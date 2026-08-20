@@ -1,26 +1,242 @@
 @import "tailwindcss";
+@import "tw-animate-css";
+@import "shadcn/tailwind.css";
 
-:root {
-  --background: #ffffff;
-  --foreground: #171717;
-}
+@custom-variant dark (&:is(.dark *));
+
+/* Design system LUMINA — "Afro-Tech Lumineux", palette "Forêt Gabonaise".
+   Voir LUMINA_Document_Maitre_v2.md section 3. */
 
 @theme inline {
   --color-background: var(--background);
   --color-foreground: var(--foreground);
-  --font-sans: var(--font-geist-sans);
-  --font-mono: var(--font-geist-mono);
+  --font-sans: var(--font-body);
+  --font-body: var(--font-body);
+  --font-display: var(--font-display);
+  --font-mono: var(--font-mono);
+  --font-heading: var(--font-display);
+  --color-sidebar-ring: var(--sidebar-ring);
+  --color-sidebar-border: var(--sidebar-border);
+  --color-sidebar-accent-foreground: var(--sidebar-accent-foreground);
+  --color-sidebar-accent: var(--sidebar-accent);
+  --color-sidebar-primary-foreground: var(--sidebar-primary-foreground);
+  --color-sidebar-primary: var(--sidebar-primary);
+  --color-sidebar-foreground: var(--sidebar-foreground);
+  --color-sidebar: var(--sidebar);
+  --color-chart-5: var(--chart-5);
+  --color-chart-4: var(--chart-4);
+  --color-chart-3: var(--chart-3);
+  --color-chart-2: var(--chart-2);
+  --color-chart-1: var(--chart-1);
+  --color-ring: var(--ring);
+  --color-input: var(--input);
+  --color-border: var(--border);
+  --color-destructive: var(--destructive);
+  --color-success: var(--success);
+  --color-warning: var(--warning);
+  --color-accent-foreground: var(--accent-foreground);
+  --color-accent: var(--accent);
+  --color-muted-foreground: var(--muted-foreground);
+  --color-muted: var(--muted);
+  --color-secondary-foreground: var(--secondary-foreground);
+  --color-secondary: var(--secondary);
+  --color-primary-foreground: var(--primary-foreground);
+  --color-primary: var(--primary);
+  --color-popover-foreground: var(--popover-foreground);
+  --color-popover: var(--popover);
+  --color-card-foreground: var(--card-foreground);
+  --color-card: var(--card);
+  --radius-sm: calc(var(--radius) * 0.6);
+  --radius-md: calc(var(--radius) * 0.8);
+  --radius-lg: var(--radius);
+  --radius-xl: calc(var(--radius) * 1.4);
+  --radius-2xl: calc(var(--radius) * 1.8);
+  --radius-3xl: calc(var(--radius) * 2.2);
+  --radius-4xl: calc(var(--radius) * 2.6);
 }
 
-@media (prefers-color-scheme: dark) {
-  :root {
-    --background: #0a0a0a;
-    --foreground: #ededed;
+:root {
+  --background: #f8f7f4; /* Fond */
+  --foreground: #1c1c1e; /* Texte */
+  --card: #ffffff;
+  --card-foreground: #1c1c1e;
+  --popover: #ffffff;
+  --popover-foreground: #1c1c1e;
+  --primary: #0a4f3c; /* Primaire */
+  --primary-foreground: #ffffff;
+  --secondary: #f4b942; /* Secondaire */
+  --secondary-foreground: #1c1c1e;
+  --muted: #eae8e1; /* Surface */
+  --muted-foreground: #6b7280; /* Texte secondaire */
+  --accent: #2e6baa; /* Tertiaire */
+  --accent-foreground: #ffffff;
+  --destructive: #dc2626; /* Erreur */
+  --success: #10b981;
+  --warning: #ea580c; /* Alerte */
+  --border: #eae8e1;
+  --input: #eae8e1;
+  --ring: #2e6baa;
+  --chart-1: #0a4f3c;
+  --chart-2: #f4b942;
+  --chart-3: #2e6baa;
+  --chart-4: #10b981;
+  --chart-5: #ea580c;
+  --radius: 0.75rem;
+  --sidebar: #ffffff;
+  --sidebar-foreground: #1c1c1e;
+  --sidebar-primary: #0a4f3c;
+  --sidebar-primary-foreground: #ffffff;
+  --sidebar-accent: #eae8e1;
+  --sidebar-accent-foreground: #1c1c1e;
+  --sidebar-border: #eae8e1;
+  --sidebar-ring: #2e6baa;
+}
+
+.dark {
+  --background: #14201b;
+  --foreground: #f8f7f4;
+  --card: #1b2b24;
+  --card-foreground: #f8f7f4;
+  --popover: #1b2b24;
+  --popover-foreground: #f8f7f4;
+  --primary: #2fae86;
+  --primary-foreground: #0a1f18;
+  --secondary: #f4b942;
+  --secondary-foreground: #1c1c1e;
+  --muted: #1f322a;
+  --muted-foreground: #a3ada8;
+  --accent: #5a9bd8;
+  --accent-foreground: #0a1f18;
+  --destructive: #f87171;
+  --success: #34d399;
+  --warning: #fb923c;
+  --border: oklch(1 0 0 / 10%);
+  --input: oklch(1 0 0 / 15%);
+  --ring: #5a9bd8;
+  --chart-1: #2fae86;
+  --chart-2: #f4b942;
+  --chart-3: #5a9bd8;
+  --chart-4: #34d399;
+  --chart-5: #fb923c;
+  --sidebar: #1b2b24;
+  --sidebar-foreground: #f8f7f4;
+  --sidebar-primary: #2fae86;
+  --sidebar-primary-foreground: #0a1f18;
+  --sidebar-accent: oklch(1 0 0 / 8%);
+  --sidebar-accent-foreground: #f8f7f4;
+  --sidebar-border: oklch(1 0 0 / 10%);
+  --sidebar-ring: #5a9bd8;
+}
+
+@layer base {
+  * {
+    @apply border-border outline-ring/50;
+  }
+  body {
+    @apply bg-background text-foreground;
+  }
+  html {
+    @apply font-body scroll-smooth;
+  }
+  h1,
+  h2,
+  h3,
+  h4,
+  h5,
+  h6 {
+    @apply font-display;
   }
 }
 
-body {
-  background: var(--background);
-  color: var(--foreground);
-  font-family: Arial, Helvetica, sans-serif;
+/* SaaS Landing Visual Accents */
+.bg-grid-pattern {
+  background-size: 32px 32px;
+  background-image: 
+    linear-gradient(to right, rgba(10, 79, 60, 0.05) 1px, transparent 1px),
+    linear-gradient(to bottom, rgba(10, 79, 60, 0.05) 1px, transparent 1px);
 }
+
+.dark .bg-grid-pattern {
+  background-image: 
+    linear-gradient(to right, rgba(47, 174, 134, 0.08) 1px, transparent 1px),
+    linear-gradient(to bottom, rgba(47, 174, 134, 0.08) 1px, transparent 1px);
+}
+
+.bg-dots-pattern {
+  background-image: radial-gradient(rgba(10, 79, 60, 0.12) 1px, transparent 1px);
+  background-size: 24px 24px;
+}
+
+.glass-card {
+  background: rgba(255, 255, 255, 0.85);
+  backdrop-filter: blur(16px);
+  -webkit-backdrop-filter: blur(16px);
+  border: 1px solid rgba(234, 232, 225, 0.8);
+}
+
+.dark .glass-card {
+  background: rgba(27, 43, 36, 0.85);
+  border: 1px solid rgba(255, 255, 255, 0.08);
+}
+
+.glow-primary {
+  box-shadow: 0 0 60px -15px rgba(10, 79, 60, 0.35);
+}
+
+.glow-secondary {
+  box-shadow: 0 0 60px -15px rgba(244, 185, 66, 0.35);
+}
+
+@keyframes pulse-slow {
+  0%, 100% {
+    opacity: 0.4;
+    transform: scale(1);
+  }
+  50% {
+    opacity: 0.8;
+    transform: scale(1.05);
+  }
+}
+
+.animate-pulse-slow {
+  animation: pulse-slow 6s ease-in-out infinite;
+}
+
+@keyframes float-gentle {
+  0%, 100% {
+    transform: translateY(0px);
+  }
+  50% {
+    transform: translateY(-8px);
+  }
+}
+
+.animate-float {
+  animation: float-gentle 4s ease-in-out infinite;
+}
+
+@keyframes marquee {
+  0% {
+    transform: translateX(0%);
+  }
+  100% {
+    transform: translateX(-50%);
+  }
+}
+
+.animate-marquee {
+  display: flex;
+  width: max-content;
+  animation: marquee 28s linear infinite;
+}
+
+.animate-marquee:hover {
+  animation-play-state: paused;
+}
+
+.marquee-mask {
+  mask-image: linear-gradient(to right, transparent, black 12%, black 88%, transparent);
+  -webkit-mask-image: linear-gradient(to right, transparent, black 12%, black 88%, transparent);
+}
+
+

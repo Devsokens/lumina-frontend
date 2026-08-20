@@ -1,3 +1,13 @@
+# LUMINA Frontend
+
+Ce dépôt est le **frontend** de LUMINA (repo séparé du backend `lumina-backend`). Avant toute
+modification, lire `LUMINA_FRONTEND_CONTEXT.md` — c'est la source de vérité de ce dépôt.
+`LUMINA_Document_Maitre_v2.md` et `LUMINA_Audit_Menaces_Complet.md` sont fournis en référence
+partagée (vision produit + threat matrix) mais ne doivent pas être modifiés depuis ce repo.
+
+Règle d'or : ce frontend ne contient AUCUNE logique métier, secret, ou accès direct à une base
+de données. Tout passe par des appels HTTP à `NEXT_PUBLIC_API_URL` (le backend NestJS).
+
 <!-- BEGIN:nextjs-agent-rules -->
 
 # This is NOT the Next.js you know
