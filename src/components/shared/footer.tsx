@@ -1,6 +1,6 @@
 import { Logo } from "./logo";
 import Link from "next/link";
-import { ShieldCheck, Smartphone, Zap, Heart } from "lucide-react";
+import { ShieldCheck, Smartphone, Zap } from "lucide-react";
 
 export function Footer() {
   return (

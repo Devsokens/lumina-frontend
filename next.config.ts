@@ -12,9 +12,14 @@ const apiOrigin = (() => {
   }
 })();
 
+// 'unsafe-eval' est requis par le Fast Refresh de Next.js en dev — jamais en
+// prod. 'unsafe-inline' reste nécessaire pour le script de bootstrap inline
+// de Next.js (hydratation) tant qu'un CSP à base de nonce n'est pas mis en
+// place. Voir LUMINA_Audit_Menaces_Complet.md action critique #5.
+const isDev = process.env.NODE_ENV === "development";
 const csp = [
   "default-src 'self'",
-  "script-src 'self' 'unsafe-inline' 'unsafe-eval'",
+  `script-src 'self' 'unsafe-inline'${isDev ? " 'unsafe-eval'" : ""}`,
   "style-src 'self' 'unsafe-inline'",
   `img-src 'self' ${apiOrigin} data: blob:`,
   `connect-src 'self' ${apiOrigin} ws: wss:`,
