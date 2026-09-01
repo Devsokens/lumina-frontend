@@ -97,6 +97,8 @@ export type Order = {
   updatedAt: string;
 };
 
+export type EventStatus = "DRAFT" | "PUBLISHED" | "ONGOING" | "COMPLETED" | "CANCELLED";
+
 export type Event = {
   id: string;
   title: string;
@@ -105,27 +107,73 @@ export type Event = {
   startDate: string;
   endDate: string | null;
   location: string | null;
+  venueName?: string | null;
+  address?: string | null;
   capacity: number | null;
-  status: "DRAFT" | "PUBLISHED" | "ONGOING" | "COMPLETED" | "CANCELLED";
+  status: EventStatus;
+  ticketTypes?: TicketType[];
+  soldTicketsCount?: number;
+  totalRevenue?: number;
+  checkedInCount?: number;
+  createdAt: string;
 };
 
 export type TicketType = {
   id: string;
   name: string;
-  price: number;
+  price: number; // centimes
   quantity: number;
   sold: number;
   eventId: string;
+  description?: string | null;
+};
+
+export type Attendee = {
+  id: string;
+  ticketId: string;
+  ticketNumber: string;
+  customerName: string;
+  customerEmail: string;
+  customerPhone: string;
+  ticketTypeName: string;
+  ticketPrice: number;
+  status: "VALID" | "USED" | "CANCELLED" | "REFUNDED";
+  scannedAt: string | null;
+  purchaseDate: string;
 };
 
 export type Ticket = {
   id: string;
+  ticketNumber: string;
   qrCode: string;
   status: "VALID" | "USED" | "CANCELLED" | "REFUNDED";
   scannedAt: string | null;
   ticketTypeId: string;
+  ticketType?: TicketType;
   eventId: string;
+  event?: Event;
   customerName: string | null;
   customerEmail: string | null;
   customerPhone: string | null;
+  pricePaid: number;
 };
+
+export type TicketScanResult = {
+  isValid: boolean;
+  message: string;
+  ticket?: Ticket;
+  alreadyScannedAt?: string;
+};
+
+export type Property = {
+  id: string;
+  name: string;
+  type: "APARTMENT" | "MOTEL_ROOM" | "GUEST_HOUSE" | "VILLA" | "STUDIO";
+  address: string;
+  city: string;
+  basePrice: number; // centimes
+  maxGuests: number;
+  photos: { id: string; url: string; isMain: boolean }[];
+  isPublished: boolean;
+};
+

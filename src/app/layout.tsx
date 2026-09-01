@@ -21,9 +21,9 @@ const jetbrainsMono = JetBrains_Mono({
 });
 
 export const metadata: Metadata = {
-  title: "LUMINA — Digitalisez votre activité en 5 minutes",
+  title: "Giya — La plateforme de commerce et gestion pour l'Afrique",
   description:
-    "SaaS multi-tenant pour PME africaines : restauration, événementiel, commerce.",
+    "Giya digitalise vos activités en Afrique : Événementiel, Restauration, E-Commerce et Hébergement RBNB avec paiement Mobile Money et mode hors-ligne.",
   manifest: "/manifest.json",
 };
 

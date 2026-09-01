@@ -23,9 +23,10 @@ import {
 } from "@/components/ui/select";
 
 const SECTOR_LABELS: Record<(typeof SECTORS)[number], string> = {
-  RESTAURANT: "Restauration",
   EVENT: "Événementiel",
+  RESTAURANT: "Restauration",
   SHOP: "Commerce",
+  ACCOMMODATION: "Hébergement & RBNB",
 };
 
 export default function SignupPage() {
@@ -72,17 +73,44 @@ export default function SignupPage() {
     }
   }
 
+  const [googleLoading, setGoogleLoading] = useState(false);
+
+  function handleGoogleSignup() {
+    setGoogleLoading(true);
+    toast.loading("Redirection vers Google...");
+    const apiUrl = process.env.NEXT_PUBLIC_API_URL ?? "http://localhost:3001/v1";
+    window.location.href = `${apiUrl}/auth/google`;
+  }
+
   return (
     <div>
       <div className="flex size-14 items-center justify-center rounded-2xl bg-muted text-primary">
         <UserPlus className="size-6" />
       </div>
-      <h1 className="mt-6 font-display text-2xl font-bold text-foreground">Créer un compte</h1>
+      <h1 className="mt-6 font-display text-2xl font-bold text-foreground">Créer votre compte Giya</h1>
       <p className="mt-1 text-sm text-muted-foreground">
-        Digitalisez votre commerce en quelques minutes.
+        Digitalisez votre activité en quelques minutes sans frais d&apos;entrée.
       </p>
 
-      <form onSubmit={handleSubmit(onSubmit)} className="mt-8 space-y-4" noValidate>
+      {/* Google Signup Button */}
+      <Button
+        type="button"
+        variant="outline"
+        className="mt-6 h-12 w-full rounded-xl border-border bg-card text-base font-medium shadow-xs transition-all hover:bg-muted/50 hover:border-primary/40"
+        onClick={handleGoogleSignup}
+        disabled={googleLoading}
+      >
+        <GoogleIcon className="mr-2 size-5" />
+        {googleLoading ? "Inscription en cours..." : "S'inscrire avec Google"}
+      </Button>
+
+      <div className="my-6 flex items-center gap-3">
+        <div className="h-px flex-1 bg-border" />
+        <span className="text-xs font-medium uppercase tracking-wider text-muted-foreground">ou avec formulaire</span>
+        <div className="h-px flex-1 bg-border" />
+      </div>
+
+      <form onSubmit={handleSubmit(onSubmit)} className="space-y-4" noValidate>
         <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
           <div className="space-y-1.5">
             <Label htmlFor="fullName">
@@ -126,7 +154,7 @@ export default function SignupPage() {
             <Input id="email" type="email" className="h-11 rounded-xl" placeholder="vous@exemple.com" {...register("email")} />
           </div>
           <div className="space-y-1.5">
-            <Label htmlFor="phone">Téléphone</Label>
+            <Label htmlFor="phone">Téléphone (Mobile Money)</Label>
             <Input id="phone" className="h-11 rounded-xl" placeholder="+241 XX XX XX XX" {...register("phone")} />
           </div>
         </div>
@@ -138,7 +166,7 @@ export default function SignupPage() {
           <Input
             id="businessName"
             className="h-11 rounded-xl"
-            placeholder="Le Palmier Restaurant"
+            placeholder="Ex: Villa Sunset, Festival Libreville, Le Palmier"
             value={businessName ?? ""}
             onChange={(e) => onBusinessNameChange(e.target.value)}
           />
@@ -149,7 +177,7 @@ export default function SignupPage() {
 
         <div className="space-y-1.5">
           <Label htmlFor="slug">
-            Sous-domaine <span className="text-destructive">*</span>
+            Sous-domaine personnalisé <span className="text-destructive">*</span>
           </Label>
           <div className="flex h-11 items-center gap-1 rounded-xl border border-input pr-3 focus-within:border-ring focus-within:ring-3 focus-within:ring-ring/50">
             <Input
@@ -157,7 +185,7 @@ export default function SignupPage() {
               {...register("slug")}
               className="h-full flex-1 rounded-xl border-0 focus-visible:ring-0"
             />
-            <span className="shrink-0 text-sm text-muted-foreground">.lumina.ga</span>
+            <span className="shrink-0 text-sm font-semibold text-primary">.giya.ga</span>
           </div>
           {errors.slug && <p className="text-sm text-destructive">{errors.slug.message}</p>}
         </div>
@@ -167,18 +195,17 @@ export default function SignupPage() {
             Secteur d&apos;activité <span className="text-destructive">*</span>
           </Label>
           <Select
-            defaultValue="RESTAURANT"
+            defaultValue="EVENT"
             onValueChange={(v) => setValue("sector", v as SignupInput["sector"])}
           >
             <SelectTrigger className="h-11 w-full rounded-xl">
               <SelectValue />
             </SelectTrigger>
             <SelectContent>
-              {SECTORS.map((s) => (
-                <SelectItem key={s} value={s}>
-                  {SECTOR_LABELS[s]}
-                </SelectItem>
-              ))}
+              <SelectItem value="EVENT">🎉 Événementiel (Billetterie & Scan QR)</SelectItem>
+              <SelectItem value="RESTAURANT">🍽️ Restauration (Menu QR & KDS Cuisine)</SelectItem>
+              <SelectItem value="SHOP">🛍️ E-Commerce (Boutique & Stocks)</SelectItem>
+              <SelectItem value="ACCOMMODATION">🏨 Hébergement & RBNB (Calendrier & Reçus)</SelectItem>
             </SelectContent>
           </Select>
         </div>
@@ -186,37 +213,21 @@ export default function SignupPage() {
         <label className="flex items-start gap-2 text-sm">
           <input type="checkbox" className="mt-1 size-4 rounded border-input" {...register("acceptedTerms")} />
           <span className="text-muted-foreground">
-            J&apos;accepte les CGU et la politique de confidentialité de LUMINA.
+            J&apos;accepte les CGU et la politique de confidentialité de Giya.
           </span>
         </label>
         {errors.acceptedTerms && (
           <p className="text-sm text-destructive">{errors.acceptedTerms.message}</p>
         )}
 
-        <Button type="submit" className="h-11 w-full rounded-xl text-base" disabled={submitting}>
-          {submitting ? "Création..." : "Créer mon compte"}
+        <Button type="submit" className="h-11 w-full rounded-xl text-base font-semibold shadow-md shadow-primary/20" disabled={submitting}>
+          {submitting ? "Création..." : "Démarrer gratuitement"}
         </Button>
       </form>
 
-      <div className="my-6 flex items-center gap-3">
-        <div className="h-px flex-1 bg-border" />
-        <span className="text-xs text-muted-foreground">ou</span>
-        <div className="h-px flex-1 bg-border" />
-      </div>
-
-      <Button
-        type="button"
-        variant="outline"
-        className="h-11 w-full rounded-xl text-base"
-        onClick={() => toast.info("Inscription Google bientôt disponible")}
-      >
-        <GoogleIcon className="size-4" />
-        S&apos;inscrire avec Google
-      </Button>
-
-      <p className="mt-6 text-center text-sm text-muted-foreground">
+      <p className="mt-8 text-center text-sm text-muted-foreground">
         Déjà un compte ?{" "}
-        <Link href="/login" className="font-medium text-primary underline-offset-4 hover:underline">
+        <Link href="/login" className="font-semibold text-primary underline-offset-4 hover:underline">
           Se connecter
         </Link>
       </p>

@@ -50,7 +50,7 @@ export function Footer() {
           <div className="col-span-2">
             <Logo size="lg" inverted />
             <p className="mt-4 max-w-sm text-sm leading-relaxed text-white/70">
-              La plateforme tout-en-un de digitalisation sectorielle pour les restaurants, événements et commerces en Afrique.
+              La plateforme tout-en-un de gestion et d&apos;encaissement pour les événements, la restauration, le commerce et l&apos;hébergement en Afrique.
             </p>
             <div className="mt-6 flex items-center gap-2">
               <span className="relative flex size-2.5">
@@ -58,33 +58,33 @@ export function Footer() {
                 <span className="relative inline-flex size-2.5 rounded-full bg-emerald-500"></span>
               </span>
               <span className="text-xs font-medium text-emerald-300">
-                Tous les systèmes opérationnels (99.9%)
+                Tous les systèmes Giya opérationnels (99.9%)
               </span>
             </div>
           </div>
 
           {/* Solutions Col */}
           <div>
-            <p className="text-sm font-semibold tracking-wider text-white uppercase">Secteurs</p>
+            <p className="text-sm font-semibold tracking-wider text-white uppercase">4 Secteurs</p>
             <ul className="mt-4 space-y-2.5 text-sm text-white/65">
               <li>
                 <a href="#secteurs" className="transition-colors hover:text-secondary">
-                  Restauration & KDS
+                  🎉 Événementiel & Billets
                 </a>
               </li>
               <li>
                 <a href="#secteurs" className="transition-colors hover:text-secondary">
-                  Événements & Billetterie
+                  🍽️ Restauration & KDS
                 </a>
               </li>
               <li>
                 <a href="#secteurs" className="transition-colors hover:text-secondary">
-                  Boutiques & Retail
+                  🛍️ E-Commerce & Stocks
                 </a>
               </li>
               <li>
-                <a href="#demo" className="transition-colors hover:text-secondary">
-                  Démo Live
+                <a href="#secteurs" className="transition-colors hover:text-secondary">
+                  🏨 Hébergement & RBNB
                 </a>
               </li>
             </ul>
@@ -92,26 +92,26 @@ export function Footer() {
 
           {/* Produit Col */}
           <div>
-            <p className="text-sm font-semibold tracking-wider text-white uppercase">Produit</p>
+            <p className="text-sm font-semibold tracking-wider text-white uppercase">Infrastructure</p>
             <ul className="mt-4 space-y-2.5 text-sm text-white/65">
-              <li>
-                <a href="#features" className="transition-colors hover:text-secondary">
-                  Menus & QR Codes
-                </a>
-              </li>
               <li>
                 <a href="#features" className="transition-colors hover:text-secondary">
                   Paiement Mobile Money
                 </a>
               </li>
               <li>
+                <a href="#features" className="transition-colors hover:text-secondary">
+                  Mode PWA Hors-Ligne
+                </a>
+              </li>
+              <li>
                 <a href="#tarifs" className="transition-colors hover:text-secondary">
-                  Grille Tarifaire
+                  Formule Free & Pro
                 </a>
               </li>
               <li>
                 <a href="#faq" className="transition-colors hover:text-secondary">
-                  FAQ & Aide
+                  FAQ & Assistance
                 </a>
               </li>
             </ul>
@@ -128,7 +128,7 @@ export function Footer() {
               </li>
               <li>
                 <Link href="/signup" className="transition-colors hover:text-secondary">
-                  Créer un compte
+                  Créer un compte Giya
                 </Link>
               </li>
               <li>
@@ -141,7 +141,7 @@ export function Footer() {
         {/* Bottom Bar */}
         <div className="mt-12 flex flex-col items-center justify-between gap-4 border-t border-white/10 pt-8 text-xs text-white/50 sm:flex-row">
           <p className="flex items-center">
-            © {new Date().getFullYear()} LUMINA Technologies.
+            © {new Date().getFullYear()} Giya Technologies. Tous droits réservés.
           </p>
           <div className="flex items-center gap-6">
             <span>Confidentialité & RGPD/APDP</span>

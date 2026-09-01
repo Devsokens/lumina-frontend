@@ -56,10 +56,10 @@ export function HeroSection() {
             initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ duration: 0.6, delay: 0.2 }}
-            className="mt-6 max-w-2xl text-lg leading-relaxed text-muted-foreground sm:text-xl"
+            className="mt-6 max-w-3xl text-lg leading-relaxed text-muted-foreground sm:text-xl"
           >
-            La plateforme tout-en-un pour les <strong>Restaurants</strong>, <strong>Événements</strong> et <strong>Commerces</strong>. 
-            Menus QR dynamiques, billetterie anti-fraude, écran cuisine (KDS) et paiements directs <strong>Airtel & Moov Money</strong> sans écrire une seule ligne de code.
+            La plateforme tout-en-un pour les <strong>Événements</strong>, <strong>Restaurants</strong>, <strong>Commerces</strong> et <strong>Hébergements RBNB</strong>. 
+            Billetterie anti-fraude, menus QR & KDS, réservations meublés et paiements directs <strong>Airtel & Moov Money</strong>.
           </motion.p>
 
           {/* CTA Group */}
@@ -75,7 +75,7 @@ export function HeroSection() {
               className="group h-13 rounded-full bg-primary px-8 text-base font-semibold text-white shadow-xl shadow-primary/30 transition-all hover:bg-primary/90 hover:shadow-primary/50 hover:scale-[1.02]"
             >
               <Link href="/signup" className="flex items-center gap-2">
-                <span>Créer mon espace gratuitement</span>
+                <span>Créer mon compte Giya gratuit</span>
                 <ArrowRight className="size-4 transition-transform group-hover:translate-x-1" />
               </Link>
             </Button>
@@ -86,8 +86,8 @@ export function HeroSection() {
               size="lg"
               className="h-13 rounded-full border-border/80 bg-card/60 px-7 text-base font-medium backdrop-blur-md hover:bg-card hover:border-primary/50"
             >
-              <a href="#demo" className="flex items-center gap-2">
-                <span>Tester la démo en direct</span>
+              <a href="#secteurs" className="flex items-center gap-2">
+                <span>Explorer les 4 secteurs</span>
               </a>
             </Button>
           </motion.div>
@@ -101,15 +101,15 @@ export function HeroSection() {
           >
             <div className="flex items-center gap-1.5">
               <CheckCircle2 className="size-4 text-emerald-600 dark:text-emerald-400" />
-              <span>0 FCFA pour démarrer (Sans engagement)</span>
+              <span>0 FCFA pour démarrer</span>
             </div>
             <div className="flex items-center gap-1.5">
               <CheckCircle2 className="size-4 text-emerald-600 dark:text-emerald-400" />
-              <span>Sous-domaine offert à vie (nom.lumina.ga)</span>
+              <span>Sous-domaine offert (nom.giya.ga)</span>
             </div>
             <div className="flex items-center gap-1.5">
               <CheckCircle2 className="size-4 text-emerald-600 dark:text-emerald-400" />
-              <span>PWA Offline-First (Résiste aux coupures)</span>
+              <span>PWA Offline (Fonctionne sans Internet)</span>
             </div>
           </motion.div>
 
@@ -131,68 +131,86 @@ export function HeroSection() {
                 <span className="size-3 rounded-full bg-yellow-400/80" />
                 <span className="size-3 rounded-full bg-green-400/80" />
                 <span className="ml-3 rounded-md bg-muted/60 px-3 py-1 font-mono text-[11px] text-muted-foreground">
-                  https://le-palmier-d-or.lumina.ga
+                  https://festival-urban.giya.ga
                 </span>
               </div>
               <div className="flex items-center gap-2 text-xs text-muted-foreground">
                 <span className="flex size-2 rounded-full bg-emerald-500 animate-pulse" />
-                <span className="hidden sm:inline font-mono">Realtime Sync (12ms)</span>
+                <span className="hidden sm:inline font-mono">Giya Realtime Sync (10ms)</span>
               </div>
             </div>
 
             {/* Inner Interactive Product Teaser Grid */}
-            <div className="grid gap-4 p-3 sm:grid-cols-3 sm:p-5">
-              {/* Sector 1 Preview Card */}
-              <div className="group relative overflow-hidden rounded-xl border border-border/70 bg-background/80 p-4 transition-all hover:border-primary/50 hover:shadow-md">
+            <div className="grid gap-4 p-3 sm:grid-cols-4 sm:p-5">
+              {/* Sector 1: Event */}
+              <div className="group relative overflow-hidden rounded-xl border border-border/70 bg-background/80 p-4 transition-all hover:border-amber-500/50 hover:shadow-md">
                 <div className="flex items-center justify-between">
-                  <div className="flex size-9 items-center justify-center rounded-lg bg-primary/10 text-primary">
-                    <Utensils className="size-4.5" />
-                  </div>
-                  <span className="rounded-full bg-emerald-500/10 px-2 py-0.5 font-mono text-[10px] font-semibold text-emerald-600 dark:text-emerald-400">
-                    KDS Actif
-                  </span>
-                </div>
-                <h4 className="mt-3 font-display font-semibold text-foreground">Menu QR & Cuisine</h4>
-                <p className="mt-1 text-xs text-muted-foreground">Commandes transmises en 200ms en cuisine avec suivi des stocks.</p>
-                <div className="mt-3 flex items-center justify-between border-t border-border/40 pt-2 text-[11px] font-mono text-muted-foreground">
-                  <span>Table #04</span>
-                  <span className="font-semibold text-foreground">18 500 FCFA</span>
-                </div>
-              </div>
-
-              {/* Sector 2 Preview Card */}
-              <div className="group relative overflow-hidden rounded-xl border border-border/70 bg-background/80 p-4 transition-all hover:border-secondary/50 hover:shadow-md">
-                <div className="flex items-center justify-between">
-                  <div className="flex size-9 items-center justify-center rounded-lg bg-secondary/20 text-yellow-700 dark:text-secondary">
+                  <div className="flex size-9 items-center justify-center rounded-lg bg-amber-500/15 text-amber-600">
                     <Ticket className="size-4.5" />
                   </div>
-                  <span className="rounded-full bg-secondary/20 px-2 py-0.5 font-mono text-[10px] font-semibold text-yellow-800 dark:text-secondary">
-                    Zero-Fraude
+                  <span className="rounded-full bg-amber-500/20 px-2 py-0.5 font-mono text-[10px] font-semibold text-amber-500">
+                    Anti-Fraude
                   </span>
                 </div>
-                <h4 className="mt-3 font-display font-semibold text-foreground">Billetterie & Scan</h4>
-                <p className="mt-1 text-xs text-muted-foreground">Billets QR cryptés, contrôle d&apos;accès PWA ultra-rapide hors-ligne.</p>
+                <h4 className="mt-3 font-display font-semibold text-foreground text-sm">Événements</h4>
+                <p className="mt-1 text-[11px] text-muted-foreground line-clamp-2">Billetterie & scan PWA à la seconde.</p>
                 <div className="mt-3 flex items-center justify-between border-t border-border/40 pt-2 text-[11px] font-mono text-muted-foreground">
-                  <span>Pass VIP Scanné</span>
-                  <span className="font-semibold text-emerald-600 dark:text-emerald-400">0.2s ✓</span>
+                  <span>Pass VIP</span>
+                  <span className="font-semibold text-emerald-500">Scanné ✓</span>
                 </div>
               </div>
 
-              {/* Sector 3 Preview Card */}
-              <div className="group relative overflow-hidden rounded-xl border border-border/70 bg-background/80 p-4 transition-all hover:border-accent/50 hover:shadow-md">
+              {/* Sector 2: Restaurant */}
+              <div className="group relative overflow-hidden rounded-xl border border-border/70 bg-background/80 p-4 transition-all hover:border-emerald-500/50 hover:shadow-md">
                 <div className="flex items-center justify-between">
-                  <div className="flex size-9 items-center justify-center rounded-lg bg-accent/15 text-accent dark:text-blue-400">
-                    <ShoppingBag className="size-4.5" />
+                  <div className="flex size-9 items-center justify-center rounded-lg bg-emerald-500/15 text-emerald-600">
+                    <Utensils className="size-4.5" />
                   </div>
-                  <span className="rounded-full bg-accent/15 px-2 py-0.5 font-mono text-[10px] font-semibold text-accent dark:text-blue-400">
-                    Airtel / Moov
+                  <span className="rounded-full bg-emerald-500/10 px-2 py-0.5 font-mono text-[10px] font-semibold text-emerald-500">
+                    KDS Cuisine
                   </span>
                 </div>
-                <h4 className="mt-3 font-display font-semibold text-foreground">Boutique & Encaissement</h4>
-                <p className="mt-1 text-xs text-muted-foreground">Catalogue en ligne avec paiement Mobile Money direct sans terminal.</p>
+                <h4 className="mt-3 font-display font-semibold text-foreground text-sm">Restauration</h4>
+                <p className="mt-1 text-[11px] text-muted-foreground line-clamp-2">Menu QR dynamique & bons cuisine.</p>
                 <div className="mt-3 flex items-center justify-between border-t border-border/40 pt-2 text-[11px] font-mono text-muted-foreground">
-                  <span>Encaissement</span>
-                  <span className="font-semibold text-foreground">Instantané</span>
+                  <span>Table #04</span>
+                  <span className="font-semibold text-foreground">18 500 F</span>
+                </div>
+              </div>
+
+              {/* Sector 3: Shop */}
+              <div className="group relative overflow-hidden rounded-xl border border-border/70 bg-background/80 p-4 transition-all hover:border-blue-500/50 hover:shadow-md">
+                <div className="flex items-center justify-between">
+                  <div className="flex size-9 items-center justify-center rounded-lg bg-blue-500/15 text-blue-600">
+                    <ShoppingBag className="size-4.5" />
+                  </div>
+                  <span className="rounded-full bg-blue-500/15 px-2 py-0.5 font-mono text-[10px] font-semibold text-blue-500">
+                    Moov/Airtel
+                  </span>
+                </div>
+                <h4 className="mt-3 font-display font-semibold text-foreground text-sm">E-Commerce</h4>
+                <p className="mt-1 text-[11px] text-muted-foreground line-clamp-2">Boutique WhatsApp & stocks sync.</p>
+                <div className="mt-3 flex items-center justify-between border-t border-border/40 pt-2 text-[11px] font-mono text-muted-foreground">
+                  <span>Paiement</span>
+                  <span className="font-semibold text-foreground">Direct</span>
+                </div>
+              </div>
+
+              {/* Sector 4: Accommodation */}
+              <div className="group relative overflow-hidden rounded-xl border border-border/70 bg-background/80 p-4 transition-all hover:border-purple-500/50 hover:shadow-md">
+                <div className="flex items-center justify-between">
+                  <div className="flex size-9 items-center justify-center rounded-lg bg-purple-500/15 text-purple-600">
+                    <QrCode className="size-4.5" />
+                  </div>
+                  <span className="rounded-full bg-purple-500/15 px-2 py-0.5 font-mono text-[10px] font-semibold text-purple-400">
+                    RBNB
+                  </span>
+                </div>
+                <h4 className="mt-3 font-display font-semibold text-foreground text-sm">Hébergement</h4>
+                <p className="mt-1 text-[11px] text-muted-foreground line-clamp-2">Calendrier & reçu fiscal certifié.</p>
+                <div className="mt-3 flex items-center justify-between border-t border-border/40 pt-2 text-[11px] font-mono text-muted-foreground">
+                  <span>Acompte 30%</span>
+                  <span className="font-semibold text-purple-400">Validé</span>
                 </div>
               </div>
             </div>

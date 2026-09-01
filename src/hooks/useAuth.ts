@@ -3,7 +3,7 @@
 import { useCallback } from "react";
 import axios from "axios";
 import { api } from "@/lib/api";
-import { API_URL } from "@/lib/constants";
+import { API_URL, type Sector } from "@/lib/constants";
 import { useAuthStore, type AuthUser } from "@/stores/useAuthStore";
 
 type LoginPayload = { email?: string; phone?: string; password: string };
@@ -13,7 +13,7 @@ type SignupPayload = {
   phone?: string;
   businessName: string;
   slug: string;
-  sector: "RESTAURANT" | "EVENT" | "SHOP";
+  sector: Sector;
   acceptedTerms: true;
 };
 type OtpVerifyPayload = { phone: string; code: string };

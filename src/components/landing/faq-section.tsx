@@ -7,28 +7,24 @@ import { ChevronDown } from "lucide-react";
 
 const FAQS = [
   {
-    question: "Comment mes clients accèdent-ils à mon menu ou à mes billets ?",
-    answer: "Vos clients n'ont AUCUNE application à télécharger. Ils scannent simplement votre QR code avec l'appareil photo de leur téléphone (Android ou iPhone) ou cliquent sur votre lien (monresto.lumina.ga). Votre menu ou catalogue s'ouvre instantanément en moins d'une seconde.",
+    question: "Comment mes clients ou invités accèdent-ils à mes services ?",
+    answer: "Vos clients n'ont AUCUNE application à télécharger. Ils scannent simplement votre QR code ou cliquent sur votre lien (monresto.giya.ga). Vos billets, menus, catalogues ou fiches d'hébergement s'ouvrent instantanément.",
   },
   {
     question: "Comment s'effectue l'encaissement via Airtel Money et Moov Money ?",
-    answer: "Lors du paiement, le client sélectionne son opérateur (Airtel Money ou Moov Money) et saisit son numéro. Une notification de validation USSD s'affiche sur son téléphone pour confirmer le code PIN. Une fois validé, vous recevez les fonds directement et la commande passe automatiquement au statut 'Payé'.",
+    answer: "Le client sélectionne son opérateur et valide via le prompt USSD sur son téléphone. Les fonds sont sécurisés instantanément et votre tableau de bord Giya met à jour les ventes en temps réel.",
   },
   {
-    question: "Est-ce que LUMINA fonctionne en cas de coupure Internet ?",
-    answer: "Oui ! LUMINA est développé avec la technologie PWA Offline-First. Si la connexion Internet faiblit ou coupe à Libreville ou en province, vous pouvez continuer à saisir les commandes et scanner les billets d'entrée. Dès que la 4G/Wifi est rétablie, toutes les données sont automatiquement synchronisées.",
+    question: "Est-ce que Giya fonctionne en cas de coupure Internet ?",
+    answer: "Oui ! Giya intègre la technologie PWA Offline-First. Si la connexion coupe, vous pouvez continuer à saisir les commandes et scanner les billets d'entrée. Dès que le réseau revient, tout est synchronisé sans aucune perte de données.",
   },
   {
-    question: "Comment le système anti-fraude de billetterie empêche-t-il les duplicatas ?",
-    answer: "Chaque billet émis comporte une signature cryptographique unique. Lorsque le portier scanne le QR code avec l'application scanner PWA de LUMINA, le billet est instantanément marqué comme consommé en mémoire locale et sur le serveur. Toute tentative de présenter une capture d'écran ou une photocopie est immédiatement rejetée avec une alerte rouge.",
+    question: "Comment fonctionne l'anti-fraude billetterie ?",
+    answer: "Chaque billet émis comporte un QR code cryptographique unique. Au scan avec l'application Giya, le billet est validé en moins de 1 seconde et marqué comme utilisé. Les captures d'écran et doublons sont rejetés immédiatement.",
   },
   {
-    question: "Puis-je exporter mes données de ventes et de clients ?",
-    answer: "Absolument. Chez LUMINA, nous garantissons la souveraineté totale de vos données. Vous pouvez exporter vos rapports en PDF/CSV à tout moment, et même activer la synchronisation quotidienne automatique vers votre compte Google Drive ou Dropbox personnel.",
-  },
-  {
-    question: "Combien de temps prend la mise en place de mon espace ?",
-    answer: "Moins de 5 minutes chrono ! Vous vous inscrivez gratuitement, choisissez votre secteur (Restaurant, Événement, Boutique), entrez le nom de votre établissement, et votre plateforme est immédiatement opérationnelle avec vos QR codes prêts à imprimer.",
+    question: "Qu'en est-il du secteur Hébergement & RBNB ?",
+    answer: "Giya gère vos appartements meublés et motels avec un calendrier en direct, l'encaissement d'acompte 30% Mobile Money anti-no-show, et l'émission automatique de reçus fiscaux certifiés avec signature électronique.",
   },
 ];
 
@@ -40,7 +36,7 @@ export function FaqSection() {
   };
 
   return (
-    <section id="faq" className="relative py-20 lg:py-28 bg-muted/20 border-t border-border/70">
+    <section id="faq" className="relative py-16 lg:py-24 bg-muted/20 border-t border-border/70">
       <div className="mx-auto max-w-4xl px-4 sm:px-6 lg:px-8">
         {/* Heading */}
         <div className="text-center">
@@ -49,18 +45,18 @@ export function FaqSection() {
             whileInView={{ opacity: 1, y: 0 }}
             viewport={{ once: true }}
             transition={{ delay: 0.1 }}
-            className="mt-4 font-display text-3xl font-extrabold tracking-tight text-foreground sm:text-5xl"
+            className="mt-2 font-display text-3xl font-extrabold tracking-tight text-foreground sm:text-4xl"
           >
-            Questions fréquemment posées
+            Questions fréquentes
           </motion.h2>
           <motion.p
             initial={{ opacity: 0, y: 20 }}
             whileInView={{ opacity: 1, y: 0 }}
             viewport={{ once: true }}
             transition={{ delay: 0.2 }}
-            className="mt-3 text-base text-muted-foreground"
+            className="mt-2 text-sm text-muted-foreground"
           >
-            Tout ce que vous devez savoir pour démarrer sereinement avec LUMINA.
+            Tout ce que vous devez savoir pour démarrer sereinement avec Giya.
           </motion.p>
         </div>
 
