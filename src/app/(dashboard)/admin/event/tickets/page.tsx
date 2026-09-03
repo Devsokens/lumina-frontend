@@ -1,20 +1,18 @@
 "use client";
 
-import { TicketsManager } from "@/components/events/tickets-manager";
+import { useEffect } from "react";
+import { useRouter } from "next/navigation";
 
-export default function EventTicketsPage() {
+export default function EventTicketsRedirect() {
+  const router = useRouter();
+
+  useEffect(() => {
+    router.replace("/admin/event/reservations");
+  }, [router]);
+
   return (
-    <div className="space-y-6">
-      <div>
-        <h1 className="font-display text-2xl sm:text-3xl font-bold text-foreground">
-          Billetterie & Catégories de Tarifs
-        </h1>
-        <p className="text-sm text-muted-foreground mt-0.5">
-          Gérez vos types de billets (Standard, VIP, Tables), vos quotas et vos prix en FCFA.
-        </p>
-      </div>
-
-      <TicketsManager />
+    <div className="flex items-center justify-center p-12 text-sm text-muted-foreground">
+      Redirection vers les Réservations...
     </div>
   );
 }

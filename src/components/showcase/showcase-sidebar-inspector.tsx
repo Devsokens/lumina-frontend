@@ -3,12 +3,12 @@
 import {
   Palette,
   Type,
-  Image as ImageIcon,
   Ticket,
-  Music,
   Phone,
   Sparkles,
-  ChevronRight,
+  Building,
+  Calendar,
+  FileText,
   Plus,
   Trash2,
 } from "lucide-react";
@@ -18,36 +18,36 @@ import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { Button } from "@/components/ui/button";
 
-const THEMES: { id: ShowcaseTheme; name: string; gradient: string; accent: string }[] = [
+const THEMES: { id: ShowcaseTheme; name: string; gradient: string }[] = [
+  {
+    id: "emerald",
+    name: "Émeraude Royal (Giya)",
+    gradient: "from-emerald-500 to-teal-700",
+  },
+  {
+    id: "indigo",
+    name: "Bleu Nuit / Indigo Prestige",
+    gradient: "from-blue-600 to-indigo-900",
+  },
   {
     id: "amber",
     name: "Ambre Solaire (Afro Vibes)",
     gradient: "from-amber-500 to-orange-600",
-    accent: "bg-amber-500",
-  },
-  {
-    id: "emerald",
-    name: "Émeraude & Forêt Équatoriale",
-    gradient: "from-emerald-500 to-teal-700",
-    accent: "bg-emerald-500",
   },
   {
     id: "electric",
     name: "Nuit Électrique & Cyber DJ",
     gradient: "from-cyan-500 to-blue-600",
-    accent: "bg-cyan-500",
   },
   {
     id: "ruby",
     name: "Rubis & Soirée VIP Prestige",
     gradient: "from-rose-500 to-purple-600",
-    accent: "bg-rose-500",
   },
   {
     id: "dark",
     name: "Noir Onyx Minimaliste",
     gradient: "from-zinc-700 to-zinc-950",
-    accent: "bg-zinc-800",
   },
 ];
 
@@ -61,22 +61,28 @@ export function ShowcaseSidebarInspector() {
     setFontFamily,
     activeInspectorTab,
     setActiveInspectorTab,
-    siteTitle,
-    tagline,
+    orgName,
+    orgTagline,
+    orgCoverUrl,
+    heroBadge,
     heroHeadline,
     heroSubheadline,
-    eventDate,
-    eventTime,
-    eventLocation,
-    ctaText,
-    coverImageUrl,
+    heroCtaText,
+    statParticipants,
+    statEvents,
+    statSatisfaction,
+    statSecurity,
+    aboutTitle,
+    aboutText,
+    events,
     whatsappNumber,
-    instagramHandle,
-    tickets,
-    artists,
+    supportPhone,
+    contactEmail,
+    address,
+    rccm,
+    nif,
     updateField,
-    updateTicket,
-    updateArtist,
+    updateEvent,
   } = useShowcaseStore();
 
   return (
@@ -99,44 +105,44 @@ export function ShowcaseSidebarInspector() {
 
         <button
           type="button"
-          onClick={() => setActiveInspectorTab("content")}
+          onClick={() => setActiveInspectorTab("org")}
           className={`flex flex-col items-center justify-center rounded-xl p-2 text-[10px] font-semibold transition-all ${
-            activeInspectorTab === "content"
+            activeInspectorTab === "org"
               ? "bg-card text-foreground shadow-xs"
               : "text-muted-foreground hover:text-foreground"
           }`}
-          title="Textes & Hero"
+          title="Organisation & Hero"
         >
-          <Type className="size-4 mb-1" />
-          <span>Textes</span>
+          <Building className="size-4 mb-1" />
+          <span>Structure</span>
         </button>
 
         <button
           type="button"
-          onClick={() => setActiveInspectorTab("tickets")}
+          onClick={() => setActiveInspectorTab("events")}
           className={`flex flex-col items-center justify-center rounded-xl p-2 text-[10px] font-semibold transition-all ${
-            activeInspectorTab === "tickets"
+            activeInspectorTab === "events"
               ? "bg-card text-foreground shadow-xs"
               : "text-muted-foreground hover:text-foreground"
           }`}
-          title="Billetterie & Prix"
+          title="Catalogue des Événements"
         >
           <Ticket className="size-4 mb-1" />
-          <span>Pass</span>
+          <span>Événements</span>
         </button>
 
         <button
           type="button"
-          onClick={() => setActiveInspectorTab("lineup")}
+          onClick={() => setActiveInspectorTab("about")}
           className={`flex flex-col items-center justify-center rounded-xl p-2 text-[10px] font-semibold transition-all ${
-            activeInspectorTab === "lineup"
+            activeInspectorTab === "about"
               ? "bg-card text-foreground shadow-xs"
               : "text-muted-foreground hover:text-foreground"
           }`}
-          title="Lineup & Artistes"
+          title="À Propos & Vision"
         >
-          <Music className="size-4 mb-1" />
-          <span>Artistes</span>
+          <FileText className="size-4 mb-1" />
+          <span>À Propos</span>
         </button>
 
         <button
@@ -159,7 +165,7 @@ export function ShowcaseSidebarInspector() {
         <div className="space-y-4 text-xs">
           <div>
             <Label className="text-xs font-bold text-foreground mb-2 block">
-              Palette de couleurs du festival
+              Palette de couleurs du portail
             </Label>
             <div className="space-y-2">
               {THEMES.map((t) => (
@@ -187,23 +193,24 @@ export function ShowcaseSidebarInspector() {
             </div>
           </div>
 
-          <div className="border-t border-border pt-3">
-            <Label className="text-xs font-bold text-foreground mb-2 block">
-              Typographie des titres
+          <div className="pt-2 border-t border-border space-y-2">
+            <Label className="text-xs font-bold text-foreground block">
+              Typographie principale
             </Label>
             <div className="grid grid-cols-2 gap-2">
-              {FONTS.map((font) => (
+              {FONTS.map((f) => (
                 <button
-                  key={font}
+                  key={f}
                   type="button"
-                  onClick={() => setFontFamily(font)}
-                  className={`rounded-xl border p-2 text-xs font-semibold transition-all text-center ${
-                    fontFamily === font
-                      ? "border-primary bg-primary/10 text-primary"
-                      : "border-border text-foreground hover:bg-muted/40"
+                  onClick={() => setFontFamily(f)}
+                  className={`rounded-xl border p-2.5 text-xs transition-all ${
+                    fontFamily === f
+                      ? "border-primary bg-primary/10 font-bold text-primary"
+                      : "border-border hover:bg-muted/30"
                   }`}
+                  style={{ fontFamily: f }}
                 >
-                  {font}
+                  {f}
                 </button>
               ))}
             </div>
@@ -211,192 +218,231 @@ export function ShowcaseSidebarInspector() {
         </div>
       )}
 
-      {/* Tab 2: Content & Hero */}
-      {activeInspectorTab === "content" && (
-        <div className="space-y-3.5 text-xs max-h-[600px] overflow-y-auto pr-1">
+      {/* Tab 2: Organization & Hero */}
+      {activeInspectorTab === "org" && (
+        <div className="space-y-3.5 text-xs">
           <div className="space-y-1">
-            <Label className="text-[11px] font-bold">Nom de l&apos;événement</Label>
+            <Label className="text-xs font-bold">Nom de l&apos;Organisation</Label>
             <Input
-              value={siteTitle}
-              onChange={(e) => updateField("siteTitle", e.target.value)}
-              className="h-8.5 text-xs rounded-xl"
+              value={orgName}
+              onChange={(e) => updateField("orgName", e.target.value)}
+              className="h-9 rounded-xl text-xs font-semibold"
             />
           </div>
 
           <div className="space-y-1">
-            <Label className="text-[11px] font-bold">Grand Titre Hero</Label>
+            <Label className="text-xs font-bold">Slogan & Activité</Label>
+            <Input
+              value={orgTagline}
+              onChange={(e) => updateField("orgTagline", e.target.value)}
+              className="h-9 rounded-xl text-xs"
+            />
+          </div>
+
+          <div className="space-y-1 pt-1 border-t border-border">
+            <Label className="text-xs font-bold">Badge Hero</Label>
+            <Input
+              value={heroBadge}
+              onChange={(e) => updateField("heroBadge", e.target.value)}
+              className="h-9 rounded-xl text-xs"
+            />
+          </div>
+
+          <div className="space-y-1">
+            <Label className="text-xs font-bold">Grand Titre Hero</Label>
             <Input
               value={heroHeadline}
               onChange={(e) => updateField("heroHeadline", e.target.value)}
-              className="h-8.5 text-xs rounded-xl"
+              className="h-9 rounded-xl text-xs font-semibold"
             />
           </div>
 
           <div className="space-y-1">
-            <Label className="text-[11px] font-bold">Slogan & Description</Label>
+            <Label className="text-xs font-bold">Texte de Présentation Hero</Label>
             <Textarea
               value={heroSubheadline}
               onChange={(e) => updateField("heroSubheadline", e.target.value)}
-              rows={2}
-              className="text-xs rounded-xl"
+              rows={3}
+              className="rounded-xl text-xs"
             />
           </div>
 
           <div className="space-y-1">
-            <Label className="text-[11px] font-bold">Date & Horaires</Label>
+            <Label className="text-xs font-bold">Bouton CTA Principal</Label>
             <Input
-              value={eventDate}
-              onChange={(e) => updateField("eventDate", e.target.value)}
-              className="h-8.5 text-xs rounded-xl"
+              value={heroCtaText}
+              onChange={(e) => updateField("heroCtaText", e.target.value)}
+              className="h-9 rounded-xl text-xs font-bold"
             />
           </div>
 
-          <div className="space-y-1">
-            <Label className="text-[11px] font-bold">Lieu & Ville</Label>
-            <Input
-              value={eventLocation}
-              onChange={(e) => updateField("eventLocation", e.target.value)}
-              className="h-8.5 text-xs rounded-xl"
-            />
-          </div>
-
-          <div className="space-y-1">
-            <Label className="text-[11px] font-bold">Texte du Bouton d&apos;Achat (CTA)</Label>
-            <Input
-              value={ctaText}
-              onChange={(e) => updateField("ctaText", e.target.value)}
-              className="h-8.5 text-xs rounded-xl"
-            />
-          </div>
-
-          <div className="space-y-1">
-            <Label className="text-[11px] font-bold">Image d&apos;affiche / Flyer (URL)</Label>
-            <Input
-              value={coverImageUrl}
-              onChange={(e) => updateField("coverImageUrl", e.target.value)}
-              className="h-8.5 text-xs rounded-xl font-mono"
-            />
-          </div>
-        </div>
-      )}
-
-      {/* Tab 3: Tickets */}
-      {activeInspectorTab === "tickets" && (
-        <div className="space-y-3 text-xs max-h-[600px] overflow-y-auto pr-1">
-          <p className="text-muted-foreground text-[11px]">
-            Modifiez les prix en FCFA et descriptions des pass en direct.
-          </p>
-
-          {tickets.map((t) => (
-            <div
-              key={t.id}
-              className="rounded-2xl border border-border bg-muted/20 p-3 space-y-2"
-            >
-              <div className="flex items-center justify-between">
-                <span className="font-bold text-foreground text-xs">{t.name}</span>
-                <span className="font-mono font-extrabold text-primary">
-                  {t.price.toLocaleString("fr-FR")} FCFA
-                </span>
-              </div>
-
-              <div className="grid grid-cols-2 gap-2">
-                <div>
-                  <Label className="text-[10px] text-muted-foreground">Prix FCFA</Label>
-                  <Input
-                    type="number"
-                    value={t.price}
-                    onChange={(e) =>
-                      updateTicket(t.id, { price: Number(e.target.value) })
-                    }
-                    className="h-7 text-xs rounded-lg font-mono"
-                  />
-                </div>
-                <div>
-                  <Label className="text-[10px] text-muted-foreground">Places restantes</Label>
-                  <Input
-                    type="number"
-                    value={t.stockLeft}
-                    onChange={(e) =>
-                      updateTicket(t.id, { stockLeft: Number(e.target.value) })
-                    }
-                    className="h-7 text-xs rounded-lg font-mono"
-                  />
-                </div>
-              </div>
-            </div>
-          ))}
-        </div>
-      )}
-
-      {/* Tab 4: Lineup & Artists */}
-      {activeInspectorTab === "lineup" && (
-        <div className="space-y-3 text-xs max-h-[600px] overflow-y-auto pr-1">
-          <div className="flex items-center justify-between">
-            <span className="text-[11px] text-muted-foreground font-semibold">
-              Artistes & Programme
-            </span>
-          </div>
-
-          {artists.map((a) => (
-            <div
-              key={a.id}
-              className="rounded-2xl border border-border bg-muted/20 p-3 space-y-2"
-            >
-              <div className="space-y-1">
-                <Label className="text-[10px] text-muted-foreground">Nom de l&apos;artiste</Label>
+          <div className="pt-2 border-t border-border space-y-2">
+            <Label className="text-xs font-bold">Chiffres Clés (Statistiques)</Label>
+            <div className="grid grid-cols-2 gap-2">
+              <div>
+                <span className="text-[10px] text-muted-foreground">Participants</span>
                 <Input
-                  value={a.name}
-                  onChange={(e) => updateArtist(a.id, { name: e.target.value })}
-                  className="h-7 text-xs rounded-lg font-semibold"
+                  value={statParticipants}
+                  onChange={(e) => updateField("statParticipants", e.target.value)}
+                  className="h-8 rounded-lg text-xs font-mono"
                 />
               </div>
-              <div className="grid grid-cols-2 gap-2">
-                <div>
-                  <Label className="text-[10px] text-muted-foreground">Rôle / Genre</Label>
-                  <Input
-                    value={a.role}
-                    onChange={(e) => updateArtist(a.id, { role: e.target.value })}
-                    className="h-7 text-xs rounded-lg"
-                  />
-                </div>
-                <div>
-                  <Label className="text-[10px] text-muted-foreground">Jour & Heure</Label>
-                  <Input
-                    value={a.time}
-                    onChange={(e) => updateArtist(a.id, { time: e.target.value })}
-                    className="h-7 text-xs rounded-lg"
-                  />
-                </div>
+              <div>
+                <span className="text-[10px] text-muted-foreground">Éditions</span>
+                <Input
+                  value={statEvents}
+                  onChange={(e) => updateField("statEvents", e.target.value)}
+                  className="h-8 rounded-lg text-xs font-mono"
+                />
               </div>
             </div>
-          ))}
+          </div>
         </div>
       )}
 
-      {/* Tab 5: Contact & WhatsApp */}
-      {activeInspectorTab === "contact" && (
-        <div className="space-y-3 text-xs">
+      {/* Tab 3: Events Catalog */}
+      {activeInspectorTab === "events" && (
+        <div className="space-y-3.5 text-xs">
+          <div className="flex items-center justify-between">
+            <Label className="text-xs font-bold text-foreground">
+              Événements dans le Catalogue ({events.length})
+            </Label>
+          </div>
+
+          <div className="space-y-2.5 max-h-[420px] overflow-y-auto pr-1">
+            {events.map((evt) => (
+              <div
+                key={evt.id}
+                className="rounded-2xl border border-border bg-muted/20 p-3 space-y-2 text-xs"
+              >
+                <div className="space-y-1">
+                  <span className="text-[10px] font-bold text-primary">{evt.category}</span>
+                  <Input
+                    value={evt.title}
+                    onChange={(e) => updateEvent(evt.id, { title: e.target.value })}
+                    className="h-8 rounded-lg text-xs font-bold"
+                  />
+                </div>
+
+                <div className="grid grid-cols-2 gap-1.5">
+                  <div>
+                    <span className="text-[10px] text-muted-foreground">Date</span>
+                    <Input
+                      value={evt.date}
+                      onChange={(e) => updateEvent(evt.id, { date: e.target.value })}
+                      className="h-7 rounded-lg text-[11px]"
+                    />
+                  </div>
+                  <div>
+                    <span className="text-[10px] text-muted-foreground">Prix Dès (FCFA)</span>
+                    <Input
+                      type="number"
+                      value={evt.startingPrice}
+                      onChange={(e) =>
+                        updateEvent(evt.id, { startingPrice: Number(e.target.value) })
+                      }
+                      className="h-7 rounded-lg text-[11px] font-mono"
+                    />
+                  </div>
+                </div>
+
+                <div>
+                  <span className="text-[10px] text-muted-foreground">Lieu</span>
+                  <Input
+                    value={evt.location}
+                    onChange={(e) => updateEvent(evt.id, { location: e.target.value })}
+                    className="h-7 rounded-lg text-[11px]"
+                  />
+                </div>
+              </div>
+            ))}
+          </div>
+        </div>
+      )}
+
+      {/* Tab 4: About & Vision */}
+      {activeInspectorTab === "about" && (
+        <div className="space-y-3.5 text-xs">
           <div className="space-y-1">
-            <Label className="text-[11px] font-bold">Numéro WhatsApp Billetterie</Label>
+            <Label className="text-xs font-bold">Titre de la Section À Propos</Label>
+            <Input
+              value={aboutTitle}
+              onChange={(e) => updateField("aboutTitle", e.target.value)}
+              className="h-9 rounded-xl text-xs font-bold"
+            />
+          </div>
+
+          <div className="space-y-1">
+            <Label className="text-xs font-bold">Texte de Présentation de l&apos;Organisation</Label>
+            <Textarea
+              value={aboutText}
+              onChange={(e) => updateField("aboutText", e.target.value)}
+              rows={6}
+              className="rounded-xl text-xs leading-relaxed"
+            />
+          </div>
+        </div>
+      )}
+
+      {/* Tab 5: Contact & Legal */}
+      {activeInspectorTab === "contact" && (
+        <div className="space-y-3.5 text-xs">
+          <div className="space-y-1">
+            <Label className="text-xs font-bold">Numéro WhatsApp (Bouton Direct)</Label>
             <Input
               value={whatsappNumber}
               onChange={(e) => updateField("whatsappNumber", e.target.value)}
-              className="h-8.5 text-xs rounded-xl font-mono"
-              placeholder="+241..."
+              className="h-9 rounded-xl text-xs font-mono"
+              placeholder="+241 77 XX XX XX"
             />
-            <p className="text-[10px] text-muted-foreground">
-              Bouton WhatsApp flottant pour les clients souhaitant commander via agent.
-            </p>
           </div>
 
           <div className="space-y-1">
-            <Label className="text-[11px] font-bold">Instagram Officiel</Label>
+            <Label className="text-xs font-bold">Téléphone Support Client</Label>
             <Input
-              value={instagramHandle}
-              onChange={(e) => updateField("instagramHandle", e.target.value)}
-              className="h-8.5 text-xs rounded-xl"
-              placeholder="@festival..."
+              value={supportPhone}
+              onChange={(e) => updateField("supportPhone", e.target.value)}
+              className="h-9 rounded-xl text-xs font-mono"
+              placeholder="+241 74 XX XX XX"
             />
+          </div>
+
+          <div className="space-y-1">
+            <Label className="text-xs font-bold">Email de Contact</Label>
+            <Input
+              value={contactEmail}
+              onChange={(e) => updateField("contactEmail", e.target.value)}
+              className="h-9 rounded-xl text-xs"
+              placeholder="contact@organisation.ga"
+            />
+          </div>
+
+          <div className="space-y-1">
+            <Label className="text-xs font-bold">Adresse / Ville</Label>
+            <Input
+              value={address}
+              onChange={(e) => updateField("address", e.target.value)}
+              className="h-9 rounded-xl text-xs"
+            />
+          </div>
+
+          <div className="grid grid-cols-2 gap-2 pt-1 border-t border-border">
+            <div className="space-y-1">
+              <Label className="text-[10px] font-bold">N° NIF</Label>
+              <Input
+                value={nif}
+                onChange={(e) => updateField("nif", e.target.value)}
+                className="h-8 rounded-lg text-xs font-mono"
+              />
+            </div>
+            <div className="space-y-1">
+              <Label className="text-[10px] font-bold">N° RCCM</Label>
+              <Input
+                value={rccm}
+                onChange={(e) => updateField("rccm", e.target.value)}
+                className="h-8 rounded-lg text-xs font-mono"
+              />
+            </div>
           </div>
         </div>
       )}

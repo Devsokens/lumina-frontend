@@ -3,10 +3,19 @@
 import Link from "next/link";
 import { Button } from "@/components/ui/button";
 import { useTenant } from "@/hooks/useTenant";
+import { ShowcaseCanvas } from "@/components/showcase/showcase-canvas";
 
 export default function TenantHomePage() {
   const tenant = useTenant();
   const config = tenant.config as { description?: string };
+
+  if (tenant.sector === "EVENT") {
+    return (
+      <main className="min-h-screen bg-[#090b0e]">
+        <ShowcaseCanvas isEditorMode={false} />
+      </main>
+    );
+  }
 
   return (
     <main className="flex-1">

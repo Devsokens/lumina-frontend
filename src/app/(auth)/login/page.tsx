@@ -92,7 +92,7 @@ export default function LoginPage() {
       <div className="mt-6 rounded-2xl border border-primary/30 bg-primary/5 p-4 space-y-2.5">
         <div className="flex items-center justify-between">
           <span className="text-xs font-bold uppercase tracking-wider text-primary flex items-center gap-1.5">
-            ⚡ Accès Démo Immédiat (Sans backend)
+            Accès Démo Immédiat (Sans backend)
           </span>
           <span className="text-[10px] font-mono rounded bg-primary/20 px-1.5 py-0.5 text-primary">
             Mode Prévisualisation
@@ -108,7 +108,7 @@ export default function LoginPage() {
             className="rounded-xl bg-amber-600 hover:bg-amber-500 text-white font-semibold text-xs h-9 justify-start px-3"
             onClick={() => handleDemoLogin("event")}
           >
-            🎟️ Événementiel (Pass & Scan)
+            Événementiel (Pass & Scan)
           </Button>
           <Button
             type="button"
@@ -117,7 +117,7 @@ export default function LoginPage() {
             className="rounded-xl border-emerald-500/30 text-emerald-600 hover:bg-emerald-500/10 font-semibold text-xs h-9 justify-start px-3"
             onClick={() => handleDemoLogin("restaurant")}
           >
-            🍽️ Restauration & KDS
+            Restauration & KDS
           </Button>
           <Button
             type="button"
@@ -126,7 +126,7 @@ export default function LoginPage() {
             className="rounded-xl border-purple-500/30 text-purple-600 hover:bg-purple-500/10 font-semibold text-xs h-9 justify-start px-3"
             onClick={() => handleDemoLogin("accommodation")}
           >
-            🏨 Hébergement & RBNB
+            Hébergement & RBNB
           </Button>
           <Button
             type="button"
@@ -135,7 +135,7 @@ export default function LoginPage() {
             className="rounded-xl border-blue-500/30 text-blue-600 hover:bg-blue-500/10 font-semibold text-xs h-9 justify-start px-3"
             onClick={() => handleDemoLogin("shop")}
           >
-            🛍️ E-Commerce & Stocks
+            E-Commerce & Stocks
           </Button>
         </div>
       </div>

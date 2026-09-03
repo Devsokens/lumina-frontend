@@ -97,6 +97,58 @@ export type Order = {
   updatedAt: string;
 };
 
+export type EventType =
+  | "CONCERT"
+  | "CONFERENCE"
+  | "NIGHTLIFE"
+  | "EXHIBITION"
+  | "SPORTS"
+  | "SHOW";
+
+export type CertificateTemplate =
+  | "ACADEMIC_GOLD"
+  | "CORPORATE_PRESTIGE"
+  | "TECH_INNOVATION"
+  | "MINIMALIST_ECO";
+
+export type TicketTemplate =
+  | "GOLD_VIP"
+  | "FESTIVAL_WRISTBAND"
+  | "CONFERENCE_BADGE"
+  | "NIGHTLIFE_DARK"
+  | "CLASSIC_PASS";
+
+export type QuestionType =
+  | "SINGLE_CHOICE"
+  | "MULTIPLE_CHOICE"
+  | "SHORT_TEXT"
+  | "PARAGRAPH"
+  | "RATING_SCALE"
+  | "DROPDOWN";
+
+export type QuestionnaireQuestion = {
+  id: string;
+  title: string;
+  description?: string;
+  type: QuestionType;
+  options?: string[];
+  isRequired: boolean;
+};
+
+export type CertificateDispatchRecord = {
+  id: string;
+  attendeeId: string;
+  attendeeName: string;
+  attendeeEmail: string;
+  attendeePhone: string;
+  ticketNumber: string;
+  ticketTypeName: string;
+  certificateNumber: string;
+  status: "SENT" | "PENDING_SCAN" | "FAILED";
+  sentAt: string | null;
+  pdfUrl: string;
+};
+
 export type EventStatus = "DRAFT" | "PUBLISHED" | "ONGOING" | "COMPLETED" | "CANCELLED";
 
 export type Event = {
@@ -104,6 +156,12 @@ export type Event = {
   title: string;
   description: string | null;
   imageUrl: string | null;
+  eventType?: EventType;
+  hasCertificate?: boolean;
+  certificateTemplate?: CertificateTemplate;
+  ticketTemplate?: TicketTemplate;
+  questionnaireEnabled?: boolean;
+  questionnaire?: QuestionnaireQuestion[];
   startDate: string;
   endDate: string | null;
   location: string | null;
@@ -126,6 +184,7 @@ export type TicketType = {
   sold: number;
   eventId: string;
   description?: string | null;
+  ticketTemplate?: TicketTemplate;
 };
 
 export type Attendee = {

@@ -19,6 +19,7 @@ import Link from "next/link";
 
 export function ShowcaseEditorToolbar() {
   const {
+    orgName,
     deviceView,
     setDeviceView,
     isEditingInline,
@@ -28,15 +29,22 @@ export function ShowcaseEditorToolbar() {
     lastSavedAt,
   } = useShowcaseStore();
 
+  const orgSlug = (orgName || "organisation")
+    .toLowerCase()
+    .normalize("NFD")
+    .replace(/[\u0300-\u036f]/g, "")
+    .replace(/[^a-z0-9]/g, "-")
+    .replace(/-+/g, "-");
+
   function handlePublish() {
     publishShowcase();
-    toast.success("Vitrine publiée avec succès sur festivalurban.giya.ga !");
+    toast.success(`Vitrine de ${orgName} publiée avec succès sur ${orgSlug}.giya.ga !`);
   }
 
   function handleReset() {
-    if (confirm("Voulez-vous réinitialiser tous les textes et styles par défaut ?")) {
+    if (confirm("Voulez-vous réinitialiser tous les textes et événements par défaut ?")) {
       resetToDefaults();
-      toast.info("Modèle réinitialisé aux valeurs initiales.");
+      toast.info("Vitrine réinitialisée aux valeurs initiales.");
     }
   }
 
@@ -50,7 +58,7 @@ export function ShowcaseEditorToolbar() {
         <div>
           <div className="flex items-center gap-2">
             <span className="font-display text-sm font-bold text-foreground">
-              Éditeur de Vitrine Publique
+              Vitrine Officielle de l&apos;Organisation
             </span>
             <span className="inline-flex items-center gap-1 rounded-full bg-emerald-500/15 px-2 py-0.5 text-[10px] font-bold text-emerald-600 dark:text-emerald-400">
               <span className="size-1.5 rounded-full bg-emerald-500 animate-pulse" />
@@ -58,7 +66,7 @@ export function ShowcaseEditorToolbar() {
             </span>
           </div>
           <p className="text-[11px] font-mono text-muted-foreground">
-            URL : <strong className="text-foreground">festivalurban.giya.ga</strong>
+            Portail : <strong className="text-foreground">{orgSlug}.giya.ga</strong>
             {lastSavedAt && ` • Enregistré à ${lastSavedAt}`}
           </p>
         </div>
@@ -157,11 +165,11 @@ export function ShowcaseEditorToolbar() {
           asChild
           variant="outline"
           size="sm"
-          className="rounded-xl text-xs gap-1 border-primary/40 text-primary hover:bg-primary/10"
+          className="rounded-xl text-xs gap-1.5 border-emerald-500/40 text-emerald-600 dark:text-emerald-400 hover:bg-emerald-500/10 font-bold"
         >
-          <Link href="/demo-event-tenant/event" target="_blank">
-            <span>Voir le site</span>
-            <ExternalLink className="size-3" />
+          <Link href="/showcase" target="_blank">
+            <span>Voir le site en ligne</span>
+            <ExternalLink className="size-3.5" />
           </Link>
         </Button>
       </div>

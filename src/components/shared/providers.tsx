@@ -16,6 +16,8 @@ function AuthBootstrap() {
   return null;
 }
 
+import { OrganizationThemeProvider } from "@/components/shared/organization-theme-provider";
+
 export function Providers({ children }: { children: React.ReactNode }) {
   const [queryClient] = useState(
     () =>
@@ -28,9 +30,11 @@ export function Providers({ children }: { children: React.ReactNode }) {
 
   return (
     <QueryClientProvider client={queryClient}>
-      <AuthBootstrap />
-      {children}
-      <Toaster richColors position="top-center" />
+      <OrganizationThemeProvider>
+        <AuthBootstrap />
+        {children}
+        <Toaster richColors position="top-center" />
+      </OrganizationThemeProvider>
     </QueryClientProvider>
   );
 }

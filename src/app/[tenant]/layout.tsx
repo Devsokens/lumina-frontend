@@ -19,7 +19,7 @@ export default async function TenantLayout({
 
   return (
     <TenantProvider tenant={tenant}>
-      <VitrineHeader />
+      {tenant.sector !== "EVENT" && <VitrineHeader />}
       {children}
     </TenantProvider>
   );

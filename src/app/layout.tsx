@@ -35,9 +35,10 @@ export default function RootLayout({ children }: LayoutProps<"/">) {
   return (
     <html
       lang="fr"
+      suppressHydrationWarning
       className={`${spaceGrotesk.variable} ${inter.variable} ${jetbrainsMono.variable} h-full antialiased`}
     >
-      <body className="min-h-full flex flex-col font-body">
+      <body className="min-h-full flex flex-col font-body" suppressHydrationWarning>
         <Providers>{children}</Providers>
       </body>
     </html>
