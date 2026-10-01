@@ -3,14 +3,14 @@
 import { useState } from "react";
 import { useZxing } from "react-zxing";
 
-export function useScan(onResult: (text: string) => void) {
+// `paused` est piloté par la page : la caméra reste en pause tant qu'un
+// verdict est affiché, puis reprend au "Scanner suivant".
+export function useScan(onResult: (text: string) => void, paused: boolean) {
   const [isTorchOn, setTorchOn] = useState(false);
-  const [paused, setPaused] = useState(false);
 
   const { ref, torch } = useZxing({
     onDecodeResult(result) {
       if (paused) return;
-      setPaused(true);
       onResult(result.rawValue);
     },
     paused,
@@ -28,9 +28,5 @@ export function useScan(onResult: (text: string) => void) {
     });
   }
 
-  function resume() {
-    setPaused(false);
-  }
-
-  return { ref, toggleTorch, isTorchAvailable: torch.isAvailable, isTorchOn, resume, paused };
+  return { ref, toggleTorch, isTorchAvailable: torch.isAvailable, isTorchOn };
 }

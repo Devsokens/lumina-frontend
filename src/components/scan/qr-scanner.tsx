@@ -4,11 +4,17 @@ import { Flashlight, FlashlightOff } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { useScan } from "@/hooks/useScan";
 
-export function QrScanner({ onResult }: { onResult: (text: string) => void }) {
-  const { ref, toggleTorch, isTorchAvailable, isTorchOn } = useScan(onResult);
+export function QrScanner({
+  onResult,
+  paused,
+}: {
+  onResult: (text: string) => void;
+  paused: boolean;
+}) {
+  const { ref, toggleTorch, isTorchAvailable, isTorchOn } = useScan(onResult, paused);
 
   return (
-    <div className="relative h-screen w-full overflow-hidden bg-black">
+    <div className="relative h-dvh w-full overflow-hidden bg-black">
       <video ref={ref} className="h-full w-full object-cover" muted playsInline />
 
       <div className="pointer-events-none absolute inset-0 flex items-center justify-center">
@@ -19,11 +25,11 @@ export function QrScanner({ onResult }: { onResult: (text: string) => void }) {
         <Button
           variant="secondary"
           size="icon"
-          className="absolute bottom-8 left-1/2 size-14 -translate-x-1/2 rounded-full"
+          className="absolute right-4 bottom-28 size-12 rounded-full"
           onClick={toggleTorch}
           aria-label="Activer/désactiver la torche"
         >
-          {isTorchOn ? <FlashlightOff className="size-6" /> : <Flashlight className="size-6" />}
+          {isTorchOn ? <FlashlightOff className="size-5" /> : <Flashlight className="size-5" />}
         </Button>
       )}
     </div>
