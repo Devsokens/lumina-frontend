@@ -174,10 +174,37 @@ Chaque message reçu est un objet `Order` JSON (commande créée ou mise à jour
 
 | Méthode | Route | Auth | Body | Réponse `data` |
 |---|---|---|---|---|
-| POST | `/admin/scan/validate` | Bearer | `{ code }` (contenu brut du QR scanné) | `{ status: "valid" \| "used" \| "invalid", detail?: string }` |
+| POST | `/admin/scan/validate` | Bearer | `{ code, eventId? }` (contenu brut du QR scanné) | `{ status: "valid" \| "used" \| "invalid", detail?: string }` |
+| GET | `/admin/events/:id/scan-manifest` | Bearer (OWNER, MANAGER, STAFF) | — | `{ eventId, generatedAt, publicKey, tickets: [{ code, attendee, ticketType, status }], signature }` |
+
+**Format du QR billet** (`Ticket.qrCode`, aussi encodé dans le PDF) :
+`v1.<ticketId>.<signature>` où `signature` = `base64url(Ed25519(ticketId + "." + eventId))` (64 octets,
+86 caractères), clé privée `TICKET_SIGNING_PRIVATE_KEY` côté serveur. Les billets émis avant ce format
+gardent un code hex de 32 caractères, toujours acceptés (lookup direct, warning serveur). Tout autre
+format → `invalid`.
+
+`eventId` (UUID, optionnel) dans le body de `/admin/scan/validate` : l'événement que contrôle le
+scanner. Fourni, la signature d'un QR `v1` est vérifiée avant toute requête en base et un billet
+d'un autre événement répond `invalid`. Absent, la signature est vérifiée contre l'événement du
+billet trouvé.
+
+`scan-manifest` : billets `VALID` de l'événement (mode hors ligne EF-E09).
+`publicKey` = clé publique Ed25519 brute (32 octets, base64url) — vérifie hors ligne les QR `v1` et le
+manifeste. `signature` = `base64url(Ed25519("manifest." + JSON.stringify({ eventId, generatedAt, publicKey, tickets })))`,
+champs dans cet ordre exact.
 
 Usage MVP restauration : validation de table/commande. Réutilisé en V1 pour les billets
 événementiel (`Ticket.qrCode`).
+
+**Écran `/scan` (frontend)** :
+- Verdict backend → plein vert / orange / rouge. Échec réseau ou 5xx → panneau sombre bordé orange
+  « RÉSEAU — vérification impossible, réessayez » (jamais rouge) ; autre 4xx → message d'erreur.
+- Saisie manuelle du code (≥ 32 caractères), même endpoint que la caméra. Le body inclut `eventId`
+  quand un événement est choisi.
+- Hors ligne (EF-E09) : manifeste téléchargé et vérifié (Ed25519), stocké dans IndexedDB
+  (`lumina-scan`). Sans réseau : signature du QR → présence `VALID` dans le manifeste → anti-double
+  local → verdict « HORS LIGNE » (bordure pointillée + badge) et mise en file. Au retour du réseau,
+  la file est rejouée en séquence sur `/admin/scan/validate` ; `used`/`invalid` → liste de conflits.
 
 ---
 

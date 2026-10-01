@@ -1,0 +1,22 @@
+"use client";
+
+import { useSyncExternalStore } from "react";
+
+function subscribe(onChange: () => void) {
+  window.addEventListener("online", onChange);
+  window.addEventListener("offline", onChange);
+  return () => {
+    window.removeEventListener("online", onChange);
+    window.removeEventListener("offline", onChange);
+  };
+}
+
+// navigator.onLine : "false" est fiable (aucun réseau) ; "true" ne garantit
+// pas que l'API répond — useScanStore gère aussi l'échec réseau d'un appel.
+export function useOnlineStatus() {
+  return useSyncExternalStore(
+    subscribe,
+    () => navigator.onLine,
+    () => true
+  );
+}
