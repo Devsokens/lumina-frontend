@@ -10,6 +10,7 @@ import { Skeleton } from "@/components/ui/skeleton";
 import { useApiQuery } from "@/hooks/useApi";
 import { useOrdersList } from "@/hooks/useOrders";
 import { useParams } from "next/navigation";
+import { useAuthStore } from "@/stores/useAuthStore";
 
 type DashboardKpis = {
   salesToday: number; // centimes
@@ -20,11 +21,27 @@ type DashboardKpis = {
 
 export default function DashboardHomePage() {
   const { sector } = useParams<{ sector: string }>();
+  const role = useAuthStore((st) => st.user?.role);
+  // KPIs réservés OWNER/MANAGER côté serveur.
+  const canSeeKpis = role === "OWNER" || role === "MANAGER";
   const { data: kpis, isLoading: kpisLoading } = useApiQuery<DashboardKpis>(
     ["dashboard-kpis"],
-    "/admin/analytics/kpis"
+    "/admin/analytics/kpis",
+    canSeeKpis
   );
   const { data: orders, isLoading: ordersLoading } = useOrdersList();
+
+  if (sector === "accommodation") {
+    return (
+      <div className="space-y-4">
+        <h1 className="font-display text-2xl font-semibold">Tableau de bord</h1>
+        <p className="rounded-2xl border border-border bg-muted/40 p-4 text-sm text-muted-foreground">
+          Le module Hébergement (propriétés, calendrier, réservations) est en préparation. Vous pouvez
+          déjà gérer votre équipe et les informations de votre activité.
+        </p>
+      </div>
+    );
+  }
 
   return (
     <div className="space-y-6">
@@ -39,7 +56,7 @@ export default function DashboardHomePage() {
       </div>
 
       <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
-        {kpisLoading ? (
+        {!canSeeKpis ? null : kpisLoading ? (
           Array.from({ length: 4 }).map((_, i) => <Skeleton key={i} className="h-28" />)
         ) : (
           <>

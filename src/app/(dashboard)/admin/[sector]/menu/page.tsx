@@ -1,48 +1,84 @@
 "use client";
 
+import { useState } from "react";
 import { toast } from "sonner";
+import { Pencil, Plus, Trash2 } from "lucide-react";
 import { Card, CardContent } from "@/components/ui/card";
-import { Badge } from "@/components/ui/badge";
+import { Button } from "@/components/ui/button";
 import { Switch } from "@/components/ui/switch";
 import { Skeleton } from "@/components/ui/skeleton";
 import { ProductFormDialog } from "@/components/dashboard/product-form-dialog";
-import { useAdminCategories, useAdminProducts, useUpdateProduct } from "@/hooks/useMenu";
+import { CategoryManager } from "@/components/dashboard/category-manager";
+import { useAdminCategories, useAdminProducts } from "@/hooks/useMenu";
+import { useDeleteProduct, useSaveProduct } from "@/hooks/useAdmin";
+import { useAuthStore } from "@/stores/useAuthStore";
+import { apiError } from "@/lib/api";
 import { formatXAF } from "@/lib/format";
+import type { Product } from "@/types/api";
 
 export default function MenuPage() {
+  const role = useAuthStore((s) => s.user?.role);
+  const canEdit = role === "OWNER" || role === "MANAGER";
   const { data: categories, isLoading: categoriesLoading } = useAdminCategories();
   const { data: products, isLoading: productsLoading } = useAdminProducts();
-  const updateProduct = useUpdateProduct();
+  const save = useSaveProduct();
+  const remove = useDeleteProduct();
+  const [dialog, setDialog] = useState<{ open: boolean; product: Product | null }>({
+    open: false,
+    product: null,
+  });
 
-  async function toggleAvailability(id: string, isAvailable: boolean) {
+  async function toggleAvailability(product: Product, isAvailable: boolean) {
     try {
-      await updateProduct.mutateAsync({ id, isAvailable });
-    } catch {
-      toast.error("Échec de la mise à jour");
+      await save.mutateAsync({
+        id: product.id,
+        name: product.name,
+        price: product.price,
+        categoryId: product.categoryId,
+        isAvailable,
+      });
+    } catch (err) {
+      toast.error(apiError(err, "Échec de la mise à jour"));
     }
   }
 
+  async function del(product: Product) {
+    if (!window.confirm(`Supprimer « ${product.name} » ?`)) return;
+    try {
+      await remove.mutateAsync(product.id);
+      // Un article déjà commandé est seulement désactivé (historique conservé).
+      toast.success("Article supprimé (ou désactivé s'il a déjà été commandé)");
+    } catch (err) {
+      toast.error(apiError(err, "Suppression impossible"));
+    }
+  }
+
+  const categoryName = new Map((categories ?? []).map((c) => [c.id, c.name]));
+
   return (
     <div className="space-y-6">
-      <div className="flex items-center justify-between">
+      <div className="flex flex-wrap items-center justify-between gap-3">
         <h1 className="font-display text-2xl font-semibold">Menu</h1>
-        <ProductFormDialog categories={categories ?? []} />
+        {canEdit && (
+          <Button
+            onClick={() => setDialog({ open: true, product: null })}
+            disabled={(categories ?? []).length === 0}
+            title={(categories ?? []).length === 0 ? "Créez d'abord une catégorie" : undefined}
+          >
+            <Plus className="size-4" />
+            Ajouter un article
+          </Button>
+        )}
       </div>
 
-      {categoriesLoading ? (
-        <Skeleton className="h-10 w-full" />
-      ) : (
-        <div className="flex flex-wrap gap-2">
-          {(categories ?? []).map((c) => (
-            <Badge key={c.id} variant="outline">
-              {c.name}
-            </Badge>
-          ))}
-          {categories?.length === 0 && (
-            <p className="text-sm text-muted-foreground">Aucune catégorie encore créée.</p>
-          )}
-        </div>
-      )}
+      <section className="space-y-2">
+        <h2 className="text-sm font-semibold text-muted-foreground">Catégories</h2>
+        {categoriesLoading ? (
+          <Skeleton className="h-10 w-full" />
+        ) : (
+          <CategoryManager categories={categories ?? []} canEdit={canEdit} />
+        )}
+      </section>
 
       {productsLoading ? (
         <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
@@ -57,24 +93,48 @@ export default function MenuPage() {
       ) : (
         <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
           {(products ?? []).map((product) => (
-            <Card key={product.id}>
-              <CardContent className="flex items-start justify-between gap-3 pt-6">
-                <div>
-                  <p className="font-medium">{product.name}</p>
-                  <p className="font-mono text-sm text-muted-foreground">
-                    {formatXAF(product.price)}
-                  </p>
+            <Card key={product.id} className={product.isAvailable ? "" : "opacity-60"}>
+              <CardContent className="space-y-3 pt-6">
+                <div className="flex items-start justify-between gap-3">
+                  <div className="min-w-0">
+                    <p className="truncate font-medium">{product.name}</p>
+                    <p className="text-xs text-muted-foreground">{categoryName.get(product.categoryId) ?? "—"}</p>
+                    <p className="font-mono text-sm">{formatXAF(product.price)}</p>
+                    {product.stock !== null && (
+                      <p className="text-xs text-muted-foreground">Stock : {product.stock}</p>
+                    )}
+                  </div>
+                  <Switch
+                    checked={product.isAvailable}
+                    disabled={!canEdit}
+                    onCheckedChange={(checked) => void toggleAvailability(product, checked)}
+                    aria-label={`Disponibilité de ${product.name}`}
+                  />
                 </div>
-                <Switch
-                  checked={product.isAvailable}
-                  onCheckedChange={(checked) => toggleAvailability(product.id, checked)}
-                  aria-label={`Disponibilité de ${product.name}`}
-                />
+                {canEdit && (
+                  <div className="flex gap-2">
+                    <Button size="sm" variant="outline" onClick={() => setDialog({ open: true, product })}>
+                      <Pencil className="size-3.5" />
+                      Modifier
+                    </Button>
+                    <Button size="sm" variant="ghost" className="text-destructive" onClick={() => void del(product)}>
+                      <Trash2 className="size-3.5" />
+                      Supprimer
+                    </Button>
+                  </div>
+                )}
               </CardContent>
             </Card>
           ))}
         </div>
       )}
+
+      <ProductFormDialog
+        categories={categories ?? []}
+        product={dialog.product}
+        open={dialog.open}
+        onOpenChange={(open) => setDialog((d) => ({ ...d, open }))}
+      />
     </div>
   );
 }

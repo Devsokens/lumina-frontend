@@ -39,6 +39,7 @@ import {
   Star,
   ListFilter,
   BadgeCheck,
+  type LucideIcon,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -82,7 +83,7 @@ interface EventFormData {
   capacity: number;
 }
 
-const EVENT_TYPES: { id: EventType; label: string; icon: any; desc: string }[] = [
+const EVENT_TYPES: { id: EventType; label: string; icon: LucideIcon; desc: string }[] = [
   { id: "CONCERT", label: "Concert & Festival", icon: Music, desc: "Musique live, DJs, plein air" },
   { id: "CONFERENCE", label: "Conférence & Formation", icon: GraduationCap, desc: "Séminaires, masterclass avec attestation" },
   { id: "NIGHTLIFE", label: "Soirée VIP & Club", icon: Wine, desc: "Rooftop, lounge, tables privées" },
@@ -137,7 +138,7 @@ const DEFAULT_QUESTIONS: QuestionnaireQuestion[] = [
   },
 ];
 
-const QUESTION_TYPE_CONFIG: { type: QuestionType; label: string; icon: any; desc: string }[] = [
+const QUESTION_TYPE_CONFIG: { type: QuestionType; label: string; icon: LucideIcon; desc: string }[] = [
   { type: "SINGLE_CHOICE", label: "Choix unique", icon: CircleDot, desc: "Boutons radio (1 seule réponse possible)" },
   { type: "MULTIPLE_CHOICE", label: "Cases à cocher", icon: CheckSquare, desc: "Choix multiples (plusieurs réponses)" },
   { type: "SHORT_TEXT", label: "Texte court", icon: Type, desc: "Réponse en une ligne (Poste, Entreprise...)" },
