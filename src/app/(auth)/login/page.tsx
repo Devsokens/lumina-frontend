@@ -1,21 +1,39 @@
 "use client";
 
 import { useState } from "react";
-import { useRouter } from "next/navigation";
+import { useRouter, useSearchParams } from "next/navigation";
+import { Suspense } from "react";
 import Link from "next/link";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { toast } from "sonner";
 import { Eye, EyeOff, KeyRound } from "lucide-react";
 import { loginSchema, type LoginInput } from "@/lib/validations";
-import { useAuth } from "@/hooks/useAuth";
-import { useAuthStore } from "@/stores/useAuthStore";
+import { homePathFor, useAuth } from "@/hooks/useAuth";
+import { apiError } from "@/lib/api";
+import { OtpLogin } from "@/components/shared/otp-login";
+import { useAuthStore, type AuthUser } from "@/stores/useAuthStore";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
+import { API_URL } from "@/lib/constants";
+
+// Accès démo sans backend : uniquement si NEXT_PUBLIC_DEMO_MODE=true
+// (prévisualisation des écrans). Jamais en production.
+const DEMO_MODE = process.env.NEXT_PUBLIC_DEMO_MODE === "true";
 
 export default function LoginPage() {
+  return (
+    <Suspense>
+      <LoginContent />
+    </Suspense>
+  );
+}
+
+function LoginContent() {
   const router = useRouter();
+  const searchParams = useSearchParams();
+  const [mode, setMode] = useState<"password" | "otp">("password");
   const { login } = useAuth();
   const setAccessToken = useAuthStore((s) => s.setAccessToken);
   const setUser = useAuthStore((s) => s.setUser);
@@ -32,17 +50,25 @@ export default function LoginPage() {
     setSubmitting(true);
     try {
       const isEmail = values.identifier.includes("@");
-      await login({
+      const user = await login({
         password: values.password,
-        ...(isEmail ? { email: values.identifier } : { phone: values.identifier }),
+        ...(isEmail
+          ? { email: values.identifier.trim() }
+          : { phone: values.identifier.replace(/[\s.()-]/g, "") }),
       });
-      toast.success("Connexion réussie");
-      router.push("/admin/restaurant");
-    } catch {
-      toast.error("Identifiants incorrects");
-    } finally {
+      await goHome(user);
+    } catch (err) {
+      toast.error(apiError(err, "Identifiants incorrects"));
       setSubmitting(false);
     }
+  }
+
+  // Retour à la page demandée avant la connexion (chemin interne uniquement).
+  async function goHome(user: AuthUser) {
+    toast.success("Connexion réussie");
+    const next = searchParams.get("next");
+    const safeNext = next && next.startsWith("/") && !next.startsWith("//") ? next : null;
+    router.replace(user.mustChangePassword ? "/change-password" : safeNext ?? (await homePathFor(user)));
   }
 
   const [googleLoading, setGoogleLoading] = useState(false);
@@ -50,8 +76,7 @@ export default function LoginPage() {
   function handleGoogleLogin() {
     setGoogleLoading(true);
     toast.loading("Redirection vers Google...");
-    const apiUrl = process.env.NEXT_PUBLIC_API_URL ?? "http://localhost:3001/v1";
-    window.location.href = `${apiUrl}/auth/google`;
+    window.location.href = `${API_URL}/auth/google`;
   }
 
   // Connexion démo fictive instantanée pour prévisualiser les écrans
@@ -88,7 +113,14 @@ export default function LoginPage() {
         Connectez-vous pour accéder à votre tableau de bord Giya.
       </p>
 
+      {searchParams.get("error") === "google_no_email" && (
+        <p className="mt-4 rounded-xl border border-destructive/40 bg-destructive/10 p-3 text-sm text-destructive">
+          Google n&apos;a pas communiqué d&apos;adresse e-mail. Utilisez le formulaire ou le code SMS.
+        </p>
+      )}
+
       {/* Mode Démo Rapide en 1 Clic pour la prévisualisation */}
+      {DEMO_MODE && (
       <div className="mt-6 rounded-2xl border border-primary/30 bg-primary/5 p-4 space-y-2.5">
         <div className="flex items-center justify-between">
           <span className="text-xs font-bold uppercase tracking-wider text-primary flex items-center gap-1.5">
@@ -139,6 +171,7 @@ export default function LoginPage() {
           </Button>
         </div>
       </div>
+      )}
 
       {/* Bouton Google */}
       <Button
@@ -158,6 +191,18 @@ export default function LoginPage() {
         <div className="h-px flex-1 bg-border" />
       </div>
 
+      {mode === "otp" ? (
+        <div className="space-y-3">
+          <OtpLogin onSuccess={(user) => void goHome(user)} />
+          <button
+            type="button"
+            onClick={() => setMode("password")}
+            className="text-xs text-primary underline-offset-4 hover:underline"
+          >
+            Revenir au mot de passe
+          </button>
+        </div>
+      ) : (
       <form onSubmit={handleSubmit(onSubmit)} className="space-y-4" noValidate>
         <div className="space-y-1.5">
           <Label htmlFor="identifier">
@@ -180,12 +225,13 @@ export default function LoginPage() {
             <Label htmlFor="password">
               Mot de passe <span className="text-destructive">*</span>
             </Label>
-            <Link
-              href="/forgot-password"
+            <button
+              type="button"
+              onClick={() => setMode("otp")}
               className="text-xs text-primary underline-offset-4 hover:underline"
             >
-              Mot de passe oublié ?
-            </Link>
+              Mot de passe oublié ? Code SMS
+            </button>
           </div>
           <div className="relative">
             <Input
@@ -214,6 +260,7 @@ export default function LoginPage() {
           {submitting ? "Connexion..." : "Se connecter"}
         </Button>
       </form>
+      )}
 
       <p className="mt-8 text-center text-sm text-muted-foreground">
         Pas encore de compte ?{" "}

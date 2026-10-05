@@ -9,7 +9,9 @@ import slugify from "slugify";
 import { toast } from "sonner";
 import { Eye, EyeOff, UserPlus } from "lucide-react";
 import { signupSchema, type SignupInput } from "@/lib/validations";
-import { useAuth } from "@/hooks/useAuth";
+import { homePathFor, useAuth } from "@/hooks/useAuth";
+import { apiError } from "@/lib/api";
+import { API_URL } from "@/lib/constants";
 import { SECTORS } from "@/lib/constants";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -55,20 +57,20 @@ export default function SignupPage() {
   async function onSubmit(values: SignupInput) {
     setSubmitting(true);
     try {
-      await signup({
+      const user = await signup({
         fullName: values.fullName,
         email: values.email || undefined,
-        phone: values.phone || undefined,
+        phone: values.phone ? values.phone.replace(/[\s.()-]/g, "") : undefined,
+        password: values.password,
         businessName: values.businessName,
         slug: values.slug,
         sector: values.sector,
         acceptedTerms: true,
       });
       toast.success("Compte créé avec succès");
-      router.push(`/admin/${values.sector.toLowerCase()}`);
-    } catch {
-      toast.error("Impossible de créer le compte. Slug déjà pris ?");
-    } finally {
+      router.replace(await homePathFor(user));
+    } catch (err) {
+      toast.error(apiError(err, "Impossible de créer le compte."));
       setSubmitting(false);
     }
   }
@@ -78,8 +80,7 @@ export default function SignupPage() {
   function handleGoogleSignup() {
     setGoogleLoading(true);
     toast.loading("Redirection vers Google...");
-    const apiUrl = process.env.NEXT_PUBLIC_API_URL ?? "http://localhost:3001/v1";
-    window.location.href = `${apiUrl}/auth/google`;
+    window.location.href = `${API_URL}/auth/google`;
   }
 
   return (
