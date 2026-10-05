@@ -1,7 +1,9 @@
+import { Suspense } from "react";
 import { notFound } from "next/navigation";
 import { getTenantBySlug } from "@/lib/tenant";
 import { TenantProvider } from "@/hooks/useTenant";
 import { VitrineHeader } from "@/components/vitrine/header";
+import { CartBinding } from "@/components/vitrine/cart-binding";
 
 export default async function TenantLayout({
   children,
@@ -19,6 +21,9 @@ export default async function TenantLayout({
 
   return (
     <TenantProvider tenant={tenant}>
+      <Suspense>
+        <CartBinding tenantSlug={tenant.slug} />
+      </Suspense>
       {tenant.sector !== "EVENT" && <VitrineHeader />}
       {children}
     </TenantProvider>

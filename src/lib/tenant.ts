@@ -1,50 +1,23 @@
-import { API_URL, type Sector } from "@/lib/constants";
+import { API_URL } from "@/lib/constants";
 import type { Tenant } from "@/types/api";
 
-// Fetch serveur (Server Component) — pas d'auth nécessaire, endpoint public.
-// GET /v1/tenants/:slug — voir docs/API_CONTRACT.md.
+// Fetch serveur (Server Component), endpoint public GET /v1/tenants/:slug.
+// Mis en cache 60 s par Next (une requête backend par minute et par tenant,
+// quel que soit le trafic de la vitrine).
+// 404 (inexistant ou suspendu) → null → page 404. Le backend ne distingue
+// pas les deux cas (anti-énumération) ; on n'invente jamais de tenant.
 export async function getTenantBySlug(slug: string): Promise<Tenant | null> {
-  try {
-    const res = await fetch(`${API_URL}/tenants/${slug}`, {
-      next: { revalidate: 60 },
-      signal: AbortSignal.timeout(2000),
-    });
+  if (!/^[a-z0-9-]{1,63}$/.test(slug)) return null;
 
-    if (res.status === 404) return getFallbackTenant(slug);
-    if (!res.ok) return getFallbackTenant(slug);
+  const res = await fetch(`${API_URL}/tenants/${encodeURIComponent(slug)}`, {
+    next: { revalidate: 60 },
+    signal: AbortSignal.timeout(5000),
+  });
 
-    const json = await res.json();
-    return json.data as Tenant;
-  } catch {
-    // Mode hors-ligne / Prévisualisation sans backend actif : renvoie un tenant démo
-    return getFallbackTenant(slug);
-  }
-}
+  if (res.status === 404) return null;
+  // Panne backend : page d'erreur Next (et non une fausse vitrine).
+  if (!res.ok) throw new Error(`Tenant indisponible (${res.status}).`);
 
-function getFallbackTenant(slug: string): Tenant {
-  let sector: Sector = "SHOP";
-  let name = "Giya Démo Showcase";
-
-  if (slug.includes("event") || slug.includes("festival") || slug.includes("concert")) {
-    sector = "EVENT";
-    name = "Giya Events & Billetterie";
-  } else if (slug.includes("resto") || slug.includes("bar") || slug.includes("lounge")) {
-    sector = "RESTAURANT";
-    name = "Giya Lounge & Restaurant";
-  } else if (slug.includes("hotel") || slug.includes("hebergement") || slug.includes("rbnb") || slug.includes("accom")) {
-    sector = "ACCOMMODATION";
-    name = "Giya Résidences & RBNB";
-  }
-
-  return {
-    id: `tenant-${slug}`,
-    slug,
-    name,
-    sector,
-    plan: "PRO",
-    status: "ACTIVE",
-    config: {},
-    settings: {},
-    customDomain: null,
-  };
+  const json = (await res.json()) as { data?: Tenant };
+  return json.data ?? null;
 }
