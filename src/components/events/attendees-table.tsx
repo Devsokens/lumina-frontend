@@ -15,76 +15,13 @@ import { Input } from "@/components/ui/input";
 import { toast } from "sonner";
 import type { Attendee } from "@/types/api";
 
-const MOCK_ATTENDEES: Attendee[] = [
-  {
-    id: "att-1",
-    ticketId: "tk-101",
-    ticketNumber: "GA-EVT-9081",
-    customerName: "Jean-Paul Ndong",
-    customerEmail: "jp.ndong@gmail.com",
-    customerPhone: "+241 77 12 34 56",
-    ticketTypeName: "Pass VIP (Carré Or)",
-    ticketPrice: 2500000,
-    status: "USED",
-    scannedAt: "2026-09-01T20:15:00Z",
-    purchaseDate: "2026-08-28T14:30:00Z",
-  },
-  {
-    id: "att-2",
-    ticketId: "tk-102",
-    ticketNumber: "GA-EVT-9082",
-    customerName: "Aïcha Bongo",
-    customerEmail: "aicha.b@yahoo.fr",
-    customerPhone: "+241 66 98 76 54",
-    ticketTypeName: "Pass VIP (Carré Or)",
-    ticketPrice: 2500000,
-    status: "VALID",
-    scannedAt: null,
-    purchaseDate: "2026-08-29T10:12:00Z",
-  },
-  {
-    id: "att-3",
-    ticketId: "tk-103",
-    ticketNumber: "GA-EVT-9083",
-    customerName: "Brice Mba Obiang",
-    customerEmail: "brice.mba@gmail.com",
-    customerPhone: "+241 74 55 44 33",
-    ticketTypeName: "Pass Standard",
-    ticketPrice: 1000000,
-    status: "USED",
-    scannedAt: "2026-09-01T19:48:00Z",
-    purchaseDate: "2026-08-30T18:20:00Z",
-  },
-  {
-    id: "att-4",
-    ticketId: "tk-104",
-    ticketNumber: "GA-EVT-9084",
-    customerName: "Clarisse Mengue",
-    customerEmail: "clarisse.m@live.fr",
-    customerPhone: "+241 62 11 22 33",
-    ticketTypeName: "Pass Standard",
-    ticketPrice: 1000000,
-    status: "VALID",
-    scannedAt: null,
-    purchaseDate: "2026-08-31T09:05:00Z",
-  },
-  {
-    id: "att-5",
-    ticketId: "tk-105",
-    ticketNumber: "GA-EVT-9085",
-    customerName: "Sylvain Koumba",
-    customerEmail: "sylvain.k@gmail.com",
-    customerPhone: "+241 77 00 11 22",
-    ticketTypeName: "Table VVIP",
-    ticketPrice: 15000000,
-    status: "USED",
-    scannedAt: "2026-09-01T20:30:00Z",
-    purchaseDate: "2026-08-25T11:45:00Z",
-  },
-];
-
-export function AttendeesTable({ initialAttendees = MOCK_ATTENDEES }: { initialAttendees?: Attendee[] }) {
-  const [attendees, setAttendees] = useState<Attendee[]>(initialAttendees);
+export function AttendeesTable({
+  attendees,
+  onOpenTicket,
+}: {
+  attendees: Attendee[];
+  onOpenTicket?: (attendee: Attendee) => void;
+}) {
   const [search, setSearch] = useState("");
   const [statusFilter, setStatusFilter] = useState<"ALL" | "USED" | "VALID">("ALL");
 
@@ -97,12 +34,38 @@ export function AttendeesTable({ initialAttendees = MOCK_ATTENDEES }: { initialA
     return matchSearch && matchStatus;
   });
 
+  // Pas d'envoi WhatsApp/SMS côté serveur : on ouvre le PDF du billet.
   function handleResendTicket(att: Attendee) {
-    toast.success(`Billet QR Code renvoyé par WhatsApp et SMS à ${att.customerPhone}`);
+    onOpenTicket?.(att);
   }
 
+  // Export local de la liste affichée (aucune donnée envoyée ailleurs).
   function handleExportCsv() {
-    toast.success("Exportation de la liste des participants au format CSV terminée");
+    const header = ["Billet", "Nom", "Téléphone", "E-mail", "Formule", "Statut", "Scanné le"];
+    const escape = (v: string) => `"${v.replace(/"/g, '""')}"`;
+    const lines = filtered.map((a) =>
+      [
+        a.ticketNumber,
+        a.customerName,
+        a.customerPhone,
+        a.customerEmail,
+        a.ticketTypeName,
+        a.status,
+        a.scannedAt ? new Date(a.scannedAt).toLocaleString("fr-FR") : "",
+      ]
+        .map((v) => escape(String(v)))
+        .join(";")
+    );
+    const blob = new Blob(["\uFEFF" + [header.join(";"), ...lines].join("\n")], {
+      type: "text/csv;charset=utf-8",
+    });
+    const url = URL.createObjectURL(blob);
+    const link = document.createElement("a");
+    link.href = url;
+    link.download = "participants.csv";
+    link.click();
+    URL.revokeObjectURL(url);
+    toast.success(`${lines.length} participant(s) exporté(s).`);
   }
 
   const scannedCount = attendees.filter((a) => a.status === "USED").length;

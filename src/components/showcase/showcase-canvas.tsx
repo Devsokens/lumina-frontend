@@ -52,6 +52,11 @@ import { toast } from "sonner";
 
 interface ShowcaseCanvasProps {
   isEditorMode?: boolean;
+  // Vitrine publique : événements réels (GET /tenants/:slug/events) et
+  // redirection vers la page d'achat réelle. Sans ces props (éditeur), le
+  // contenu d'exemple de l'éditeur est affiché.
+  liveEvents?: EventItem[];
+  onReserve?: (event: EventItem) => void;
 }
 
 const THEMES: { id: ShowcaseTheme; name: string; gradient: string }[] = [
@@ -63,7 +68,7 @@ const THEMES: { id: ShowcaseTheme; name: string; gradient: string }[] = [
   { id: "dark", name: "Noir Onyx Minimaliste", gradient: "from-zinc-700 to-zinc-950" },
 ];
 
-export function ShowcaseCanvas({ isEditorMode = false }: ShowcaseCanvasProps) {
+export function ShowcaseCanvas({ isEditorMode = false, liveEvents, onReserve }: ShowcaseCanvasProps) {
   const {
     theme,
     setTheme,
@@ -82,7 +87,7 @@ export function ShowcaseCanvas({ isEditorMode = false }: ShowcaseCanvasProps) {
     statEvents,
     statSatisfaction,
     statSecurity,
-    events,
+    events: draftEvents,
     galleryImages,
     testimonials,
     faqs,
@@ -97,6 +102,7 @@ export function ShowcaseCanvas({ isEditorMode = false }: ShowcaseCanvasProps) {
     updateEventCover,
     updateGalleryImage,
   } = useShowcaseStore();
+  const events = liveEvents ?? draftEvents;
 
   // In-Page Event Search & Category Filter (Visible on main page)
   const [homeEventSearch, setHomeEventSearch] = useState("");
@@ -237,6 +243,11 @@ export function ShowcaseCanvas({ isEditorMode = false }: ShowcaseCanvasProps) {
   };
 
   function handleOpenEventDetails(evt: EventItem) {
+    // Vitrine publique : jamais le parcours d'achat simulé ci-dessous.
+    if (onReserve) {
+      onReserve(evt);
+      return;
+    }
     setActiveEvent(evt);
     setSelectedTicket(evt.tickets[0] || null);
     setQuantity(1);

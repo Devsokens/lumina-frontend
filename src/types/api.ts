@@ -10,7 +10,7 @@ export type Tenant = {
   slug: string;
   name: string;
   sector: Sector;
-  plan: "FREE" | "STARTER" | "PRO" | "ENTERPRISE";
+  plan: "FREE" | "STANDARD" | "PRO" | "ENTERPRISE";
   status: "ACTIVE" | "SUSPENDED" | "DELETED";
   config: Record<string, unknown>;
   settings: Record<string, unknown>;

@@ -3,7 +3,7 @@
 import Link from "next/link";
 import { Button } from "@/components/ui/button";
 import { useTenant } from "@/hooks/useTenant";
-import { ShowcaseCanvas } from "@/components/showcase/showcase-canvas";
+import { LiveShowcase } from "@/components/vitrine/live-showcase";
 
 export default function TenantHomePage() {
   const tenant = useTenant();
@@ -12,7 +12,7 @@ export default function TenantHomePage() {
   if (tenant.sector === "EVENT") {
     return (
       <main className="min-h-screen bg-[#090b0e]">
-        <ShowcaseCanvas isEditorMode={false} />
+        <LiveShowcase />
       </main>
     );
   }

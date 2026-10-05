@@ -58,7 +58,7 @@ import { PricingUpgradeModal } from "@/components/shared/pricing-upgrade-modal";
 
 interface EventFormProps {
   initialData?: Partial<Event>;
-  onSuccess?: (event: Partial<Event>) => void;
+  onSuccess?: (event: Partial<Event>) => void | Promise<void>;
   onCancel?: () => void;
 }
 
@@ -152,10 +152,7 @@ export function EventForm({ initialData, onSuccess, onCancel }: EventFormProps) 
   const [generatingAi, setGeneratingAi] = useState(false);
 
   const fileInputRef = useRef<HTMLInputElement | null>(null);
-  const [uploadedImage, setUploadedImage] = useState<string | null>(
-    initialData?.imageUrl ??
-      "https://images.unsplash.com/photo-1514525253161-7a46d19cd819?q=80&w=800&auto=format&fit=crop"
-  );
+  const [uploadedImage, setUploadedImage] = useState<string | null>(initialData?.imageUrl ?? null);
   const [fileName, setFileName] = useState<string | null>(null);
 
   const [selectedType, setSelectedType] = useState<EventType>(
@@ -205,8 +202,8 @@ export function EventForm({ initialData, onSuccess, onCancel }: EventFormProps) 
     formState: { errors },
   } = useForm<EventFormData>({
     defaultValues: {
-      title: initialData?.title ?? "Festival Urban Afro Libreville 2026",
-      description: initialData?.description ?? "Le plus grand festival afro-urbain d'Afrique Centrale.",
+      title: initialData?.title ?? "",
+      description: initialData?.description ?? "",
       eventType: initialData?.eventType ?? "CONCERT",
       hasCertificate: initialData?.hasCertificate ?? false,
       certificateTitle: "Certificat d'Accomplissement & de Formation",
@@ -215,12 +212,14 @@ export function EventForm({ initialData, onSuccess, onCancel }: EventFormProps) 
       certificateTemplate: initialData?.certificateTemplate ?? "ACADEMIC_GOLD",
       ticketTemplate: initialData?.ticketTemplate ?? "GOLD_VIP",
       imageUrl: initialData?.imageUrl ?? "",
-      startDate: initialData?.startDate ? initialData.startDate.split("T")[0] : "2026-09-05",
-      startTime: "19:00",
-      endDate: initialData?.endDate ? initialData.endDate.split("T")[0] : "2026-09-06",
-      endTime: "04:00",
-      venueName: initialData?.venueName ?? "Palais des Sports & de la Culture",
-      location: initialData?.location ?? "Libreville, Gabon",
+      startDate: initialData?.startDate
+        ? initialData.startDate.split("T")[0]
+        : new Date().toISOString().split("T")[0],
+      startTime: initialData?.startDate ? initialData.startDate.slice(11, 16) : "19:00",
+      endDate: initialData?.endDate ? initialData.endDate.split("T")[0] : "",
+      endTime: initialData?.endDate ? initialData.endDate.slice(11, 16) : "23:00",
+      venueName: initialData?.venueName ?? "",
+      location: initialData?.location ?? "",
       capacity: initialData?.capacity ?? 450,
     },
   });
@@ -491,10 +490,12 @@ export function EventForm({ initialData, onSuccess, onCancel }: EventFormProps) 
         status: "PUBLISHED",
       };
 
+      // Le parent enregistre réellement (API) et signale l'échec en levant
+      // une erreur : le toast de succès n'est affiché qu'après coup.
+      await onSuccess?.(payload);
       toast.success(initialData?.id ? "Événement mis à jour" : "Événement créé avec succès !");
-      onSuccess?.(payload);
-    } catch {
-      toast.error("Erreur lors de l'enregistrement");
+    } catch (err) {
+      toast.error(err instanceof Error && err.message ? err.message : "Erreur lors de l'enregistrement");
     } finally {
       setSubmitting(false);
     }

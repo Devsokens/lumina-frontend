@@ -1,6 +1,7 @@
 "use client";
 
-import { useState } from "react";
+import { useMemo, useState } from "react";
+import { toast } from "sonner";
 import {
   Plus,
   Calendar,
@@ -27,71 +28,17 @@ import {
 } from "@/components/ui/sheet";
 import { EventForm } from "@/components/events/event-form";
 import type { Event, EventType } from "@/types/api";
+import { useAdminEvents, useAdminTenant, useEventStats, useSaveEvent } from "@/hooks/useEvents";
+import { apiErrorMessage, hasUnsupportedImage, toUiEvent } from "@/lib/events";
 import Link from "next/link";
 
-const INITIAL_EVENTS: Event[] = [
-  {
-    id: "evt-1",
-    title: "Festival Urban Afro Libreville 2026",
-    description: "Le plus grand festival de musiques urbaines et afro-fusion d'Afrique Centrale.",
-    imageUrl:
-      "https://images.unsplash.com/photo-1514525253161-7a46d19cd819?q=80&w=800&auto=format&fit=crop",
-    eventType: "CONCERT",
-    hasCertificate: false,
-    ticketTemplate: "FESTIVAL_WRISTBAND",
-    startDate: "2026-09-05T19:00:00Z",
-    endDate: "2026-09-06T04:00:00Z",
-    venueName: "Palais des Sports & de la Culture",
-    location: "Libreville, Gabon",
-    capacity: 500,
-    status: "PUBLISHED",
-    soldTicketsCount: 218,
-    totalRevenue: 435000000, // in centimes (4 350 000 FCFA)
-    checkedInCount: 156,
-    createdAt: "2026-08-15T10:00:00Z",
-  },
-  {
-    id: "evt-2",
-    title: "Soirée Blanche & Champagne VIP",
-    description: "Soirée rooftop privée avec DJ guest international et dégustation.",
-    imageUrl:
-      "https://images.unsplash.com/photo-1516450360452-9312f5e86fc7?q=80&w=800&auto=format&fit=crop",
-    eventType: "NIGHTLIFE",
-    hasCertificate: false,
-    ticketTemplate: "GOLD_VIP",
-    startDate: "2026-09-20T21:00:00Z",
-    endDate: "2026-09-21T05:00:00Z",
-    venueName: "Rooftop Sky Lounge Sablière",
-    location: "Libreville, Gabon",
-    capacity: 150,
-    status: "DRAFT",
-    soldTicketsCount: 45,
-    totalRevenue: 112500000, // 1 125 000 FCFA
-    checkedInCount: 0,
-    createdAt: "2026-08-20T12:00:00Z",
-  },
-  {
-    id: "evt-3",
-    title: "Masterclass Executive : IA & Croissance Digitale",
-    description: "Formation certifiante pour dirigeants et managers avec attestation officielle.",
-    imageUrl:
-      "https://images.unsplash.com/photo-1540575467063-178a50c2df87?q=80&w=800&auto=format&fit=crop",
-    eventType: "CONFERENCE",
-    hasCertificate: true,
-    certificateTemplate: "ACADEMIC_GOLD",
-    ticketTemplate: "CONFERENCE_BADGE",
-    startDate: "2026-10-10T09:00:00Z",
-    endDate: "2026-10-10T17:00:00Z",
-    venueName: "Hôtel Radisson Blu Okoume Palace",
-    location: "Libreville, Gabon",
-    capacity: 80,
-    status: "PUBLISHED",
-    soldTicketsCount: 62,
-    totalRevenue: 310000000, // 3 100 000 FCFA
-    checkedInCount: 0,
-    createdAt: "2026-08-25T14:00:00Z",
-  },
-];
+const STATUS_LABELS: Record<Event["status"], string> = {
+  DRAFT: "Brouillon",
+  PUBLISHED: "En Vente",
+  ONGOING: "En cours",
+  COMPLETED: "Terminé",
+  CANCELLED: "Annulé",
+};
 
 const TYPE_LABELS: Record<EventType, { label: string; color: string }> = {
   CONCERT: { label: "Concert / Festival", color: "bg-amber-500/15 text-amber-500 border-amber-500/20" },
@@ -103,7 +50,20 @@ const TYPE_LABELS: Record<EventType, { label: string; color: string }> = {
 };
 
 export default function EventsListPage() {
-  const [events, setEvents] = useState<Event[]>(INITIAL_EVENTS);
+  const { data: apiEvents, isLoading, isError } = useAdminEvents();
+  const { data: stats } = useEventStats();
+  const { data: tenant } = useAdminTenant();
+  const saveEvent = useSaveEvent();
+  const events = useMemo(
+    () =>
+      (apiEvents ?? []).map((e) =>
+        toUiEvent(
+          e,
+          stats?.find((s) => s.eventId === e.id)
+        )
+      ),
+    [apiEvents, stats]
+  );
   const [isDrawerOpen, setIsDrawerOpen] = useState(false);
   const [editingEvent, setEditingEvent] = useState<Event | null>(null);
   const [filterType, setFilterType] = useState<string>("ALL");
@@ -119,34 +79,19 @@ export default function EventsListPage() {
     setIsDrawerOpen(true);
   }
 
-  function handleCreateSuccess(created: Partial<Event>) {
-    if (editingEvent) {
-      setEvents((prev) =>
-        prev.map((e) => (e.id === editingEvent.id ? ({ ...e, ...created } as Event) : e))
+  async function handleCreateSuccess(created: Partial<Event>) {
+    const existing = editingEvent
+      ? (apiEvents ?? []).find((e) => e.id === editingEvent.id) ?? null
+      : null;
+    try {
+      await saveEvent.mutateAsync({ existing, form: created });
+    } catch (err) {
+      throw new Error(apiErrorMessage(err, "Enregistrement impossible."));
+    }
+    if (hasUnsupportedImage(created)) {
+      toast.warning(
+        "Affiche non enregistrée : l'import de fichier n'est pas encore disponible. Utilisez une URL d'image (https://…)."
       );
-    } else {
-      const newEvent: Event = {
-        id: `evt-${Date.now()}`,
-        title: created.title ?? "Nouvel événement",
-        description: created.description ?? null,
-        imageUrl: created.imageUrl ?? INITIAL_EVENTS[0].imageUrl,
-        eventType: created.eventType ?? "CONCERT",
-        hasCertificate: created.hasCertificate ?? false,
-        certificateTemplate: created.certificateTemplate,
-        ticketTemplate: created.ticketTemplate ?? "GOLD_VIP",
-        startDate: created.startDate ?? new Date().toISOString(),
-        endDate: created.endDate ?? null,
-        venueName: created.venueName ?? "Lieu à confirmer",
-        location: created.location ?? "Libreville",
-        capacity: created.capacity ?? 200,
-        ticketTypes: created.ticketTypes,
-        status: "PUBLISHED",
-        soldTicketsCount: 0,
-        totalRevenue: 0,
-        checkedInCount: 0,
-        createdAt: new Date().toISOString(),
-      };
-      setEvents((prev) => [newEvent, ...prev]);
     }
     setIsDrawerOpen(false);
     setEditingEvent(null);
@@ -241,6 +186,16 @@ export default function EventsListPage() {
         </div>
       </div>
 
+      {isLoading && <p className="text-sm text-muted-foreground">Chargement des événements…</p>}
+      {isError && (
+        <p className="text-sm text-destructive">Impossible de charger les événements. Réessayez.</p>
+      )}
+      {!isLoading && !isError && events.length === 0 && (
+        <div className="rounded-2xl border border-dashed border-border p-8 text-center text-sm text-muted-foreground">
+          Aucun événement pour l&apos;instant. Créez le premier pour ouvrir la billetterie.
+        </div>
+      )}
+
       {/* Compact & Visual Events Grid (3 columns on Desktop) */}
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-5">
         {filteredEvents.map((evt) => {
@@ -287,12 +242,12 @@ export default function EventsListPage() {
 
                   <span
                     className={`rounded-full px-2.5 py-0.5 text-[10px] font-semibold backdrop-blur-md ${
-                      evt.status === "PUBLISHED"
+                      evt.status === "PUBLISHED" || evt.status === "ONGOING"
                         ? "bg-emerald-500/20 text-emerald-300 border border-emerald-500/30"
                         : "bg-black/50 text-zinc-300 border border-white/20"
                     }`}
                   >
-                    {evt.status === "PUBLISHED" ? "En Vente" : "Brouillon"}
+                    {STATUS_LABELS[evt.status]}
                   </span>
                 </div>
 
@@ -324,7 +279,9 @@ export default function EventsListPage() {
                   </div>
                   <div className="flex items-center gap-1.5">
                     <MapPin className="size-3.5 text-primary shrink-0" />
-                    <span className="truncate">{evt.venueName}</span>
+                    <span className="truncate">
+                      {[evt.venueName, evt.location].filter(Boolean).join(" · ") || "Lieu à préciser"}
+                    </span>
                   </div>
                 </div>
 
@@ -373,7 +330,10 @@ export default function EventsListPage() {
                     className="h-8 rounded-xl text-xs px-2 text-muted-foreground hover:text-foreground"
                     title="Voir vitrine publique"
                   >
-                    <Link href="/demo-event-tenant/event" target="_blank">
+                    <Link
+                      href={tenant ? `/${tenant.slug}/events/${evt.id}` : "#"}
+                      target="_blank"
+                    >
                       <Eye className="size-3.5" />
                     </Link>
                   </Button>

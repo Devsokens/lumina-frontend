@@ -167,6 +167,11 @@ Chaque message reçu est un objet `Order` JSON (commande créée ou mise à jour
 | Méthode | Route | Auth | Réponse `data` |
 |---|---|---|---|
 | GET | `/admin/analytics/kpis` | Bearer (OWNER/MANAGER) | `{ salesToday: number, ordersInProgress: number, lowStockCount: number, customersCount: number }` |
+| GET | `/admin/analytics/events?eventId=` | Bearer (OWNER/MANAGER) | `[{ eventId, capacity, issued, scanned, pending, refunded, revenue, ticketTypes: [{ ticketTypeId, name, quantity, issued, scanned, pending, refunded, revenue }] }]` — `eventId` optionnel (UUID) |
+
+Billetterie (EF-E10) : `issued` = billets `VALID` + `USED`, `scanned` = `USED`, `pending` = réservés non
+payés, `revenue` = Σ prix unitaires (HT, centimes) des billets émis — remboursés exclus. `capacity` =
+Σ quantités des types de billets. Pas de push temps réel : le back-office rafraîchit par polling.
 
 ---
 
@@ -217,9 +222,37 @@ Usage MVP restauration : validation de table/commande. Réutilisé en V1 pour le
 Au paiement confirmé : reçu par e-mail si `customerEmail` est renseigné ; pour une commande de
 billets (`type: "EVENT"`), les billets passent `VALID` et le PDF est envoyé par e-mail.
 
+| GET | `/payments/status/:reference` | non (rate limit 30/min) | — | `{ orderId, orderNumber, type, status, paymentStatus, total, tickets: [{ id, qrCode, status, ticketTypeId }] }` — `tickets` vide tant que non payé ; **404** référence inconnue |
+
 Le frontend redirige `window.location.href` vers `authorizationUrl` (Paystack hosted checkout).
+Commande de billets (`type: "EVENT"`) : Paystack renvoie ensuite le client sur
+`${FRONTEND_URL}/{slug}/events/confirmation?reference=...` (URL construite serveur, jamais fournie
+par le client). Cette page appelle `/payments/status/:reference` ; si le webhook n'est pas encore
+arrivé, le backend vérifie la transaction auprès de Paystack avant de répondre. Restauration :
+URL de retour par défaut du dashboard Paystack (inchangé).
 Le webhook Paystack (`POST /webhooks/paystack`) est **interne au backend**, jamais appelé par le
 frontend — voir `GIYA_BACKEND_CONTEXT.md` 4.6.
+
+### Remboursement (billets)
+
+| Méthode | Route | Auth | Body | Réponse `data` |
+|---|---|---|---|---|
+| POST | `/admin/orders/:id/refund` | Bearer (OWNER, MANAGER) | `{ releaseSeats?: boolean }` (défaut `true`) | `{ orderId, paymentStatus: "REFUNDED", amount, paystackStatus, refundedTickets, releasedSeats }` |
+
+- Commande `type: "EVENT"`, `paymentStatus: "PAID"`, payée via Paystack uniquement — sinon **409** ;
+  **404** si la commande n'est pas au tenant ; **502** si Paystack refuse.
+- Montant remboursé = `order.total`, toujours (aucun montant accepté dans le body → 400).
+- Double appel : **409** (« déjà en cours » ou « déjà remboursée »), jamais deux remboursements.
+- Effet : commande `REFUNDED`, billets `VALID` → `REFUNDED` (le scan répond `invalid`), places rendues
+  (`sold -= n`) sauf `releaseSeats: false`. Les billets `USED` restent `USED`.
+- Écart Paystack : le remboursement est **asynchrone** (`POST /refund` répond `pending`). Les billets
+  sont invalidés dès que Paystack accepte la demande, sans attendre `refund.processed` (anti-fraude).
+  Un `refund.failed` ultérieur est journalisé (`REFUND_FAILED`) pour action manuelle — les billets
+  ne sont pas réactivés automatiquement.
+
+Webhook (interne) : `refund.processed` (ex. remboursement fait depuis le dashboard Paystack) applique
+le même effet, places rendues, de façon idempotente. Remboursement partiel → aucun billet touché,
+audit `REFUND_PARTIAL_REVIEW` pour revue manuelle. `refund.pending` / `refund.processing` ignorés.
 
 ---
 
@@ -272,7 +305,7 @@ cherche dans le nom, le téléphone et l'email.
 
 | Méthode | Route | Auth | Réponse `data` |
 |---|---|---|---|
-| GET | `/admin/audit-logs?page=&limit=` | Bearer (OWNER) | `AuditLog[]` (+ `user: { id, fullName, role }`) + `meta` |
+| GET | `/admin/audit-logs?page=&limit=&actions=` | Bearer (OWNER) | `AuditLog[]` (+ `user: { id, fullName, role }`) + `meta` — `actions` optionnel : codes séparés par des virgules (ex. `REFUND_FAILED,REFUND_PARTIAL_REVIEW,TICKETS_REFUND_NEEDED`) |
 
 Actions journalisées : `CREATE/UPDATE/DELETE_CATEGORY`, `CREATE/UPDATE/DELETE/DISABLE_PRODUCT`,
 `STOCK_IN`, `STOCK_ADJUSTMENT`, `CREATE/UPDATE/DELETE_TABLE`, `UPDATE_ORDER_STATUS`,
@@ -291,6 +324,18 @@ Actions journalisées : `CREATE/UPDATE/DELETE_CATEGORY`, `CREATE/UPDATE/DELETE/D
 |---|---|---|---|---|
 | GET | `/tenants/:slug/events` | non | — | `Event[]` à venir, `PUBLISHED`/`ONGOING`, avec `ticketTypes: [{ id, name, price, remaining }]` |
 | GET | `/tenants/:slug/events/:id` | non | — | `Event` (même forme) |
+| GET | `/events` | non, **Host = sous-domaine tenant** | — | Comme `/tenants/:slug/events`, pour le tenant du Host. **404** hors sous-domaine/domaine tenant |
+| GET | `/events/:id` | non, **Host = sous-domaine tenant** | — | Comme `/tenants/:slug/events/:id`, pour le tenant du Host |
+
+**Routage par Host (EF-C03).** Un middleware global lit l'en-tête `Host` (port et casse ignorés).
+S'il vaut `{slug}.{ROOT_DOMAIN}` (un seul niveau, `slug` = `^[a-z0-9-]+$`) ou un `Tenant.customDomain`
+d'un tenant `ACTIVE`, la requête est rattachée à ce tenant (`req.tenant = { tenantId, tenantSlug }`),
+mis en cache Redis 5 min (`tenant:host:<host>` ; hôtes inconnus 60 s). Sans correspondance,
+rien ne change : `req.tenant` reste `undefined` et toutes les routes existantes se comportent comme
+avant. Seules `GET /events` et `GET /events/:id` consomment `req.tenant` ; `/tenants/:slug/...`
+reste le fallback et **prime toujours sur le Host**. Conséquence cache : suspension d'un tenant ou
+changement de `customDomain` effectif après au plus 5 min. `ROOT_DOMAIN` doit valoir le domaine
+racine de prod (ex. `giyax.ga`).
 | POST | `/events/:id/tickets` | non, header `X-Idempotency-Key` | `{ ticketTypeId, quantity (1-10), customerPhone, customerName?, customerEmail? }` | `Order` (`type: "EVENT"`) + `tickets: [{ id, qrCode, status, ticketTypeId }]` |
 | GET | `/tickets/:qrCode/pdf` | non (le `qrCode` sert de secret) | — | **PDF binaire** (pas d'enveloppe JSON). 404 si le billet n'est pas `VALID`/`USED` |
 
@@ -307,19 +352,24 @@ Achat : prix recalculé serveur, places réservées de façon atomique (**409** 
 |---|---|---|---|---|
 | GET | `/admin/events` | Bearer | — | `Event[]` (+ `ticketTypes`, avec `quantity`/`sold`) |
 | GET | `/admin/events/:id` | Bearer | — | `Event` |
-| POST | `/admin/events` | Bearer (OWNER/MANAGER) | `{ title, startDate, endDate?, description?, imageUrl?, location?, lat?, lng?, capacity? }` | `Event` (`status: DRAFT`) |
+| POST | `/admin/events` | Bearer (OWNER/MANAGER) | `{ title, startDate, endDate?, description?, imageUrl? (URL http/https), location?, venueName?, eventType? (CONCERT/CONFERENCE/NIGHTLIFE/EXHIBITION/SPORTS/SHOW), lat?, lng?, capacity? }` | `Event` (`status: DRAFT`) |
 | PATCH | `/admin/events/:id` | Bearer (OWNER/MANAGER) | mêmes champs + `status` (`DRAFT`/`PUBLISHED`/`ONGOING`/`COMPLETED`/`CANCELLED`) | `Event` |
-| DELETE | `/admin/events/:id` | Bearer (OWNER/MANAGER) | — | `{}` — **409** si des billets ont été émis (passer `CANCELLED`) |
+| DELETE | `/admin/events/:id` | Bearer (OWNER/MANAGER) | — | `{}` — **409** si billet émis/réservé/remboursé ou commande payée/remboursée (archiver via `PATCH` `status: CANCELLED`) |
 | GET | `/admin/events/:id/tickets` | Bearer (OWNER/MANAGER/STAFF) | — | `Ticket[]` (+ `ticketType: { name, price }`) |
-| POST | `/admin/events/:id/ticket-types` | Bearer (OWNER/MANAGER) | `{ name, price, quantity }` | `TicketType` |
+| GET | `/admin/events/:id/orders?page=&limit=` | Bearer (OWNER/MANAGER) | — | `[{ id, orderNumber, status, paymentStatus, paymentMethod, total, customerName, customerPhone, customerEmail, createdAt, tickets: [{ id, status, scannedAt, ticketType: { name } }] }]` + `meta` — commandes de billets de l'événement (réservations, remboursements) |
+| POST | `/admin/events/:id/ticket-types` | Bearer (OWNER/MANAGER) | `{ name, price, quantity, description? }` | `TicketType` |
 | PATCH | `/admin/ticket-types/:id` | Bearer (OWNER/MANAGER) | `{ name?, price?, quantity? }` | `TicketType` — **409** si `quantity` < vendus |
-| DELETE | `/admin/ticket-types/:id` | Bearer (OWNER/MANAGER) | — | `{}` — **409** si des billets de ce type existent |
+| DELETE | `/admin/ticket-types/:id` | Bearer (OWNER/MANAGER) | — | `{}` — **409** si `sold` > 0 ou si des billets de ce type existent |
 
 Un événement n'est visible et achetable qu'en `PUBLISHED`/`ONGOING`. La somme des `quantity` des
 types de billets ne peut pas dépasser `capacity` (**409**). Validation à l'entrée : §7
 (`/admin/scan/validate`, un billet `PENDING` répond `invalid`).
 
 ## Historique
+
+- **2026-10-05** — Synchronisé avec le backend : stats billetterie (§6), statut de paiement
+  public + URL de retour (§8), filtre d'audit (§13), commandes d'un événement et champs
+  `venueName`/`eventType`/`description` (§14). Écrans branchés : voir `docs/ETAT_EVENEMENTIEL.md`.
 
 - **2026-09-29 (lot 2)** — Billetterie (§14), taxe par tenant, `paymentMethod`, reçus et billets
   par e-mail, OTP par SMS réel.

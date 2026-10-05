@@ -1,11 +1,11 @@
 "use client";
 
-import { ShowcaseCanvas } from "@/components/showcase/showcase-canvas";
+import { LiveShowcase } from "@/components/vitrine/live-showcase";
 
 export default function TenantPublicEventPage() {
   return (
     <main className="min-h-screen bg-[#090b0e]">
-      <ShowcaseCanvas />
+      <LiveShowcase />
     </main>
   );
 }

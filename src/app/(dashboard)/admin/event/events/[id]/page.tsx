@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, use } from "react";
+import { useMemo, useState, use } from "react";
 import Link from "next/link";
 import {
   ChevronLeft,
@@ -55,233 +55,25 @@ import type {
   TicketType,
 } from "@/types/api";
 import { PricingUpgradeModal } from "@/components/shared/pricing-upgrade-modal";
+import {
+  useAdminEvent,
+  useAdminTenant,
+  useCheckIn,
+  useEventStats,
+  useEventTickets,
+  useSaveEvent,
+  useSetEventStatus,
+} from "@/hooks/useEvents";
+import { apiErrorMessage, hasUnsupportedImage, toAttendees, toUiEvent } from "@/lib/events";
+import { API_URL } from "@/lib/constants";
 
-// Sample Event Data
-const MOCK_EVENT: Event = {
-  id: "evt-1",
-  title: "Festival Urban Afro Libreville 2026",
-  description:
-    "Le plus grand festival de musiques urbaines, afro-fusion et masterclass d'Afrique Centrale. Profitez d'une programmation exceptionnelle, de concerts live avec artistes internationaux, de sessions networking VIP et d'une organisation 100% digitale avec billetterie sécurisée et QR Code infalsifiable.",
-  imageUrl:
-    "https://images.unsplash.com/photo-1514525253161-7a46d19cd819?q=80&w=800&auto=format&fit=crop",
-  eventType: "CONCERT",
-  hasCertificate: true,
-  certificateTemplate: "ACADEMIC_GOLD",
-  ticketTemplate: "GOLD_VIP",
-  questionnaireEnabled: true,
-  questionnaire: [
-    {
-      id: "q-1",
-      title: "Comment avez-vous découvert cet événement ?",
-      type: "SINGLE_CHOICE",
-      options: [
-        "Réseaux Sociaux (Instagram / TikTok)",
-        "WhatsApp / Recommandation",
-        "Bouche à oreille",
-        "Affichage public",
-      ],
-      isRequired: true,
-    },
-    {
-      id: "q-2",
-      title: "Quels sont vos principaux centres d'intérêt pour cette session ?",
-      type: "MULTIPLE_CHOICE",
-      options: [
-        "Networking & Affaires",
-        "Acquisition de compétences",
-        "Concert & Ambiance Live",
-        "Dégustation VIP",
-      ],
-      isRequired: false,
-    },
-    {
-      id: "q-3",
-      title: "Poste et Organisation / Entreprise (facultatif)",
-      type: "SHORT_TEXT",
-      isRequired: false,
-    },
-  ],
-  ticketTypes: [
-    {
-      id: "tf-1",
-      eventId: "evt-1",
-      name: "Pass Standard (Accès Général)",
-      price: 1000000, // 10 000 FCFA
-      quantity: 350,
-      sold: 140,
-      ticketTemplate: "FESTIVAL_WRISTBAND",
-      description: "Accès à la fosse, scène principale et village exposants.",
-    },
-    {
-      id: "tf-2",
-      eventId: "evt-1",
-      name: "Pass VIP (Carré Or)",
-      price: 2500000, // 25 000 FCFA
-      quantity: 100,
-      sold: 65,
-      ticketTemplate: "GOLD_VIP",
-      description: "Cocktail d'accueil offert, place assise réservée et vue plongeante.",
-    },
-    {
-      id: "tf-3",
-      eventId: "evt-1",
-      name: "Table VVIP Privative (5 Pers.)",
-      price: 15000000, // 150 000 FCFA
-      quantity: 10,
-      sold: 8,
-      ticketTemplate: "GOLD_VIP",
-      description: "Service majordome dédié, champagne premium et accès backstages.",
-    },
-  ],
-  startDate: "2026-09-05T19:00:00Z",
-  endDate: "2026-09-06T04:00:00Z",
-  venueName: "Palais des Sports & de la Culture",
-  location: "Libreville, Gabon",
-  capacity: 500,
-  status: "PUBLISHED",
-  soldTicketsCount: 218,
-  totalRevenue: 435000000, // 4 350 000 FCFA
-  checkedInCount: 156,
-  createdAt: "2026-08-15T10:00:00Z",
+const STATUS_LABELS: Record<Event["status"], string> = {
+  DRAFT: "Brouillon",
+  PUBLISHED: "En Vente",
+  ONGOING: "En cours",
+  COMPLETED: "Terminé",
+  CANCELLED: "Annulé",
 };
-
-// Sample Attendees Data
-const INITIAL_ATTENDEES: Attendee[] = [
-  {
-    id: "att-1",
-    ticketId: "t-101",
-    ticketNumber: "GA-EVT-9081",
-    customerName: "Marc Ondimba",
-    customerEmail: "marc.ondimba@gmail.com",
-    customerPhone: "+241 77 12 34 56",
-    ticketTypeName: "Pass VIP (Carré Or)",
-    ticketPrice: 2500000,
-    status: "USED",
-    scannedAt: "2026-09-05T19:24:00Z",
-    purchaseDate: "2026-08-20T14:15:00Z",
-  },
-  {
-    id: "att-2",
-    ticketId: "t-102",
-    ticketNumber: "GA-EVT-9082",
-    customerName: "Aïcha Nguema",
-    customerEmail: "aicha.nguema@yahoo.fr",
-    customerPhone: "+241 66 98 76 54",
-    ticketTypeName: "Pass VIP (Carré Or)",
-    ticketPrice: 2500000,
-    status: "USED",
-    scannedAt: "2026-09-05T19:42:00Z",
-    purchaseDate: "2026-08-21T09:30:00Z",
-  },
-  {
-    id: "att-3",
-    ticketId: "t-103",
-    ticketNumber: "GA-EVT-9083",
-    customerName: "Jean-Pierre Bongo",
-    customerEmail: "jp.bongo@outlook.com",
-    customerPhone: "+241 74 11 22 33",
-    ticketTypeName: "Pass Standard (Accès Général)",
-    ticketPrice: 1000000,
-    status: "USED",
-    scannedAt: "2026-09-05T20:05:00Z",
-    purchaseDate: "2026-08-22T16:45:00Z",
-  },
-  {
-    id: "att-4",
-    ticketId: "t-104",
-    ticketNumber: "GA-EVT-9084",
-    customerName: "Clarisse Mba",
-    customerEmail: "clarisse.mba@gmail.com",
-    customerPhone: "+241 65 33 44 55",
-    ticketTypeName: "Pass Standard (Accès Général)",
-    ticketPrice: 1000000,
-    status: "VALID",
-    scannedAt: null,
-    purchaseDate: "2026-08-25T11:20:00Z",
-  },
-  {
-    id: "att-5",
-    ticketId: "t-105",
-    ticketNumber: "GA-EVT-9085",
-    customerName: "David Koumba",
-    customerEmail: "david.koumba@pro-tech.ga",
-    customerPhone: "+241 77 55 66 77",
-    ticketTypeName: "Table VVIP Privative (5 Pers.)",
-    ticketPrice: 15000000,
-    status: "USED",
-    scannedAt: "2026-09-05T19:50:00Z",
-    purchaseDate: "2026-08-26T18:00:00Z",
-  },
-  {
-    id: "att-6",
-    ticketId: "t-106",
-    ticketNumber: "GA-EVT-9086",
-    customerName: "Sylvie Bekale",
-    customerEmail: "sylvie.bekale@gmail.com",
-    customerPhone: "+241 66 22 88 99",
-    ticketTypeName: "Pass Standard (Accès Général)",
-    ticketPrice: 1000000,
-    status: "VALID",
-    scannedAt: null,
-    purchaseDate: "2026-08-28T13:10:00Z",
-  },
-];
-
-// Sample Certificates Dispatch Data
-const INITIAL_CERTIFICATES: CertificateDispatchRecord[] = [
-  {
-    id: "cert-1",
-    attendeeId: "att-1",
-    attendeeName: "Marc Ondimba",
-    attendeeEmail: "marc.ondimba@gmail.com",
-    attendeePhone: "+241 77 12 34 56",
-    ticketNumber: "GA-EVT-9081",
-    ticketTypeName: "Pass VIP (Carré Or)",
-    certificateNumber: "GA-CERT-2026-001",
-    status: "SENT",
-    sentAt: "2026-09-06T10:00:00Z",
-    pdfUrl: "#",
-  },
-  {
-    id: "cert-2",
-    attendeeId: "att-2",
-    attendeeName: "Aïcha Nguema",
-    attendeeEmail: "aicha.nguema@yahoo.fr",
-    attendeePhone: "+241 66 98 76 54",
-    ticketNumber: "GA-EVT-9082",
-    ticketTypeName: "Pass VIP (Carré Or)",
-    certificateNumber: "GA-CERT-2026-002",
-    status: "SENT",
-    sentAt: "2026-09-06T10:01:00Z",
-    pdfUrl: "#",
-  },
-  {
-    id: "cert-3",
-    attendeeId: "att-3",
-    attendeeName: "Jean-Pierre Bongo",
-    attendeeEmail: "jp.bongo@outlook.com",
-    attendeePhone: "+241 74 11 22 33",
-    ticketNumber: "GA-EVT-9083",
-    ticketTypeName: "Pass Standard (Accès Général)",
-    certificateNumber: "GA-CERT-2026-003",
-    status: "SENT",
-    sentAt: "2026-09-06T10:02:00Z",
-    pdfUrl: "#",
-  },
-  {
-    id: "cert-5",
-    attendeeId: "att-5",
-    attendeeName: "David Koumba",
-    attendeeEmail: "david.koumba@pro-tech.ga",
-    attendeePhone: "+241 77 55 66 77",
-    ticketNumber: "GA-EVT-9085",
-    ticketTypeName: "Table VVIP Privative (5 Pers.)",
-    certificateNumber: "GA-CERT-2026-005",
-    status: "PENDING_SCAN",
-    sentAt: null,
-    pdfUrl: "#",
-  },
-];
 
 interface EventManagePageProps {
   params: Promise<{ id: string }>;
@@ -290,9 +82,29 @@ interface EventManagePageProps {
 export default function EventManagePage({ params }: EventManagePageProps) {
   const resolvedParams = use(params);
   const [activeTab, setActiveTab] = useState<"INFO" | "RESERVATIONS" | "CERTIFICATES" | "STATS">("INFO");
-  const [eventData, setEventData] = useState<Event>(MOCK_EVENT);
-  const [attendees, setAttendees] = useState<Attendee[]>(INITIAL_ATTENDEES);
-  const [certificates, setCertificates] = useState<CertificateDispatchRecord[]>(INITIAL_CERTIFICATES);
+  const eventId = resolvedParams.id;
+  const { data: apiEvent, isLoading, isError } = useAdminEvent(eventId);
+  const { data: statsList } = useEventStats(eventId);
+  const { data: tickets } = useEventTickets(eventId);
+  const { data: tenant } = useAdminTenant();
+  const saveEvent = useSaveEvent();
+  const setStatus = useSetEventStatus();
+  const checkIn = useCheckIn(eventId);
+  const eventData: Event | undefined = useMemo(
+    () => (apiEvent ? toUiEvent(apiEvent, statsList?.[0]) : undefined),
+    [apiEvent, statsList]
+  );
+  const attendees: Attendee[] = useMemo(() => toAttendees(tickets ?? []), [tickets]);
+  const qrCodeById = useMemo(
+    () => new Map((tickets ?? []).map((t) => [t.id, t.qrCode])),
+    [tickets]
+  );
+  // Attestations : pas encore de support serveur (aucun certificat généré).
+  const certificates: CertificateDispatchRecord[] = [];
+  const publicUrl =
+    tenant && typeof window !== "undefined"
+      ? `${window.location.origin}/${tenant.slug}/events/${eventId}`
+      : "";
   const [searchQuery, setSearchQuery] = useState("");
   const [reservationFilter, setReservationFilter] = useState<"ALL" | "SCANNED" | "PENDING">("ALL");
   const [isSendingCertificates, setIsSendingCertificates] = useState(false);
@@ -316,65 +128,62 @@ export default function EventManagePage({ params }: EventManagePageProps) {
     return matchesSearch;
   });
 
-  // Action: Manually Mark as Scanned
-  function handleMarkAsScanned(attendeeId: string) {
-    setAttendees((prev) =>
-      prev.map((a) =>
-        a.id === attendeeId
-          ? { ...a, status: "USED" as const, scannedAt: new Date().toISOString() }
-          : a
-      )
-    );
-    toast.success("Billet marqué comme scanné / présent !");
+  // Pointage manuel : même validation serveur que le scanner (/scan).
+  async function handleMarkAsScanned(attendeeId: string) {
+    const code = qrCodeById.get(attendeeId);
+    if (!code) return;
+    try {
+      const result = await checkIn.mutateAsync(code);
+      if (result.status === "valid") toast.success("Billet marqué comme scanné / présent !");
+      else if (result.status === "used") toast.warning(result.detail ?? "Billet déjà scanné.");
+      else toast.error("Billet refusé par le serveur (annulé, remboursé ou invalide).");
+    } catch (err) {
+      toast.error(apiErrorMessage(err, "Pointage impossible."));
+    }
   }
 
-  // Action: Resend Pass via WhatsApp / SMS
+  // Pas d'envoi WhatsApp/SMS côté serveur : on ouvre le PDF du billet, à
+  // transmettre au participant.
   function handleResendPass(attendee: Attendee) {
-    toast.success(`Billet n°${attendee.ticketNumber} renvoyé par WhatsApp à ${attendee.customerPhone}`);
+    const code = qrCodeById.get(attendee.id);
+    if (!code) return;
+    window.open(`${API_URL}/tickets/${encodeURIComponent(code)}/pdf`, "_blank", "noopener");
+    toast.info("Billet PDF ouvert : l'envoi automatique par WhatsApp n'est pas encore disponible.");
   }
 
-  // Action: Copy Share Link
   function handleCopyShareLink() {
-    navigator.clipboard?.writeText(window.location.origin + "/demo-event-tenant/event");
+    if (!publicUrl) return;
+    navigator.clipboard?.writeText(publicUrl);
     toast.success("Lien public de la billetterie copié !");
   }
 
-  // Action: Mass Dispatch Certificates to all Scanned Attendees (> 15 is PRO paid)
   function handleMassDispatchCertificates() {
-    const scannedOnly = attendees.filter((a) => a.status === "USED");
-    if (scannedOnly.length === 0) {
-      toast.error("Aucun participant n'a encore été scanné pour cet événement.");
-      return;
+    toast.info("Les attestations ne sont pas encore disponibles : aucun certificat n'a été envoyé.");
+  }
+
+  async function handleToggleSale() {
+    if (!eventData) return;
+    const onSale = eventData.status === "PUBLISHED" || eventData.status === "ONGOING";
+    try {
+      await setStatus.mutateAsync({ id: eventId, status: onSale ? "DRAFT" : "PUBLISHED" });
+      toast.success(onSale ? "Billetterie mise en pause (brouillon)." : "Billetterie ouverte au public.");
+    } catch (err) {
+      toast.error(apiErrorMessage(err, "Changement de statut impossible."));
     }
+  }
 
-    // Limit to 15 certifications in Free plan
-    if (scannedOnly.length > 15) {
-      setIsCertUpgradeModalOpen(true);
-      return;
-    }
-
-    setIsSendingCertificates(true);
-    setTimeout(() => {
-      const updatedCerts: CertificateDispatchRecord[] = scannedOnly.map((a, i) => ({
-        id: `cert-gen-${Date.now()}-${i}`,
-        attendeeId: a.id,
-        attendeeName: a.customerName,
-        attendeeEmail: a.customerEmail,
-        attendeePhone: a.customerPhone,
-        ticketNumber: a.ticketNumber,
-        ticketTypeName: a.ticketTypeName,
-        certificateNumber: `GA-CERT-2026-${String(i + 1).padStart(3, "0")}`,
-        status: "SENT",
-        sentAt: new Date().toISOString(),
-        pdfUrl: "#",
-      }));
-
-      setCertificates(updatedCerts);
-      setIsSendingCertificates(false);
-      toast.success(
-        `🎉 ${scannedOnly.length} certifications officielles générées et transmises par Email & WhatsApp aux participants scannés !`
-      );
-    }, 1200);
+  if (isLoading) {
+    return <p className="p-6 text-sm text-muted-foreground">Chargement de l&apos;événement…</p>;
+  }
+  if (isError || !eventData) {
+    return (
+      <div className="space-y-3 p-6">
+        <p className="text-sm text-destructive">Événement introuvable.</p>
+        <Link href="/admin/event/events" className="text-sm text-primary underline">
+          Retour à mes événements
+        </Link>
+      </div>
+    );
   }
 
   const totalCalculatedCapacity =
@@ -412,7 +221,7 @@ export default function EventManagePage({ params }: EventManagePageProps) {
               {eventData.title}
             </h1>
             <span className="rounded-full bg-emerald-500/15 border border-emerald-500/30 px-2.5 py-0.5 text-xs font-bold text-emerald-500">
-              En Vente • {eventData.soldTicketsCount} vendus
+              {STATUS_LABELS[eventData.status]} • {eventData.soldTicketsCount} vendus
             </span>
           </div>
         </div>
@@ -429,13 +238,29 @@ export default function EventManagePage({ params }: EventManagePageProps) {
             <span>Modifier</span>
           </Button>
 
+          {(eventData.status === "DRAFT" ||
+            eventData.status === "PUBLISHED" ||
+            eventData.status === "ONGOING") && (
+            <Button
+              type="button"
+              variant="outline"
+              size="sm"
+              className="rounded-xl text-xs gap-1.5"
+              onClick={() => void handleToggleSale()}
+              disabled={setStatus.isPending}
+            >
+              <ShieldCheck className="size-3.5" />
+              <span>{eventData.status === "DRAFT" ? "Ouvrir la vente" : "Mettre en pause"}</span>
+            </Button>
+          )}
+
           <Button
             asChild
             variant="outline"
             size="sm"
             className="rounded-xl text-xs gap-1.5"
           >
-            <Link href="/demo-event-tenant/event" target="_blank">
+            <Link href={tenant ? `/${tenant.slug}/events/${eventId}` : "#"} target="_blank">
               <Eye className="size-3.5" />
               <span>Voir vitrine</span>
             </Link>
@@ -446,7 +271,7 @@ export default function EventManagePage({ params }: EventManagePageProps) {
             size="sm"
             className="rounded-xl bg-primary text-white text-xs font-semibold gap-1.5 shadow-sm"
           >
-            <Link href="/admin/event/scanner">
+            <Link href="/scan">
               <QrCode className="size-3.5" />
               <span>Scanner pass</span>
             </Link>
@@ -765,7 +590,7 @@ export default function EventManagePage({ params }: EventManagePageProps) {
                   size="sm"
                   className="w-full rounded-xl text-xs justify-start gap-2 h-9"
                 >
-                  <Link href="/demo-event-tenant/event" target="_blank">
+                  <Link href={tenant ? `/${tenant.slug}/events/${eventId}` : "#"} target="_blank">
                     <Eye className="size-3.5 text-primary" />
                     <span>Ouvrir la vitrine publique</span>
                     <ExternalLink className="size-3 ml-auto opacity-50" />
@@ -974,6 +799,10 @@ export default function EventManagePage({ params }: EventManagePageProps) {
       {/* ========================================================================= */}
       {activeTab === "CERTIFICATES" && (
         <div className="space-y-6">
+          <div className="rounded-2xl border border-amber-500/40 bg-amber-500/10 p-4 text-xs text-amber-700 dark:text-amber-300">
+            Fonctionnalité en préparation : la génération et l&apos;envoi des attestations ne sont pas
+            encore disponibles. Aucun certificat n&apos;est émis depuis cet écran.
+          </div>
           {/* Mass Dispatch Banner */}
           <div className="rounded-3xl border-2 border-primary/30 bg-gradient-to-r from-primary/10 via-card to-amber-500/10 p-6 sm:p-7 shadow-md flex flex-col md:flex-row md:items-center justify-between gap-5">
             <div className="space-y-1.5 max-w-xl">
@@ -1449,10 +1278,18 @@ export default function EventManagePage({ params }: EventManagePageProps) {
 
           <EventForm
             initialData={eventData}
-            onSuccess={(updated) => {
-              setEventData((prev) => ({ ...prev, ...updated }));
+            onSuccess={async (updated) => {
+              try {
+                await saveEvent.mutateAsync({ existing: apiEvent ?? null, form: updated });
+              } catch (err) {
+                throw new Error(apiErrorMessage(err, "Enregistrement impossible."));
+              }
+              if (hasUnsupportedImage(updated)) {
+                toast.warning(
+                  "Affiche non enregistrée : l'import de fichier n'est pas encore disponible. Utilisez une URL d'image (https://…)."
+                );
+              }
               setIsEditModalOpen(false);
-              toast.success("Événement mis à jour avec succès !");
             }}
             onCancel={() => setIsEditModalOpen(false)}
           />

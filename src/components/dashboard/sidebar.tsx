@@ -45,8 +45,9 @@ export function Sidebar() {
           { href: base, label: "Tableau de bord", icon: LayoutDashboard, exact: true },
           { href: `${base}/events`, label: "Mes Événements", icon: CalendarDays },
           { href: `${base}/reservations`, label: "Réservations", icon: ClipboardList },
+          { href: `${base}/attendees`, label: "Participants", icon: Users },
           { href: `${base}/showcase`, label: "Site Vitrine & Éditeur", icon: Globe },
-          { href: `${base}/scanner`, label: "Contrôle d'Accès", icon: ScanLine },
+          { href: "/scan", label: "Contrôle d'Accès", icon: ScanLine },
           { href: `${base}/users`, label: "Utilisateurs & Équipe", icon: Users },
           { href: `${base}/settings`, label: "Paramètres", icon: Settings },
         ];
