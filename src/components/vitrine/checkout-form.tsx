@@ -1,6 +1,6 @@
 "use client";
 
-import { useRef, useState } from "react";
+import { useState } from "react";
 import Link from "next/link";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
@@ -41,7 +41,7 @@ export function CheckoutForm() {
   const [placed, setPlaced] = useState<Order | null>(null);
   // Même clé tant que la commande n'a pas abouti : un double clic ou un
   // réessai réseau ne crée qu'une commande.
-  const idempotencyKey = useRef<string | null>(null);
+  const [idempotencyKey, setIdempotencyKey] = useState<string | null>(null);
 
   const {
     register,
@@ -68,7 +68,8 @@ export function CheckoutForm() {
   async function onSubmit(values: CheckoutValues) {
     if (items.length === 0) return;
     setSubmitting(true);
-    idempotencyKey.current ??= crypto.randomUUID();
+    const key = idempotencyKey ?? crypto.randomUUID();
+    setIdempotencyKey(key);
     try {
       const { data } = await api.post<ApiResponse<Order>>(
         "/orders",
@@ -86,7 +87,7 @@ export function CheckoutForm() {
             ...(i.notes ? { notes: i.notes } : {}),
           })),
         },
-        { headers: { "X-Idempotency-Key": idempotencyKey.current } }
+        { headers: { "X-Idempotency-Key": key } }
       );
       const order = data.data as Order;
 
@@ -103,7 +104,7 @@ export function CheckoutForm() {
       clear();
       window.location.assign(init.data.data?.authorizationUrl ?? `/${tenant.slug}/menu`);
     } catch (err) {
-      idempotencyKey.current = null;
+      setIdempotencyKey(null);
       toast.error(apiError(err, "Échec de la commande. Réessayez."));
       setSubmitting(false);
     }
