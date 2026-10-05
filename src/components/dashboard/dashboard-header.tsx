@@ -14,6 +14,7 @@ import {
   ShoppingBag,
   CheckCircle2,
   ChevronDown,
+  Menu,
   Sparkles,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
@@ -36,7 +37,18 @@ import {
   DialogTitle,
 } from "@/components/ui/dialog";
 import { useAuth } from "@/hooks/useAuth";
-import { useRouter, useParams } from "next/navigation";
+import { useRouter, useParams, usePathname } from "next/navigation";
+import { navLinks } from "@/lib/navigation";
+import { Sheet, SheetContent, SheetHeader, SheetTitle } from "@/components/ui/sheet";
+import type { Role } from "@/lib/constants";
+
+const ROLE_LABELS: Record<Role, string> = {
+  OWNER: "Propriétaire",
+  MANAGER: "Manager",
+  STAFF: "Équipe",
+  KITCHEN: "Cuisine",
+  CASHIER: "Caisse",
+};
 import Link from "next/link";
 import { toast } from "sonner";
 
@@ -49,6 +61,8 @@ export function DashboardHeader() {
   const [searchQuery, setSearchQuery] = useState("");
   const [showSearchDropdown, setShowSearchDropdown] = useState(false);
   const [logoutModalOpen, setLogoutModalOpen] = useState(false);
+  const [mobileNavOpen, setMobileNavOpen] = useState(false);
+  const pathname = usePathname();
 
   async function handleConfirmSignOut() {
     setLogoutModalOpen(false);
@@ -59,24 +73,32 @@ export function DashboardHeader() {
 
   const initials = (user?.fullName ?? user?.email ?? "Admin").slice(0, 2).toUpperCase();
 
-  // Search quick suggestions
-  const mockSuggestions = [
-    { title: "Festival Urban Afro 2026", type: "Événement", href: "/admin/event/events" },
-    { title: "Billet #GA-EVT-9082 (Aïcha Bongo)", type: "Billet VIP", href: "/admin/event/attendees" },
-    { title: "Scan Contrôle d'Accès", type: "Outil", href: "/admin/event/scanner" },
-    { title: "Pass Standard (10 000 FCFA)", type: "Tarif", href: "/admin/event/tickets" },
-  ].filter((s) => s.title.toLowerCase().includes(searchQuery.toLowerCase()));
+  // Recherche rapide parmi les écrans accessibles à ce rôle.
+  const links = navLinks(sector ?? "event", user?.role);
+  const suggestions = links
+    .filter((l) => l.label.toLowerCase().includes(searchQuery.toLowerCase()))
+    .map((l) => ({ title: l.label, type: "Écran", href: l.href }));
 
   return (
     <>
       <header className="sticky top-0 z-40 flex h-16 items-center justify-between border-b border-border/80 bg-background/90 px-4 backdrop-blur-md sm:px-6">
+        <Button
+          variant="ghost"
+          size="icon"
+          className="mr-2 size-9 sm:hidden"
+          aria-label="Ouvrir le menu"
+          onClick={() => setMobileNavOpen(true)}
+        >
+          <Menu className="size-5" />
+        </Button>
+
         {/* Global Search Bar */}
         <div className="relative flex-1 max-w-md">
           <div className="relative">
             <Search className="absolute left-3 top-1/2 -translate-y-1/2 size-4 text-muted-foreground" />
             <Input
               type="text"
-              placeholder="Rechercher billet, événement, commande, participant..."
+              placeholder="Aller à un écran (menu, commandes, équipe…)"
               className="h-10 w-full rounded-xl pl-9 pr-12 text-xs sm:text-sm bg-muted/40 border-border/80 focus:bg-background transition-all"
               value={searchQuery}
               onChange={(e) => {
@@ -102,13 +124,13 @@ export function DashboardHeader() {
               <div className="px-2 py-1.5 text-[11px] font-semibold text-muted-foreground uppercase tracking-wider">
                 Résultats rapides
               </div>
-              {mockSuggestions.length === 0 ? (
+              {suggestions.length === 0 ? (
                 <div className="p-3 text-center text-xs text-muted-foreground">
                   Aucun résultat pour &quot;{searchQuery}&quot;
                 </div>
               ) : (
                 <div className="space-y-1">
-                  {mockSuggestions.map((item, i) => (
+                  {suggestions.map((item, i) => (
                     <Link
                       key={i}
                       href={item.href}
@@ -135,7 +157,7 @@ export function DashboardHeader() {
             size="icon"
             className="size-9 rounded-xl text-muted-foreground hover:text-foreground"
             aria-label="Notifications"
-            onClick={() => toast.info("Aucune nouvelle notification non lue")}
+            onClick={() => toast.info("Aucune notification.")}
           >
             <Bell className="size-4.5" />
           </Button>
@@ -168,52 +190,27 @@ export function DashboardHeader() {
               <DropdownMenuLabel className="p-2">
                 <p className="font-bold text-sm text-foreground">{user?.fullName ?? "Administrateur"}</p>
                 <p className="text-xs text-muted-foreground font-mono truncate">
-                  {user?.email ?? `admin@${currentSector}.ga`}
+                  {user?.email ?? user?.phone ?? ""}
                 </p>
                 <div className="mt-2 flex items-center gap-1.5">
                   <span className="rounded-full bg-emerald-500/15 px-2 py-0.5 text-[10px] font-bold text-emerald-600 dark:text-emerald-400">
-                    Propriétaire Compte Giya
+                    {ROLE_LABELS[user?.role ?? "STAFF"]}
                   </span>
                 </div>
               </DropdownMenuLabel>
 
               <DropdownMenuSeparator />
 
-              {/* Sector Switching shortcuts */}
-              <div className="px-2 py-1 text-[10px] font-bold uppercase tracking-wider text-muted-foreground">
-                Changer de secteur
-              </div>
-              <DropdownMenuItem asChild>
-                <Link href="/admin/event" className="flex items-center gap-2 rounded-xl text-xs font-medium cursor-pointer">
-                  <Ticket className="size-4 text-amber-500" />
-                  <span>Secteur Événementiel</span>
-                </Link>
-              </DropdownMenuItem>
-              <DropdownMenuItem asChild>
-                <Link href="/admin/restaurant" className="flex items-center gap-2 rounded-xl text-xs font-medium cursor-pointer">
-                  <UtensilsCrossed className="size-4 text-emerald-500" />
-                  <span>Secteur Restauration</span>
-                </Link>
-              </DropdownMenuItem>
-              <DropdownMenuItem asChild>
-                <Link href="/admin/accommodation" className="flex items-center gap-2 rounded-xl text-xs font-medium cursor-pointer">
-                  <Building2 className="size-4 text-purple-500" />
-                  <span>Secteur Hébergement</span>
-                </Link>
-              </DropdownMenuItem>
-              <DropdownMenuItem asChild>
-                <Link href="/admin/shop" className="flex items-center gap-2 rounded-xl text-xs font-medium cursor-pointer">
-                  <ShoppingBag className="size-4 text-blue-500" />
-                  <span>Secteur E-Commerce</span>
-                </Link>
-              </DropdownMenuItem>
-
-              <DropdownMenuSeparator />
-
               <DropdownMenuItem asChild>
                 <Link href={`/admin/${currentSector}/settings`} className="flex items-center gap-2 rounded-xl text-xs font-medium cursor-pointer">
                   <Settings className="size-4 text-muted-foreground" />
-                  <span>Paramètres du compte</span>
+                  <span>Paramètres</span>
+                </Link>
+              </DropdownMenuItem>
+              <DropdownMenuItem asChild>
+                <Link href="/change-password" className="flex items-center gap-2 rounded-xl text-xs font-medium cursor-pointer">
+                  <Shield className="size-4 text-muted-foreground" />
+                  <span>Changer mon mot de passe</span>
                 </Link>
               </DropdownMenuItem>
 
@@ -231,6 +228,32 @@ export function DashboardHeader() {
           </DropdownMenu>
         </div>
       </header>
+
+      <Sheet open={mobileNavOpen} onOpenChange={setMobileNavOpen}>
+        <SheetContent side="left" className="w-72 p-4">
+          <SheetHeader className="p-0">
+            <SheetTitle>Menu</SheetTitle>
+          </SheetHeader>
+          <nav className="mt-4 space-y-1">
+            {links.map(({ href, label, icon: Icon, exact }) => {
+              const active = exact ? pathname === href : pathname.startsWith(href);
+              return (
+                <Link
+                  key={href}
+                  href={href}
+                  onClick={() => setMobileNavOpen(false)}
+                  className={`flex items-center gap-3 rounded-xl px-3 py-2.5 text-sm ${
+                    active ? "bg-primary text-primary-foreground font-semibold" : "hover:bg-muted"
+                  }`}
+                >
+                  <Icon className="size-4" />
+                  {label}
+                </Link>
+              );
+            })}
+          </nav>
+        </SheetContent>
+      </Sheet>
 
       {/* Confirmation Logout Modal */}
       <Dialog open={logoutModalOpen} onOpenChange={setLogoutModalOpen}>

@@ -2,23 +2,7 @@
 
 import Link from "next/link";
 import { usePathname, useParams } from "next/navigation";
-import {
-  LayoutDashboard,
-  UtensilsCrossed,
-  ClipboardList,
-  Boxes,
-  QrCode,
-  Settings,
-  Ticket,
-  CalendarDays,
-  Users,
-  ScanLine,
-  Building2,
-  CalendarCheck,
-  ShoppingBag,
-  ChefHat,
-  Globe,
-} from "lucide-react";
+import { navLinks } from "@/lib/navigation";
 import { Logo } from "@/components/shared/logo";
 import { cn } from "@/lib/utils";
 
@@ -32,55 +16,10 @@ export function Sidebar() {
   const { user } = useAuth();
   const { settings: orgSettings, activePreset } = useOrganizationSettings();
 
-  const currentSector = (sector ?? "event").toLowerCase();
-  const base = `/admin/${currentSector}`;
 
   const initials = (user?.fullName ?? user?.email ?? "Admin").slice(0, 2).toUpperCase();
 
-  // Liens dynamiques par secteur
-  const getSectorLinks = () => {
-    switch (currentSector) {
-      case "event":
-        return [
-          { href: base, label: "Tableau de bord", icon: LayoutDashboard, exact: true },
-          { href: `${base}/events`, label: "Mes Événements", icon: CalendarDays },
-          { href: `${base}/reservations`, label: "Réservations", icon: ClipboardList },
-          { href: `${base}/attendees`, label: "Participants", icon: Users },
-          { href: `${base}/showcase`, label: "Site Vitrine & Éditeur", icon: Globe },
-          { href: "/scan", label: "Contrôle d'Accès", icon: ScanLine },
-          { href: `${base}/users`, label: "Utilisateurs & Équipe", icon: Users },
-          { href: `${base}/settings`, label: "Paramètres", icon: Settings },
-        ];
-      case "accommodation":
-        return [
-          { href: base, label: "Tableau de bord", icon: LayoutDashboard, exact: true },
-          { href: `${base}/properties`, label: "Propriétés", icon: Building2 },
-          { href: `${base}/bookings`, label: "Réservations", icon: CalendarCheck },
-          { href: `${base}/showcase`, label: "Site Vitrine", icon: Globe },
-          { href: `${base}/settings`, label: "Paramètres", icon: Settings },
-        ];
-      case "boutique":
-        return [
-          { href: base, label: "Tableau de bord", icon: LayoutDashboard, exact: true },
-          { href: `${base}/products`, label: "Catalogue", icon: ShoppingBag },
-          { href: `${base}/orders`, label: "Commandes", icon: ClipboardList },
-          { href: `${base}/settings`, label: "Paramètres", icon: Settings },
-        ];
-      case "resto":
-      default:
-        return [
-          { href: base, label: "Tableau de bord", icon: LayoutDashboard, exact: true },
-          { href: `${base}/menu`, label: "Menu", icon: UtensilsCrossed },
-          { href: `${base}/orders`, label: "Commandes", icon: ClipboardList },
-          { href: `${base}/stock`, label: "Stock", icon: Boxes },
-          { href: "/kitchen", label: "Écran Cuisine (KDS)", icon: ChefHat },
-          { href: `${base}/qr`, label: "QR Code", icon: QrCode },
-          { href: `${base}/settings`, label: "Paramètres", icon: Settings },
-        ];
-    }
-  };
-
-  const links = getSectorLinks();
+  const links = navLinks(sector ?? "event", user?.role);
 
   return (
     <>
@@ -108,7 +47,7 @@ export function Sidebar() {
             )}
             <div className="min-w-0 flex-1">
               <h2 className="font-display text-sm font-extrabold text-white tracking-tight leading-snug truncate" title={orgSettings.name}>
-                {orgSettings.name || "SOKENS DIGITAL EVENT"}
+                {orgSettings.name || "Mon espace"}
               </h2>
             </div>
           </div>
@@ -156,7 +95,7 @@ export function Sidebar() {
                   {user?.fullName ?? "Administrateur"}
                 </p>
                 <p className="text-[10px] text-white/70 font-mono truncate">
-                  {user?.email ?? `admin@${currentSector}.ga`}
+                  {user?.email ?? user?.phone ?? ""}
                 </p>
               </div>
             </div>
