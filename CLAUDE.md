@@ -13,7 +13,7 @@ npm start
 npm run lint    # eslint (flat config, eslint-config-next)
 ```
 
-No test runner is configured. Env: `NEXT_PUBLIC_API_URL` (backend, default `http://localhost:3001`), `NEXT_PUBLIC_ROOT_DOMAIN` (default `lumina.ga`). Only `NEXT_PUBLIC_*` vars, no secrets.
+No test runner is configured. Env: see `.env.example` — `NEXT_PUBLIC_API_URL` (backend incl. `/v1`), optional `NEXT_PUBLIC_WS_URL` (incl. `/v1`, derived from the API URL), `NEXT_PUBLIC_APP_URL`, `NEXT_PUBLIC_ROOT_DOMAIN`, `NEXT_PUBLIC_DEMO_MODE` (demo login, never in prod). Only `NEXT_PUBLIC_*` vars, no secrets.
 
 ## Architecture
 
@@ -22,7 +22,7 @@ Next.js 16 App Router + React 19 + Tailwind 4 + shadcn (`src/components/ui`, don
 - **Route groups** (`src/app`): `(landing)` marketing, `(auth)` login/signup, `(dashboard)/admin/...` back-office, `(kitchen)` KDS, `(scan)` QR scanner, `[tenant]/...` public storefront (menu, cart, checkout, event), `showcase`. Dashboard has a static `admin/event/*` tree alongside dynamic `admin/[sector]/*`; static wins, so event-sector pages are separate from restaurant/shop pages.
 - **Multi-tenancy via subdomain**: `src/middleware.ts` rewrites `slug.<ROOT_DOMAIN>/x` → `/[slug]/x` and sets `x-tenant-slug`. `www/app/admin/api` are reserved; `localhost` and root domain pass through untouched.
 - **Auth is client-only**: access token lives in Zustand memory (`stores/useAuthStore`), never localStorage. Refresh token is an httpOnly cookie. Middleware can't see the token, so guards are client-side via `useAuth()` in `(dashboard)/layout.tsx` and `(kitchen)/layout.tsx`.
-- **HTTP**: `lib/api.ts` is the single Axios instance. Request interceptor adds Bearer token; a 401 triggers one `/auth/refresh` retry (`_retry` flag), else logout + redirect `/login`. Responses are `{ success, data, error, meta }`; prices are integer centimes.
+- **HTTP**: `lib/api.ts` is the single Axios instance. Request interceptor adds Bearer token; a 401 on an authenticated, non-`/auth/*` request waits for the single shared `refreshAccessToken()` (never several in parallel: the backend revokes the session on refresh-token reuse), else logout + redirect `/login`. Responses are `{ success, data, error, meta }` — always read `data.data`; prices are integer centimes. Session restore runs in `AuthGuard` (protected areas) or when a session hint exists, never for anonymous storefront visitors (`/auth/refresh` is rate limited per IP).
 - **Data layer**: TanStack Query hooks in `src/hooks/*` (`useOrders`, `useMenu`, ...) wrap `api`; Zustand stores in `src/stores` (auth, cart, ui, showcase); forms use react-hook-form + Zod (`lib/validations.ts`).
 - **PWA**: Serwist (not next-pwa), service worker source `src/app/sw.ts` → `public/sw.js`, disabled in dev. `public/sw.js` and `manifest.json` are gitignored/generated.
 - **Security headers/CSP** are set in `next.config.ts` (CSP allows only self + API origin; `unsafe-eval` dev only). New external origins (images, fonts, APIs) need CSP updates. `dangerouslySetInnerHTML`, `eval` forbidden.

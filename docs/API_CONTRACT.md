@@ -149,7 +149,8 @@ jour la fiche client (§12) identifiée par `customerPhone`.
 ### Temps réel (KDS)
 
 Le frontend ouvre un WebSocket natif (pas socket.io) :
-`${NEXT_PUBLIC_WS_URL}/orders?tenantId={tenantId}&token={accessToken}`.
+`${NEXT_PUBLIC_WS_URL}/orders?tenantId={tenantId}&token={accessToken}` — `NEXT_PUBLIC_WS_URL`
+inclut le préfixe `/v1` (ex. `wss://api.lumina.ga/v1`) ; absent, il est dérivé de `NEXT_PUBLIC_API_URL`.
 
 Le `token` est l'access token JWT courant (query param — impossible d'envoyer un header
 `Authorization` en WebSocket natif). Le backend doit :
@@ -225,11 +226,10 @@ billets (`type: "EVENT"`), les billets passent `VALID` et le PDF est envoyé par
 | GET | `/payments/status/:reference` | non (rate limit 30/min) | — | `{ orderId, orderNumber, type, status, paymentStatus, total, tickets: [{ id, qrCode, status, ticketTypeId }] }` — `tickets` vide tant que non payé ; **404** référence inconnue |
 
 Le frontend redirige `window.location.href` vers `authorizationUrl` (Paystack hosted checkout).
-Commande de billets (`type: "EVENT"`) : Paystack renvoie ensuite le client sur
-`${FRONTEND_URL}/{slug}/events/confirmation?reference=...` (URL construite serveur, jamais fournie
-par le client). Cette page appelle `/payments/status/:reference` ; si le webhook n'est pas encore
-arrivé, le backend vérifie la transaction auprès de Paystack avant de répondre. Restauration :
-URL de retour par défaut du dashboard Paystack (inchangé).
+Paystack renvoie ensuite le client sur `${FRONTEND_URL}/{slug}/events/confirmation?reference=...`
+(billets, `type: "EVENT"`) ou `${FRONTEND_URL}/{slug}/orders/confirmation?reference=...` (autres
+commandes). URL construite serveur, jamais fournie par le client. Cette page appelle `/payments/status/:reference` ; si le webhook n'est pas encore
+arrivé, le backend vérifie la transaction auprès de Paystack avant de répondre.
 Le webhook Paystack (`POST /webhooks/paystack`) est **interne au backend**, jamais appelé par le
 frontend — voir `GIYA_BACKEND_CONTEXT.md` 4.6.
 
@@ -367,9 +367,13 @@ types de billets ne peut pas dépasser `capacity` (**409**). Validation à l'ent
 
 ## Historique
 
+
 - **2026-10-05** — Synchronisé avec le backend : stats billetterie (§6), statut de paiement
   public + URL de retour (§8), filtre d'audit (§13), commandes d'un événement et champs
   `venueName`/`eventType`/`description` (§14). Écrans branchés : voir `docs/ETAT_EVENEMENTIEL.md`.
+- **2026-10-05 (audit frontend)** — Retour Paystack des commandes restaurant sur
+  `/{slug}/orders/confirmation` (§8). KDS : `NEXT_PUBLIC_WS_URL` doit inclure `/v1` (défaut : dérivé de
+  `NEXT_PUBLIC_API_URL`). Voir `docs/AUDIT_FRONTEND.md`.
 
 - **2026-09-29 (lot 2)** — Billetterie (§14), taxe par tenant, `paymentMethod`, reçus et billets
   par e-mail, OTP par SMS réel.
