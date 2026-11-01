@@ -94,7 +94,8 @@ function CompleteSignup() {
           className="h-11 w-full rounded-xl border border-border bg-background px-3 text-sm"
         >
           {SECTORS.map((s) => (
-            <option key={s} value={s}>
+            // Hébergement pas encore géré par le serveur.
+            <option key={s} value={s} disabled={s === "ACCOMMODATION"}>
               {SECTOR_LABELS[s].label}
             </option>
           ))}

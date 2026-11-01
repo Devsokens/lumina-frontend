@@ -44,10 +44,11 @@ export default function SignupPage() {
     formState: { errors },
   } = useForm<SignupInput>({
     resolver: zodResolver(signupSchema),
-    defaultValues: { sector: "RESTAURANT", acceptedTerms: undefined },
+    defaultValues: { sector: "EVENT", acceptedTerms: undefined },
   });
 
   const businessName = watch("businessName");
+  const sector = watch("sector");
 
   function onBusinessNameChange(value: string) {
     setValue("businessName", value);
@@ -195,9 +196,10 @@ export default function SignupPage() {
           <Label>
             Secteur d&apos;activité <span className="text-destructive">*</span>
           </Label>
+          {/* Contrôlé par le formulaire : la valeur affichée est celle envoyée. */}
           <Select
-            defaultValue="EVENT"
-            onValueChange={(v) => setValue("sector", v as SignupInput["sector"])}
+            value={sector}
+            onValueChange={(v) => setValue("sector", v as SignupInput["sector"], { shouldValidate: true })}
           >
             <SelectTrigger className="h-11 w-full rounded-xl">
               <SelectValue />
@@ -206,7 +208,8 @@ export default function SignupPage() {
               <SelectItem value="EVENT"><PartyPopper className="size-4" /> Événementiel (Billetterie & Scan QR)</SelectItem>
               <SelectItem value="RESTAURANT"><UtensilsCrossed className="size-4" /> Restauration (Menu QR & KDS Cuisine)</SelectItem>
               <SelectItem value="SHOP"><ShoppingBag className="size-4" /> E-Commerce (Boutique & Stocks)</SelectItem>
-              <SelectItem value="ACCOMMODATION"><Building2 className="size-4" /> Hébergement & RBNB (Calendrier & Reçus)</SelectItem>
+              {/* Hébergement pas encore géré par le serveur (inscription refusée). */}
+              <SelectItem value="ACCOMMODATION" disabled><Building2 className="size-4" /> Hébergement & RBNB (bientôt disponible)</SelectItem>
             </SelectContent>
           </Select>
         </div>
