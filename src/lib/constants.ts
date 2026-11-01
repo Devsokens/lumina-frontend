@@ -1,4 +1,7 @@
-export const API_URL = process.env.NEXT_PUBLIC_API_URL ?? "http://localhost:3001/v1";
+// Le backend expose tout sous /v1 : on l'ajoute s'il manque dans la variable
+// (erreur de config fréquente → 404 sur /auth/register).
+const rawApiUrl = (process.env.NEXT_PUBLIC_API_URL ?? "http://localhost:3001/v1").replace(/\/+$/, "");
+export const API_URL = /\/v1$/.test(rawApiUrl) ? rawApiUrl : `${rawApiUrl}/v1`;
 export const APP_URL = process.env.NEXT_PUBLIC_APP_URL ?? "http://localhost:3000";
 export const ROOT_DOMAIN = process.env.NEXT_PUBLIC_ROOT_DOMAIN ?? "lumina.ga";
 
