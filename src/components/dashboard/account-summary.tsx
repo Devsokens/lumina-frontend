@@ -4,6 +4,7 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Skeleton } from "@/components/ui/skeleton";
 import { useAuthStore } from "@/stores/useAuthStore";
 import { useTenantSector } from "@/hooks/useTenantSector";
+import { publicSiteLabel } from "@/lib/tenant-url";
 
 const SECTOR_LABELS: Record<string, string> = {
   RESTAURANT: "Restauration",
@@ -66,7 +67,7 @@ export function AccountSummary() {
           <Row label="Rôle" value={user ? ROLE_LABELS[user.role] : undefined} />
           <Row label="Activité" value={tenant?.name} />
           <Row label="Secteur" value={tenant ? SECTOR_LABELS[tenant.sector] : undefined} />
-          <Row label="Identifiant (slug)" value={tenant?.slug} />
+          <Row label="Adresse du site" value={tenant ? publicSiteLabel(tenant.slug) : undefined} />
           <Row
             label="Inscrit le"
             value={createdAt ? new Date(createdAt).toLocaleDateString("fr-FR") : undefined}

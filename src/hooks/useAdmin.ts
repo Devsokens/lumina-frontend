@@ -4,6 +4,7 @@ import { useMutation, useQuery, useQueryClient, keepPreviousData } from "@tansta
 import { api, type ApiResponse } from "@/lib/api";
 import type { Role } from "@/lib/constants";
 import type { Category, Product, Table, Tenant } from "@/types/api";
+import type { ShowcaseContent } from "@/stores/useShowcaseStore";
 
 // Ressources /admin/* génériques (docs/API_CONTRACT.md §2, §3, §4, §11–§13).
 // Toutes les réponses sont enveloppées { success, data, meta? }.
@@ -45,6 +46,15 @@ export function useUpdateTenant() {
   const invalidate = useInvalidate("admin-tenant");
   return useMutation({
     mutationFn: (body: TenantUpdate) => api.patch("/admin/tenant", body),
+    onSuccess: invalidate,
+  });
+}
+
+// Vitrine publique (tenant.config.showcase) — PUT /admin/tenant/showcase.
+export function useSaveShowcase() {
+  const invalidate = useInvalidate("admin-tenant");
+  return useMutation({
+    mutationFn: (body: ShowcaseContent) => api.put("/admin/tenant/showcase", body),
     onSuccess: invalidate,
   });
 }

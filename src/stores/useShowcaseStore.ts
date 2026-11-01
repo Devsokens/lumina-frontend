@@ -393,6 +393,81 @@ const DEFAULT_STATE: Omit<
   lastSavedAt: null,
 };
 
+// Champs publiés (enregistrés sur le serveur dans tenant.config.showcase).
+// Les événements n'en font pas partie : la vitrine publique affiche les
+// événements réellement en vente.
+export const SHOWCASE_CONTENT_KEYS = [
+  "theme",
+  "fontFamily",
+  "orgName",
+  "orgTagline",
+  "orgLogoUrl",
+  "orgCoverUrl",
+  "aboutTitle",
+  "aboutText",
+  "heroBadge",
+  "heroHeadline",
+  "heroSubheadline",
+  "heroCtaText",
+  "statParticipants",
+  "statEvents",
+  "statSatisfaction",
+  "statSecurity",
+  "galleryImages",
+  "testimonials",
+  "faqs",
+  "whatsappNumber",
+  "supportPhone",
+  "contactEmail",
+  "address",
+  "rccm",
+  "nif",
+  "instagramHandle",
+  "facebookUrl",
+] as const;
+
+export type ShowcaseContent = Pick<ShowcaseState, (typeof SHOWCASE_CONTENT_KEYS)[number]>;
+
+export function showcaseContentOf(state: ShowcaseState): ShowcaseContent {
+  return Object.fromEntries(SHOWCASE_CONTENT_KEYS.map((k) => [k, state[k]])) as ShowcaseContent;
+}
+
+// Point de départ d'un compte sans vitrine enregistrée : mise en page
+// d'exemple, mais identité et coordonnées du compte (jamais celles de la
+// démo, qui appartiennent à une autre organisation).
+export function showcaseDefaultsFor(name: string): ShowcaseContent {
+  return {
+    ...showcaseContentOf(DEFAULT_STATE as ShowcaseState),
+    orgName: name,
+    orgTagline: "",
+    aboutTitle: `À propos de ${name}`,
+    aboutText: "",
+    statParticipants: "",
+    statEvents: "",
+    statSatisfaction: "",
+    statSecurity: "",
+    testimonials: [],
+    whatsappNumber: "",
+    supportPhone: "",
+    contactEmail: "",
+    address: "",
+    rccm: "",
+    nif: "",
+    instagramHandle: "",
+    facebookUrl: "",
+  };
+}
+
+// Contenu enregistré (config.showcase) complété par les valeurs par défaut.
+export function showcaseFromConfig(config: Record<string, unknown> | undefined, name: string): ShowcaseContent {
+  const saved = (config?.showcase ?? {}) as Partial<ShowcaseContent>;
+  const base = showcaseDefaultsFor(name);
+  const picked = Object.fromEntries(
+    SHOWCASE_CONTENT_KEYS.filter((k) => saved[k] !== undefined).map((k) => [k, saved[k]]),
+  );
+  return { ...base, ...picked };
+}
+
 export const useShowcaseStore = create<ShowcaseState>((set) => ({
   ...DEFAULT_STATE,
 

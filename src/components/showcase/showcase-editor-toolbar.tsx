@@ -13,38 +13,50 @@ import {
   Edit3,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
-import { useShowcaseStore } from "@/stores/useShowcaseStore";
+import {
+  showcaseContentOf,
+  showcaseFromConfig,
+  useShowcaseStore,
+} from "@/stores/useShowcaseStore";
+import { useSaveShowcase } from "@/hooks/useAdmin";
+import { apiError } from "@/lib/api";
+import { publicSiteLabel, publicSiteUrl } from "@/lib/tenant-url";
 import { toast } from "sonner";
-import Link from "next/link";
 
-export function ShowcaseEditorToolbar() {
+type ToolbarProps = {
+  slug: string;
+  tenantName: string;
+  config: Record<string, unknown>;
+};
+
+export function ShowcaseEditorToolbar({ slug, tenantName, config }: ToolbarProps) {
   const {
-    orgName,
     deviceView,
     setDeviceView,
     isEditingInline,
     setIsEditingInline,
-    publishShowcase,
-    resetToDefaults,
     lastSavedAt,
   } = useShowcaseStore();
+  const save = useSaveShowcase();
+  const siteUrl = publicSiteUrl(slug);
 
-  const orgSlug = (orgName || "organisation")
-    .toLowerCase()
-    .normalize("NFD")
-    .replace(/[\u0300-\u036f]/g, "")
-    .replace(/[^a-z0-9]/g, "-")
-    .replace(/-+/g, "-");
-
-  function handlePublish() {
-    publishShowcase();
-    toast.success(`Vitrine de ${orgName} publiée avec succès sur ${orgSlug}.giya.ga !`);
+  // Publication réelle : la vitrine est enregistrée sur le serveur et le site
+  // public du compte l'affiche immédiatement.
+  async function handlePublish() {
+    try {
+      await save.mutateAsync(showcaseContentOf(useShowcaseStore.getState()));
+      useShowcaseStore.setState({ isPublished: true, lastSavedAt: null });
+      toast.success(`Vitrine publiée sur ${publicSiteLabel(slug)}`);
+    } catch (err) {
+      toast.error(apiError(err, "Échec de la publication (images trop lourdes ?)"));
+    }
   }
 
+  // Annule les modifications non publiées : retour à la version en ligne.
   function handleReset() {
-    if (confirm("Voulez-vous réinitialiser tous les textes et événements par défaut ?")) {
-      resetToDefaults();
-      toast.info("Vitrine réinitialisée aux valeurs initiales.");
+    if (confirm("Annuler les modifications non publiées ?")) {
+      useShowcaseStore.setState({ ...showcaseFromConfig(config, tenantName), lastSavedAt: null });
+      toast.info("Modifications annulées.");
     }
   }
 
@@ -66,8 +78,8 @@ export function ShowcaseEditorToolbar() {
             </span>
           </div>
           <p className="text-[11px] font-mono text-muted-foreground">
-            Portail : <strong className="text-foreground">{orgSlug}.giya.ga</strong>
-            {lastSavedAt && ` • Enregistré à ${lastSavedAt}`}
+            Portail : <strong className="text-foreground">{publicSiteLabel(slug)}</strong>
+            {lastSavedAt && ` • Modifications non publiées (${lastSavedAt})`}
           </p>
         </div>
       </div>
@@ -155,10 +167,12 @@ export function ShowcaseEditorToolbar() {
           type="button"
           size="sm"
           onClick={handlePublish}
+          disabled={save.isPending}
+
           className="rounded-xl bg-emerald-600 hover:bg-emerald-500 text-white font-bold text-xs gap-1.5 shadow-md shadow-emerald-600/20"
         >
           <Check className="size-3.5" />
-          <span>Publier</span>
+          <span>{save.isPending ? "Publication..." : "Publier"}</span>
         </Button>
 
         <Button
@@ -167,10 +181,10 @@ export function ShowcaseEditorToolbar() {
           size="sm"
           className="rounded-xl text-xs gap-1.5 border-emerald-500/40 text-emerald-600 dark:text-emerald-400 hover:bg-emerald-500/10 font-bold"
         >
-          <Link href="/showcase" target="_blank">
+          <a href={siteUrl} target="_blank" rel="noreferrer">
             <span>Voir le site en ligne</span>
             <ExternalLink className="size-3.5" />
-          </Link>
+          </a>
         </Button>
       </div>
     </div>

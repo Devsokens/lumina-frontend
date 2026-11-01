@@ -26,7 +26,10 @@ export function middleware(request: NextRequest) {
 
       // Réécriture interne du sous-domaine vers /[tenant]/... sans changer l'URL visible.
       const url = request.nextUrl.clone();
-      url.pathname = `/${slug}${pathname}`;
+      // Les liens internes de la vitrine sont déjà préfixés (/slug/menu) :
+      // pas de double préfixe.
+      const prefixed = pathname === `/${slug}` || pathname.startsWith(`/${slug}/`);
+      url.pathname = prefixed ? pathname : `/${slug}${pathname}`;
       return NextResponse.rewrite(url, { request: { headers: requestHeaders } });
     }
   }

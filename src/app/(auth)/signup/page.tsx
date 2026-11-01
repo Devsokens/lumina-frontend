@@ -11,7 +11,8 @@ import { Eye, EyeOff, UserPlus, PartyPopper, UtensilsCrossed, ShoppingBag, Build
 import { signupSchema, type SignupInput } from "@/lib/validations";
 import { homePathFor, useAuth } from "@/hooks/useAuth";
 import { apiError } from "@/lib/api";
-import { API_URL } from "@/lib/constants";
+import { API_URL, ROOT_DOMAIN } from "@/lib/constants";
+import { publicSiteLabel, subdomainActive } from "@/lib/tenant-url";
 import { SECTORS } from "@/lib/constants";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -187,8 +188,13 @@ export default function SignupPage() {
               {...register("slug")}
               className="h-full flex-1 rounded-xl border-0 focus-visible:ring-0"
             />
-            <span className="shrink-0 text-sm font-semibold text-primary">.giya.ga</span>
+            {subdomainActive() && (
+              <span className="shrink-0 text-sm font-semibold text-primary">.{ROOT_DOMAIN}</span>
+            )}
           </div>
+          <p className="text-xs text-muted-foreground">
+            Adresse de votre site : <strong>{publicSiteLabel(watch("slug") || "votre-activite")}</strong>
+          </p>
           {errors.slug && <p className="text-sm text-destructive">{errors.slug.message}</p>}
         </div>
 

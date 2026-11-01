@@ -21,7 +21,8 @@ const isDev = process.env.NODE_ENV === "development";
 const wsOrigin = apiOrigin.replace(/^http/, "ws");
 // Hébergeurs d'images autorisés (affiches, photos produits), séparés par des
 // espaces, ex. "https://res.cloudinary.com https://images.unsplash.com".
-const imageOrigins = process.env.NEXT_PUBLIC_IMAGE_ORIGINS ?? "";
+// images.unsplash.com : visuels par défaut de la vitrine.
+const imageOrigins = `https://images.unsplash.com ${process.env.NEXT_PUBLIC_IMAGE_ORIGINS ?? ""}`;
 const csp = [
   "default-src 'self'",
   `script-src 'self' 'unsafe-inline'${isDev ? " 'unsafe-eval'" : ""}`,

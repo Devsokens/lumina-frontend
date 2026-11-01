@@ -11,7 +11,7 @@ import { Skeleton } from "@/components/ui/skeleton";
 import { useAdminTenantInfo, useUpdateTenant } from "@/hooks/useAdmin";
 import { useAuthStore } from "@/stores/useAuthStore";
 import { apiError } from "@/lib/api";
-import { APP_URL } from "@/lib/constants";
+import { publicSiteLabel, publicSiteUrl } from "@/lib/tenant-url";
 
 type SettingsForm = {
   name: string;
@@ -74,8 +74,8 @@ export function TenantSettingsForm() {
         {tenant && (
           <p className="text-sm text-muted-foreground">
             Vitrine :{" "}
-            <a className="text-primary underline" href={`${APP_URL}/${tenant.slug}`} target="_blank" rel="noreferrer">
-              {APP_URL.replace(/^https?:\/\//, "")}/{tenant.slug}
+            <a className="text-primary underline" href={publicSiteUrl(tenant.slug)} target="_blank" rel="noreferrer">
+              {publicSiteLabel(tenant.slug)}
             </a>
           </p>
         )}
