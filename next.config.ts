@@ -17,16 +17,23 @@ const apiOrigin = (() => {
 // de Next.js (hydratation) tant qu'un CSP à base de nonce n'est pas mis en
 // place. Voir LUMINA_Audit_Menaces_Complet.md action critique #5.
 const isDev = process.env.NODE_ENV === "development";
+// WebSocket KDS : uniquement vers l'API (et non tout ws:/wss:).
+const wsOrigin = apiOrigin.replace(/^http/, "ws");
+// Hébergeurs d'images autorisés (affiches, photos produits), séparés par des
+// espaces, ex. "https://res.cloudinary.com https://images.unsplash.com".
+const imageOrigins = process.env.NEXT_PUBLIC_IMAGE_ORIGINS ?? "";
 const csp = [
   "default-src 'self'",
   `script-src 'self' 'unsafe-inline'${isDev ? " 'unsafe-eval'" : ""}`,
   "style-src 'self' 'unsafe-inline'",
-  `img-src 'self' ${apiOrigin} data: blob:`,
-  `connect-src 'self' ${apiOrigin} ws: wss:`,
+  `img-src 'self' ${apiOrigin} ${imageOrigins} data: blob:`,
+  `connect-src 'self' ${apiOrigin} ${wsOrigin}${isDev ? " ws:" : ""}`,
   "font-src 'self'",
   "frame-ancestors 'none'",
   "base-uri 'self'",
   "form-action 'self'",
+  "object-src 'none'",
+  ...(isDev ? [] : ["upgrade-insecure-requests"]),
 ].join("; ");
 
 const nextConfig: NextConfig = {
@@ -37,6 +44,7 @@ const nextConfig: NextConfig = {
         headers: [
           { key: "X-Frame-Options", value: "DENY" },
           { key: "X-Content-Type-Options", value: "nosniff" },
+          { key: "Cross-Origin-Opener-Policy", value: "same-origin" },
           { key: "Referrer-Policy", value: "strict-origin-when-cross-origin" },
           { key: "Permissions-Policy", value: "camera=(self), microphone=(), geolocation=(self)" },
           { key: "Strict-Transport-Security", value: "max-age=31536000; includeSubDomains; preload" },
