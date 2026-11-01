@@ -5,12 +5,15 @@ import { CalendarDays, MapPin } from "lucide-react";
 import { useTenant } from "@/hooks/useTenant";
 import { usePublicEvents } from "@/hooks/usePublicEvents";
 import { formatXaf } from "@/lib/events";
+import { PublicTopBar } from "@/components/vitrine/public-top-bar";
 
 export default function PublicEventsPage() {
   const tenant = useTenant();
   const { data: events, isLoading, isError } = usePublicEvents(tenant.slug);
 
   return (
+    <>
+    <PublicTopBar backLabel="Accueil" />
     <main className="mx-auto w-full max-w-3xl px-4 py-6 sm:py-10">
       <h1 className="font-display text-2xl font-bold text-foreground sm:text-3xl">
         Événements — {tenant.name}
@@ -60,5 +63,6 @@ export default function PublicEventsPage() {
         })}
       </ul>
     </main>
+    </>
   );
 }

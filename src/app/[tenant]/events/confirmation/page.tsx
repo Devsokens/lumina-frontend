@@ -8,6 +8,7 @@ import { useTenant } from "@/hooks/useTenant";
 import { usePaymentStatus } from "@/hooks/usePublicEvents";
 import { TicketDownloads } from "@/components/vitrine/ticket-downloads";
 import { formatXaf } from "@/lib/events";
+import { PublicTopBar } from "@/components/vitrine/public-top-bar";
 
 // Retour de Paystack : ?reference=… (et ?trxref=…, même valeur).
 function Confirmation() {
@@ -17,8 +18,8 @@ function Confirmation() {
   const { data, isLoading, isError } = usePaymentStatus(reference);
 
   const back = (
-    <Link href={`/${tenant.slug}/events`} className="text-sm text-primary underline">
-      Retour aux événements
+    <Link href={`/${tenant.slug}`} className="text-sm text-primary underline">
+      Retour à l&apos;accueil
     </Link>
   );
 
@@ -86,10 +87,13 @@ function Confirmation() {
 
 export default function PaymentConfirmationPage() {
   return (
-    <main className="mx-auto w-full max-w-md px-4 py-10">
-      <Suspense fallback={<p className="text-sm text-muted-foreground">Chargement…</p>}>
-        <Confirmation />
-      </Suspense>
-    </main>
+    <>
+      <PublicTopBar backLabel="Retour à l'accueil" />
+      <main className="mx-auto w-full max-w-md px-4 py-10">
+        <Suspense fallback={<p className="text-sm text-muted-foreground">Chargement…</p>}>
+          <Confirmation />
+        </Suspense>
+      </main>
+    </>
   );
 }

@@ -6,6 +6,7 @@ import { CalendarDays, ChevronLeft, MapPin } from "lucide-react";
 import { useTenant } from "@/hooks/useTenant";
 import { usePublicEvent } from "@/hooks/usePublicEvents";
 import { TicketPurchase } from "@/components/vitrine/ticket-purchase";
+import { PublicTopBar } from "@/components/vitrine/public-top-bar";
 
 export default function PublicEventPage({ params }: { params: Promise<{ id: string }> }) {
   const { id } = use(params);
@@ -13,14 +14,17 @@ export default function PublicEventPage({ params }: { params: Promise<{ id: stri
   const { data: event, isLoading, isError } = usePublicEvent(tenant.slug, id);
 
   return (
+    <>
+    <PublicTopBar backLabel="Retour à l'accueil" />
     <main className="mx-auto w-full max-w-2xl px-4 py-6 sm:py-10">
-      <Link
-        href={`/${tenant.slug}/events`}
-        className="mb-4 inline-flex items-center gap-1 text-sm text-muted-foreground hover:text-foreground"
-      >
-        <ChevronLeft className="size-4" />
-        Tous les événements
-      </Link>
+      {event?.imageUrl && (
+        /* eslint-disable-next-line @next/next/no-img-element */
+        <img
+          src={event.imageUrl}
+          alt=""
+          className="mb-6 aspect-[16/9] w-full rounded-3xl object-cover"
+        />
+      )}
 
       {isLoading && <p className="text-sm text-muted-foreground">Chargement…</p>}
       {(isError || (!isLoading && !event)) && (
@@ -61,8 +65,17 @@ export default function PublicEventPage({ params }: { params: Promise<{ id: stri
             <h2 className="mb-4 font-display text-lg font-bold">Billetterie</h2>
             <TicketPurchase event={event} />
           </section>
+
+          <Link
+            href={`/${tenant.slug}`}
+            className="flex min-h-11 items-center justify-center gap-1 rounded-2xl border border-border text-sm font-semibold hover:bg-muted"
+          >
+            <ChevronLeft className="size-4" />
+            Retour à l&apos;accueil
+          </Link>
         </article>
       )}
     </main>
+    </>
   );
 }

@@ -17,17 +17,20 @@ export function LiveShowcase() {
   const { data } = usePublicEvents(tenant.slug);
   const liveEvents = useMemo(() => (data ?? []).map(toShowcaseEvent), [data]);
 
-  // Contenu du compte appliqué avant le premier rendu de la vitrine.
-  const [appliedFor, setAppliedFor] = useState<string | null>(null);
-  if (appliedFor !== tenant.id) {
+  // Contenu du compte appliqué avant le premier rendu, puis réappliqué à
+  // chaque nouvelle publication (tenant relu en continu, voir TenantProvider).
+  const showcase = (tenant.config as { showcase?: { updatedAt?: string } } | undefined)?.showcase;
+  const version = `${tenant.id}:${tenant.name}:${showcase?.updatedAt ?? ""}`;
+  const [appliedVersion, setAppliedVersion] = useState<string | null>(null);
+  if (appliedVersion !== version) {
     useShowcaseStore.setState({
       ...showcaseFromConfig(tenant.config, tenant.name),
       deviceView: "desktop",
       isEditingInline: false,
     });
-    setAppliedFor(tenant.id);
+    setAppliedVersion(version);
   }
-  if (appliedFor !== tenant.id) return null;
+  if (appliedVersion === null) return null;
 
   return (
     <ShowcaseCanvas

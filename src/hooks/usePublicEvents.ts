@@ -53,12 +53,13 @@ export async function purchaseTickets(eventId: string, input: PurchaseInput, ide
   return data.data as PurchaseResult;
 }
 
+// authorizationUrl : page Paystack, ou chemin relatif de la page de paiement
+// simulée (/{slug}/pay/simulate?reference=SIM-…) en mode test du backend.
+type PaymentInit = { authorizationUrl: string; reference: string; simulated?: boolean };
+
 export async function initializePayment(orderId: string) {
-  const { data } = await api.post<ApiResponse<{ authorizationUrl: string; reference: string }>>(
-    "/payments/initialize",
-    { orderId }
-  );
-  return data.data as { authorizationUrl: string; reference: string };
+  const { data } = await api.post<ApiResponse<PaymentInit>>("/payments/initialize", { orderId });
+  return data.data as PaymentInit;
 }
 
 const STATUS_POLL_MS = 3_000;

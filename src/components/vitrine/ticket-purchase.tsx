@@ -1,6 +1,7 @@
 "use client";
 
 import { useRef, useState } from "react";
+import { useRouter } from "next/navigation";
 import { toast } from "sonner";
 import { Minus, Plus, Ticket } from "lucide-react";
 import { Button } from "@/components/ui/button";
@@ -32,6 +33,7 @@ export function TicketPurchase({ event }: { event: PublicEvent }) {
   const [submitting, setSubmitting] = useState(false);
   const [freeTickets, setFreeTickets] = useState<PurchasedTicket[] | null>(null);
   const idempotencyKey = useRef<string | null>(null);
+  const router = useRouter();
 
   const selected = event.ticketTypes.find((t) => t.id === ticketTypeId);
   const maxQuantity = Math.min(MAX_PER_ORDER, selected?.remaining ?? 0);
@@ -83,8 +85,10 @@ export function TicketPurchase({ event }: { event: PublicEvent }) {
         setFreeTickets(order.tickets);
         return;
       }
-      const { authorizationUrl } = await initializePayment(order.id);
-      window.location.assign(authorizationUrl);
+      const { authorizationUrl, simulated } = await initializePayment(order.id);
+      // Mode test : page de paiement simulée du site ; sinon page Paystack.
+      if (simulated) router.push(authorizationUrl);
+      else window.location.assign(authorizationUrl);
     } catch (err) {
       // Nouvelle tentative = nouvelle clé (les champs ont pu changer).
       idempotencyKey.current = null;
@@ -208,8 +212,8 @@ export function TicketPurchase({ event }: { event: PublicEvent }) {
         </span>
       </div>
       <p className="text-xs text-muted-foreground">
-        Taxes éventuelles calculées à la commande. Paiement sécurisé Paystack (Mobile Money ou
-        carte). Une réservation non payée est libérée après 30 min.
+        Taxes éventuelles calculées à la commande. Paiement sécurisé (Mobile Money ou carte). Une
+        réservation non payée est libérée après 30 min.
       </p>
 
       <Button type="submit" size="lg" className="w-full" disabled={submitting || !selected}>

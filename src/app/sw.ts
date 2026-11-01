@@ -1,6 +1,11 @@
 /// <reference lib="webworker" />
 import { defaultCache } from "@serwist/next/worker";
-import type { PrecacheEntry, SerwistGlobalConfig } from "serwist";
+import type {
+  PrecacheEntry,
+  RouteMatchCallback,
+  RouteMatchCallbackOptions,
+  SerwistGlobalConfig,
+} from "serwist";
 import { Serwist, NetworkFirst, NetworkOnly, ExpirationPlugin } from "serwist";
 
 declare global {
@@ -16,6 +21,14 @@ declare const self: ServiceWorkerGlobalScope;
 // /auth, paiements, commandes… passent toujours par le réseau (appareils
 // partagés, données sensibles).
 const PUBLIC_API = /^\/v1\/(tenants\/[^/]+(\/(menu|categories|products|events)(\/[^/]+)?)?)$/;
+
+// Évalue un matcher Serwist (RegExp sur l'URL complète, chaîne = URL exacte,
+// ou fonction), comme le fait le routeur.
+function matches(matcher: RegExp | string | RouteMatchCallback, opts: RouteMatchCallbackOptions) {
+  if (typeof matcher === "function") return Boolean(matcher(opts));
+  if (typeof matcher === "string") return new URL(matcher, self.location.href).href === opts.url.href;
+  return matcher.test(opts.url.href);
+}
 
 const serwist = new Serwist({
   precacheEntries: self.__SW_MANIFEST,
@@ -35,7 +48,14 @@ const serwist = new Serwist({
       matcher: ({ url }) => url.pathname.startsWith("/v1/") || url.pathname.startsWith("/api/"),
       handler: new NetworkOnly(),
     },
-    ...defaultCache,
+    // Règles par défaut limitées au même domaine : une ressource externe
+    // (images Unsplash, affiches collées par URL) re-téléchargée par le
+    // worker passe par fetch() et tombe sous connect-src (bloquée par la
+    // CSP). Non interceptée, le navigateur la charge en <img> (img-src).
+    ...defaultCache.map((entry) => ({
+      ...entry,
+      matcher: (opts: RouteMatchCallbackOptions) => opts.sameOrigin && matches(entry.matcher, opts),
+    })),
   ],
   // Page hors ligne pour toute navigation sans réseau ni cache.
   fallbacks: {

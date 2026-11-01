@@ -1,5 +1,6 @@
 "use client";
 
+import { useEffect, useRef } from "react";
 import {
   Monitor,
   Tablet,
@@ -39,12 +40,43 @@ export function ShowcaseEditorToolbar({ slug, tenantName, config }: ToolbarProps
   } = useShowcaseStore();
   const save = useSaveShowcase();
   const siteUrl = publicSiteUrl(slug);
+  const { mutateAsync } = save;
+
+  // Publication automatique : chaque modification est enregistrée sur le
+  // serveur 2 s après la dernière saisie, et le site public la reprend.
+  const published = useRef(JSON.stringify(showcaseContentOf(useShowcaseStore.getState())));
+  useEffect(() => {
+    let timer: number | undefined;
+    const unsubscribe = useShowcaseStore.subscribe((state) => {
+      const content = showcaseContentOf(state);
+      const json = JSON.stringify(content);
+      if (json === published.current) return;
+      window.clearTimeout(timer);
+      timer = window.setTimeout(async () => {
+        try {
+          await mutateAsync(content);
+          published.current = json;
+          useShowcaseStore.setState({ isPublished: true, lastSavedAt: null });
+        } catch (err) {
+          toast.error(apiError(err, "Publication automatique impossible (images trop lourdes ?)"), {
+            id: "showcase-autosave",
+          });
+        }
+      }, 2000);
+    });
+    return () => {
+      unsubscribe();
+      window.clearTimeout(timer);
+    };
+  }, [mutateAsync]);
 
   // Publication réelle : la vitrine est enregistrée sur le serveur et le site
   // public du compte l'affiche immédiatement.
   async function handlePublish() {
     try {
-      await save.mutateAsync(showcaseContentOf(useShowcaseStore.getState()));
+      const content = showcaseContentOf(useShowcaseStore.getState());
+      await save.mutateAsync(content);
+      published.current = JSON.stringify(content);
       useShowcaseStore.setState({ isPublished: true, lastSavedAt: null });
       toast.success(`Vitrine publiée sur ${publicSiteLabel(slug)}`);
     } catch (err) {
@@ -79,7 +111,11 @@ export function ShowcaseEditorToolbar({ slug, tenantName, config }: ToolbarProps
           </div>
           <p className="text-[11px] font-mono text-muted-foreground">
             Portail : <strong className="text-foreground">{publicSiteLabel(slug)}</strong>
-            {lastSavedAt && ` • Modifications non publiées (${lastSavedAt})`}
+            {save.isPending
+              ? " • Publication en cours…"
+              : lastSavedAt
+                ? ` • Publication automatique dans 2 s (${lastSavedAt})`
+                : " • Publié automatiquement"}
           </p>
         </div>
       </div>
