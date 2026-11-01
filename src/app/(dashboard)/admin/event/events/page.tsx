@@ -90,7 +90,7 @@ export default function EventsListPage() {
     }
     if (hasUnsupportedImage(created)) {
       toast.warning(
-        "Affiche non enregistrée : l'import de fichier n'est pas encore disponible. Utilisez une URL d'image (https://…)."
+        "Affiche non enregistrée : format d'image non pris en charge (PNG, JPG, WEBP ou lien https://)."
       );
     }
     setIsDrawerOpen(false);

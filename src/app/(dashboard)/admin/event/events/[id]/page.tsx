@@ -1288,7 +1288,7 @@ export default function EventManagePage({ params }: EventManagePageProps) {
               }
               if (hasUnsupportedImage(updated)) {
                 toast.warning(
-                  "Affiche non enregistrée : l'import de fichier n'est pas encore disponible. Utilisez une URL d'image (https://…)."
+                  "Affiche non enregistrée : format d'image non pris en charge (PNG, JPG, WEBP ou lien https://)."
                 );
               }
               setIsEditModalOpen(false);

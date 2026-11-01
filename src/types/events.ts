@@ -31,6 +31,8 @@ export type ApiEvent = {
   status: EventStatus;
   createdAt: string;
   ticketTypes: ApiTicketType[];
+  // Questionnaire et modèles (Event.settings).
+  settings?: import("@/lib/events").EventSettings;
 };
 
 export type ApiTicketStatus = "PENDING" | "VALID" | "USED" | "CANCELLED" | "REFUNDED";

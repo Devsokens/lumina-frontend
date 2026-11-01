@@ -1,5 +1,5 @@
 import { isAxiosError } from "axios";
-import type { Attendee, Event, TicketTemplate, TicketType } from "@/types/api";
+import type { Attendee, Event, QuestionnaireQuestion, TicketTemplate, TicketType } from "@/types/api";
 import { FEATURES } from "@/lib/features";
 import type { ApiEvent, ApiTicket, EventStats, PublicEvent } from "@/types/events";
 import type { EventItem } from "@/stores/useShowcaseStore";
@@ -10,7 +10,13 @@ import type { EventItem } from "@/stores/useShowcaseStore";
 
 export function toUiEvent(event: ApiEvent, stats?: EventStats): Event {
   const statsByType = new Map(stats?.ticketTypes.map((t) => [t.ticketTypeId, t]));
+  const settings: EventSettings = event.settings ?? {};
   return {
+    questionnaireEnabled: settings.questionnaireEnabled ?? false,
+    questionnaire: settings.questionnaire ?? [],
+    hasCertificate: settings.hasCertificate ?? false,
+    certificateTemplate: settings.certificateTemplate as Event["certificateTemplate"],
+    ticketTemplate: settings.ticketTemplate as Event["ticketTemplate"],
     id: event.id,
     title: event.title,
     description: event.description,
@@ -80,14 +86,40 @@ export type EventPayload = {
   venueName?: string;
   eventType?: string;
   capacity?: number;
+  settings?: EventSettings;
 };
 
-// Champs acceptés par le backend. Les autres réglages du formulaire
-// (modèles de pass, attestations, questionnaire) n'ont pas encore de
-// support serveur et ne sont pas envoyés (voir docs/ETAT_EVENEMENTIEL.md).
+// Event.settings côté serveur (EventSettingsDto).
+export type EventSettings = {
+  questionnaireEnabled?: boolean;
+  questionnaire?: QuestionnaireQuestion[];
+  hasCertificate?: boolean;
+  certificateTemplate?: string;
+  ticketTemplate?: string;
+};
+
+// Affiche : URL https ou image importée (data URL ré-encodée, vérifiée par
+// le serveur).
+const IMAGE_REF = /^(https:\/\/|data:image\/(png|jpeg|webp);base64,)/;
+
+// Champs acceptés par le backend, réglages (questionnaire, modèles) compris.
 export function toEventPayload(form: Partial<Event>): EventPayload {
-  const imageUrl = form.imageUrl && /^https?:\/\//.test(form.imageUrl) ? form.imageUrl : undefined;
+  const imageUrl = form.imageUrl && IMAGE_REF.test(form.imageUrl) ? form.imageUrl : undefined;
+  const settings: EventSettings = {
+    questionnaireEnabled: form.questionnaireEnabled ?? false,
+    questionnaire: (form.questionnaire ?? []).map((q) => ({
+      id: q.id,
+      title: q.title,
+      type: q.type,
+      isRequired: q.isRequired,
+      ...(q.options ? { options: q.options } : {}),
+    })),
+    hasCertificate: form.hasCertificate ?? false,
+    ...(form.certificateTemplate ? { certificateTemplate: form.certificateTemplate } : {}),
+    ...(form.ticketTemplate ? { ticketTemplate: form.ticketTemplate } : {}),
+  };
   return {
+    settings,
     title: form.title ?? "",
     ...(form.description ? { description: form.description } : {}),
     ...(imageUrl ? { imageUrl } : {}),
@@ -113,9 +145,9 @@ export function ticketTypeBody(f: TicketType) {
   };
 }
 
-// Affiche importée depuis l'appareil (data: URL) : pas d'endpoint d'upload.
+// Affiche dans un format refusé par le serveur (ni https, ni image importée).
 export function hasUnsupportedImage(form: Partial<Event>) {
-  return !!form.imageUrl && !/^https?:\/\//.test(form.imageUrl);
+  return !!form.imageUrl && !IMAGE_REF.test(form.imageUrl);
 }
 
 export function apiErrorMessage(err: unknown, fallback = "Une erreur est survenue.") {
