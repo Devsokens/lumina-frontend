@@ -2,6 +2,7 @@
 
 import { useMemo, useState } from "react";
 import Link from "next/link";
+import { motion } from "framer-motion";
 import { AlertTriangle, CalendarDays, Coins, QrCode, Ticket } from "lucide-react";
 import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -9,6 +10,8 @@ import { useAuthStore } from "@/stores/useAuthStore";
 import { MANUAL_CASE_ACTIONS, useAdminEvents, useEventStats, useManualCases } from "@/hooks/useEvents";
 import { formatXaf } from "@/lib/events";
 import type { AuditEntry } from "@/types/events";
+import { AreaChart, BarList, DonutChart } from "@/components/charts/charts";
+import { StatCard } from "@/components/charts/stat-card";
 
 // Tableau de bord événementiel (EF-E10) : données réelles de
 // GET /admin/analytics/events, rafraîchies toutes les 15 s.
@@ -33,7 +36,7 @@ function pct(part: number, total: number) {
 
 export default function EventDashboardPage() {
   const role = useAuthStore((s) => s.user?.role);
-  const { data: events, isLoading } = useAdminEvents();
+  const { data: events, isLoading, isError: eventsError, refetch } = useAdminEvents();
   const { data: stats, isError: statsDenied } = useEventStats();
   const { data: manualCases } = useManualCases(role === "OWNER");
 
@@ -58,10 +61,34 @@ export default function EventDashboardPage() {
     .sort((a, b) => new Date(b.event.startDate).getTime() - new Date(a.event.startDate).getTime());
 
   const kpis = [
-    { label: "Événements", value: String(events?.length ?? 0), icon: CalendarDays },
-    { label: "Billets émis", value: totals.issued.toLocaleString("fr-FR"), icon: Ticket },
-    { label: "Recettes billets (HT)", value: formatXaf(totals.revenue), icon: Coins },
-    { label: "Entrées scannées", value: totals.scanned.toLocaleString("fr-FR"), icon: QrCode },
+    { label: "Événements", value: events?.length ?? 0, icon: CalendarDays, hint: `${upcoming.length} à venir` },
+    { label: "Billets émis", value: totals.issued, icon: Ticket, hint: `${totals.pending} en attente de paiement` },
+    { label: "Recettes billets (HT)", value: totals.revenue, icon: Coins, format: formatXaf },
+    {
+      label: "Entrées scannées",
+      value: totals.scanned,
+      icon: QrCode,
+      hint: `${pct(totals.scanned, totals.issued)} % des billets émis`,
+    },
+  ];
+
+  // Graphiques : recettes et billets par événement (ordre chronologique),
+  // répartition des billets.
+  const chronological = [...rows].reverse();
+  const revenueSeries = chronological.map(({ event, stats: s }) => ({
+    label: new Date(event.startDate).toLocaleDateString("fr-FR", { day: "2-digit", month: "short" }),
+    value: s?.revenue ?? 0,
+  }));
+  const ticketsByEvent = rows
+    .map(({ event, stats: s }) => ({ label: event.title, value: s?.issued ?? 0 }))
+    .sort((a, b) => b.value - a.value)
+    .slice(0, 6);
+  const refunded = (stats ?? []).reduce((n, s) => n + (s.refunded ?? 0), 0);
+  const ticketSplit = [
+    { label: "Entrés (scannés)", value: totals.scanned, color: "var(--chart-1)" },
+    { label: "Valides, pas encore entrés", value: Math.max(0, totals.issued - totals.scanned), color: "var(--chart-2)" },
+    { label: "En attente de paiement", value: totals.pending, color: "var(--chart-3)" },
+    { label: "Remboursés", value: refunded, color: "var(--chart-5)" },
   ];
 
   return (
@@ -90,16 +117,32 @@ export default function EventDashboardPage() {
       )}
 
       <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-4">
-        {kpis.map(({ label, value, icon: Icon }) => (
-          <Card key={label} className="rounded-3xl border border-border/80 bg-card p-5 shadow-xs">
-            <div className="flex items-center justify-between">
-              <p className="text-xs font-semibold text-muted-foreground">{label}</p>
-              <Icon className="size-4 text-primary" />
-            </div>
-            <p className="mt-2 font-display text-3xl font-extrabold text-foreground">{value}</p>
-          </Card>
+        {kpis.map((k, i) => (
+          <StatCard key={k.label} index={i} {...k} />
         ))}
       </div>
+
+      {!statsDenied && (
+        <div className="grid gap-4 lg:grid-cols-3">
+          <Card className="rounded-3xl border border-border/80 bg-card p-5 shadow-xs lg:col-span-2">
+            <h2 className="font-display text-base font-bold">Recettes par événement</h2>
+            <p className="mb-3 text-xs text-muted-foreground">Billets payés, dans l&apos;ordre des dates</p>
+            <AreaChart data={revenueSeries} format={formatXaf} />
+          </Card>
+          <Card className="rounded-3xl border border-border/80 bg-card p-5 shadow-xs">
+            <h2 className="mb-3 font-display text-base font-bold">Répartition des billets</h2>
+            <DonutChart
+              data={ticketSplit}
+              centerValue={totals.issued.toLocaleString("fr-FR")}
+              centerLabel="billets émis"
+            />
+          </Card>
+          <Card className="rounded-3xl border border-border/80 bg-card p-5 shadow-xs lg:col-span-3">
+            <h2 className="mb-3 font-display text-base font-bold">Événements les plus vendus</h2>
+            <BarList data={ticketsByEvent} format={(v) => `${Math.round(v).toLocaleString("fr-FR")} billets`} />
+          </Card>
+        </div>
+      )}
 
       {totals.pending > 0 && (
         <p className="text-xs text-muted-foreground">
@@ -139,7 +182,15 @@ export default function EventDashboardPage() {
       <Card className="rounded-3xl border border-border/80 bg-card p-5 shadow-xs">
         <h2 className="mb-4 font-display text-lg font-bold text-foreground">Ventes par événement</h2>
         {isLoading && <p className="text-sm text-muted-foreground">Chargement…</p>}
-        {!isLoading && rows.length === 0 && (
+        {eventsError && (
+          <p className="text-sm text-destructive">
+            Impossible de charger les événements (serveur indisponible ou en cours de mise à jour).{" "}
+            <button type="button" className="underline" onClick={() => void refetch()}>
+              Réessayer
+            </button>
+          </p>
+        )}
+        {!isLoading && !eventsError && rows.length === 0 && (
           <p className="text-sm text-muted-foreground">
             Aucun événement.{" "}
             <Link href="/admin/event/events" className="text-primary underline">
@@ -181,7 +232,12 @@ export default function EventDashboardPage() {
                   </span>
                 </div>
                 <div className="mt-2 h-1.5 w-full overflow-hidden rounded-full bg-muted">
-                  <div className="h-full rounded-full bg-primary" style={{ width: `${fill}%` }} />
+                  <motion.div
+                    className="h-full rounded-full bg-gradient-to-r from-primary/70 to-primary"
+                    initial={{ width: 0 }}
+                    animate={{ width: `${fill}%` }}
+                    transition={{ duration: 0.8, ease: "easeOut" }}
+                  />
                 </div>
               </Link>
             );
