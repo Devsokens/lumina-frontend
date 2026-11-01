@@ -1,4 +1,4 @@
-# GIYA — Contrat API Frontend → Backend
+# GiyaX — Contrat API Frontend → Backend
 
 **Émis par :** `giya-frontend`
 **Destiné à :** `giya-backend` (NestJS)

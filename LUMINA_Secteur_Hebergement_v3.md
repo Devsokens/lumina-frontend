@@ -1,4 +1,4 @@
-# 🏨 LUMINA — SECTEUR HÉBERGEMENT (RBNB)
+# 🏨 GiyaX — SECTEUR HÉBERGEMENT (RBNB)
 ## Intégration du 4ème secteur : Appartements meublés, Motels, Chambres d'hôtes
 ### Document d'ajustement de vision v3.0
 
@@ -56,7 +56,7 @@
 | **Airbnb** | Mondial, connu | Pas de Mobile Money, pas adapté au marché local, commission 15-20% |
 | **Booking.com** | Référence hôtelière | Complexe pour petits propriétaires, pas de gestion multi-propriétés simple |
 | **Facebook / WhatsApp** | Gratuit, connu | Pas de réservation structurée, pas de paiement, pas de reçu, pas de calendrier |
-| **LUMINA Hébergement** | **Mobile Money, calendrier intelligent, reçu fiscal, gestion multi-propriétés, IA** | **Doit prouver sa fiabilité** |
+| **GiyaX Hébergement** | **Mobile Money, calendrier intelligent, reçu fiscal, gestion multi-propriétés, IA** | **Doit prouver sa fiabilité** |
 
 ---
 
@@ -119,7 +119,7 @@
 ### 3.2. Parcours Propriétaire (Onboarding → Première Réservation)
 
 ```
-1. Landing LUMINA → Clic "Je suis propriétaire d'hébergement"
+1. Landing GiyaX → Clic "Je suis propriétaire d'hébergement"
 2. Création compte (email/téléphone + mot de passe)
 3. Choix du secteur "Hébergement"
 4. Configuration instantanée :
@@ -540,7 +540,7 @@ enum TaskStatus {
 
 ```
 ┌─────────────────────────────────────────────────────────────┐
-│              LUMINA — ARCHITECTURE 4 SECTEURS               │
+│              GiyaX — ARCHITECTURE 4 SECTEURS               │
 ├─────────────────────────────────────────────────────────────┤
 │                                                             │
 │  BACKEND (NestJS + Prisma + PostgreSQL)                     │
@@ -722,7 +722,7 @@ Ces coûts sont **variables** et dépendent du volume de transactions :
 | **RECOMMANDÉE** | $234 | $2,803 | 140,170 FCFA |
 | **ENTERPRISE** | $894 | $10,731 | 536,540 FCFA |
 
-**Recommandation pour LUMINA :** Commencer avec la **configuration BUDGET** ($105/mois = 63 000 FCFA) pour les 3 premiers mois. Passer à la **RECOMMANDÉE** ($234/mois = 140 170 FCFA) dès que tu atteins 100 clients actifs.
+**Recommandation pour GiyaX :** Commencer avec la **configuration BUDGET** ($105/mois = 63 000 FCFA) pour les 3 premiers mois. Passer à la **RECOMMANDÉE** ($234/mois = 140 170 FCFA) dès que tu atteins 100 clients actifs.
 
 ---
 
@@ -732,7 +732,7 @@ Ces coûts sont **variables** et dépendent du volume de transactions :
 
 | Plan | Prix/mois | Secteurs inclus | Limites |
 |------|:---------:|:---------------:|---------|
-| **Free** | 0 FCFA | 1 secteur au choix | 1 propriété, 5 événements/an, 20 produits, 10 réservations/mois, branding LUMINA |
+| **Free** | 0 FCFA | 1 secteur au choix | 1 propriété, 5 événements/an, 20 produits, 10 réservations/mois, branding GiyaX |
 | **Starter** | 15 000 FCFA | 1 secteur | Fonctions complètes 1 secteur, 3 utilisateurs, vitrine perso |
 | **Pro** | 35 000 FCFA | 2 secteurs | Multi-utilisateurs, IA avancée, domaine perso, exports Drive |
 | **Business** | 75 000 FCFA | 4 secteurs (tous) | Multi-secteurs, multi-propriétés (10+), API, support prioritaire |
@@ -740,7 +740,7 @@ Ces coûts sont **variables** et dépendent du volume de transactions :
 
 ### Commission par secteur
 
-| Secteur | Commission LUMINA | Justification |
+| Secteur | Commission GiyaX | Justification |
 |---------|:-----------------:|---------------|
 | Événementiel | 2.5% / billet | Gestion billetterie, scan, certificats |
 | Restauration | 1.5% / commande | Commande en ligne, paiement, livraison |
@@ -798,7 +798,7 @@ Ces coûts sont **variables** et dépendent du volume de transactions :
 
 ## ANNEXE : COMPARAISON AVEC AIRBNB / BOOKING
 
-| Critère | Airbnb | Booking.com | **LUMINA Hébergement** |
+| Critère | Airbnb | Booking.com | **GiyaX Hébergement** |
 |---------|:------:|:-----------:|:----------------------:|
 | Commission | 15-20% | 12-15% | **3%** |
 | Paiement | Carte internationale | Carte internationale | **Mobile Money + Carte + Cash** |
@@ -814,4 +814,4 @@ Ces coûts sont **variables** et dépendent du volume de transactions :
 
 ---
 
-**LUMINA Hébergement ne concurrence pas Airbnb. Il remplace le carnet papier, le WhatsApp, et le cash.**
+**GiyaX Hébergement ne concurrence pas Airbnb. Il remplace le carnet papier, le WhatsApp, et le cash.**

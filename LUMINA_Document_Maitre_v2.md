@@ -1,8 +1,8 @@
-# LUMINA — DOCUMENT MAÎTRE COMPLET v2.0
+# GiyaX — DOCUMENT MAÎTRE COMPLET v2.0
 ## SaaS de Digitalisation Sectorielle pour l'Afrique
 **Version :** 2.0 — Architecture Séparée (2 Repos)  
 **Date :** 19 Août 2026  
-**Auteur :** Direction Produit & Sécurité LUMINA  
+**Auteur :** Direction Produit & Sécurité GiyaX  
 **Statut :** Cahier des charges final — Phase MVP
 
 ---
@@ -69,17 +69,17 @@ Au Gabon et en Afrique francophone, la digitalisation des PME/PMI reste fragment
 - **Restauration** : menus papier, commandes orales sujettes aux erreurs, pas de traçabilité des stocks, paiement cash dominant.
 - **Commerce** : vente sur WhatsApp/Facebook sans infrastructure e-commerce, gestion de stock artisanale, pas de paiement en ligne intégré.
 
-## 1.2. La Vision LUMINA
+## 1.2. La Vision GiyaX
 > **"Digitaliser l'économie informelle et formelle africaine par des outils sectoriels simples, sécurisés et intelligents — sans écrire une ligne de code."**
 
-LUMINA est une plateforme **multi-tenant, multi-secteur** où chaque opérateur économique obtient :
+GiyaX est une plateforme **multi-tenant, multi-secteur** où chaque opérateur économique obtient :
 - Un sous-domaine natif (`monbusiness.lumina.ga`)
 - Un dashboard métier configuré à son secteur
 - Une vitrine publique pour ses clients
 - Des modules IA pour automatiser les tâches répétitives
 
 ## 1.3. Architecture à 2 Repos (Nouveau)
-Avec une équipe de 4+ développeurs, LUMINA adopte une architecture séparée :
+Avec une équipe de 4+ développeurs, GiyaX adopte une architecture séparée :
 
 | Repo | Rôle | Tech | URL |
 |------|------|------|-----|
@@ -95,7 +95,7 @@ Avec une équipe de 4+ développeurs, LUMINA adopte une architecture séparée :
 - Mobile Money (Airtel Money, Moov Money, CLIKPAY) incontournable.
 
 ## 1.5. Défis & Mitigations
-| Défi | Solution LUMINA |
+| Défi | Solution GiyaX |
 |------|-----------------|
 | Connectivité intermittente | PWA + Cache agressif + Mode offline |
 | Méfiance du digital | Vitrine gratuite immédiate, onboarding guidé |
@@ -202,7 +202,7 @@ Avec une équipe de 4+ développeurs, LUMINA adopte une architecture séparée :
 
 ## 3.4. Écrans à Concevoir (Priorité)
 
-### A. Landing Page LUMINA
+### A. Landing Page GiyaX
 - Hero : "Digitalisez votre activité en 5 minutes"
 - 3 cartes secteurs (Restauration, Événementiel, Commerce)
 - Comment ça marche (3 étapes)
@@ -411,7 +411,7 @@ npm install axios @tanstack/react-query zustand react-hook-form @hookform/resolv
 
 ### Parcours Restaurateur (Onboarding)
 ```
-1. Landing LUMINA → "Je suis restaurateur"
+1. Landing GiyaX → "Je suis restaurateur"
 2. Création compte (téléphone OTP ou Email)
 3. Choix secteur : Restauration
 4. Configuration vitrine :
@@ -639,7 +639,7 @@ async generate(@Body() dto: GenerateTextDto, @CurrentTenant() tenant: Tenant) {
 
 | Plan | Prix | Inclus | Limites |
 |------|------|--------|---------|
-| **Free** | 0 FCFA | Vitrine, 10 produits, 1 événement/mois, QR code | Pas de paiement en ligne, branding LUMINA, 1 user |
+| **Free** | 0 FCFA | Vitrine, 10 produits, 1 événement/mois, QR code | Pas de paiement en ligne, branding GiyaX, 1 user |
 | **Starter** | 15 000 FCFA/mois | Tout 1 secteur, paiement intégré, 3 users, IA basique | Pas de multi-secteur |
 | **Pro** | 35 000 FCFA/mois | Multi-secteurs, multi-users, IA avancée, domaine perso | — |
 | **Enterprise** | Sur devis | Multi-locations, API dédiée, onboarding, SLA | — |
@@ -674,7 +674,7 @@ async generate(@Body() dto: GenerateTextDto, @CurrentTenant() tenant: Tenant) {
 | Export auto | Quotidien | CSV + JSON + PDF | Google Drive / Dropbox client |
 | Export manuel | À la demande | ZIP complet | Téléchargement direct |
 | API Webhook | Temps réel | JSON | URL configurée par client |
-| Backup LUMINA | Hebdomadaire | SQL chiffré | Stockage LUMINA |
+| Backup GiyaX | Hebdomadaire | SQL chiffré | Stockage GiyaX |
 
 ## 11.3. Feuille de Route Data Center
 
@@ -1087,7 +1087,7 @@ Strict-Transport-Security: max-age=31536000; includeSubDomains
 |------------|-------------|
 | RGPD | Si clients EU |
 | Loi Gabon Données Perso | Opérations Gabon |
-| PCI-DSS | Paystack gère (LUMINA ne touche pas les cartes) |
+| PCI-DSS | Paystack gère (GiyaX ne touche pas les cartes) |
 
 ## 26.2. Politique de Confidentialité (obligatoire)
 - Données collectées
@@ -1440,6 +1440,6 @@ Strict-Transport-Security: max-age=31536000; includeSubDomains
 
 ---
 
-**LUMINA. Deux repos. Une vision. Une Afrique digitalisée.**
+**GiyaX. Deux repos. Une vision. Une Afrique digitalisée.**
 
 *Document maître v2.0 — Architecture séparée. Toutes les parties doivent être lues avant toute décision.*

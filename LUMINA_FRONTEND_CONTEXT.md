@@ -1,4 +1,4 @@
-# LUMINA FRONTEND — Contexte Projet
+# GiyaX FRONTEND — Contexte Projet
 ## Fichier de référence pour Claude Code (Repo : lumina-frontend)
 **Version :** 1.0 — Architecture Séparée  
 **Date :** 19 Août 2026  
@@ -8,7 +8,7 @@
 ---
 
 ## 1. VISION EN UNE PHRASE
-> Interface web de LUMINA : PWA mobile-first, dashboard intuitif, vitrine publique élégante, scan QR natif. Zéro logique métier côté client.
+> Interface web de GiyaX : PWA mobile-first, dashboard intuitif, vitrine publique élégante, scan QR natif. Zéro logique métier côté client.
 
 ---
 
@@ -43,7 +43,7 @@
 ├── 📁 src/
 │   ├── 📁 app/
 │   │   ├── 📁 (landing)/              ← Routes publiques marketing
-│   │   │   ├── page.tsx               ← Landing LUMINA
+│   │   │   ├── page.tsx               ← Landing GiyaX
 │   │   │   ├── pricing.tsx
 │   │   │   └── layout.tsx
 │   │   ├── 📁 (dashboard)/            ← Routes admin protégées

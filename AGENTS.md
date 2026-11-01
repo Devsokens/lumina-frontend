@@ -1,6 +1,6 @@
-# LUMINA Frontend
+# GiyaX Frontend
 
-Ce dépôt est le **frontend** de LUMINA (repo séparé du backend `lumina-backend`). Avant toute
+Ce dépôt est le **frontend** de GiyaX (repo séparé du backend `lumina-backend`). Avant toute
 modification, lire `LUMINA_FRONTEND_CONTEXT.md` — c'est la source de vérité de ce dépôt.
 `LUMINA_Document_Maitre_v2.md` et `LUMINA_Audit_Menaces_Complet.md` sont fournis en référence
 partagée (vision produit + threat matrix) mais ne doivent pas être modifiés depuis ce repo.
