@@ -155,13 +155,13 @@ export function SectorShowcaseHub() {
         <div className="text-center max-w-3xl mx-auto mb-10">
           <div className="inline-flex items-center gap-2 rounded-full border border-primary/20 bg-primary/10 px-4 py-1.5 text-xs font-semibold text-primary">
             <Sparkles className="size-3.5" />
-            <span>4 Secteurs Clés Réunis sur Giya</span>
+            <span>4 Secteurs Clés Réunis sur GiyaX</span>
           </div>
           <h2 className="mt-4 font-display text-3xl font-bold tracking-tight text-foreground sm:text-4xl">
             Une seule plateforme adaptée aux réalités de votre métier
           </h2>
           <p className="mt-3 text-base text-muted-foreground">
-            Sélectionnez votre activité pour voir comment Giya simplifie vos encaissements et votre gestion quotidienne.
+            Sélectionnez votre activité pour voir comment GiyaX simplifie vos encaissements et votre gestion quotidienne.
           </p>
         </div>
 

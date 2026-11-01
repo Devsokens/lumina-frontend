@@ -17,7 +17,7 @@ const ITEMS: WhyItem[] = [
     number: "01",
     title: "Toujours synchronisé avec votre activité",
     description:
-      "LUMINA centralise vos commandes, vos stocks et vos encaissements en temps réel, sur tous vos points de vente, sans jamais perdre le fil.",
+      "GiyaX centralise vos commandes, vos stocks et vos encaissements en temps réel, sur tous vos points de vente, sans jamais perdre le fil.",
     dotColor: "bg-primary",
     dotColorSoft: "bg-primary/25",
   },
@@ -25,7 +25,7 @@ const ITEMS: WhyItem[] = [
     number: "02",
     title: "Agit, pas seulement des rapports",
     description:
-      "Alertes de rupture de stock, transmission instantanée en cuisine, relances de paiement : LUMINA exécute, il ne se contente pas d'afficher des chiffres.",
+      "Alertes de rupture de stock, transmission instantanée en cuisine, relances de paiement : GiyaX exécute, il ne se contente pas d'afficher des chiffres.",
     dotColor: "bg-secondary",
     dotColorSoft: "bg-secondary/30",
   },
@@ -94,7 +94,7 @@ export function WhyLuminaSection() {
             transition={{ delay: 0.15 }}
             className="max-w-sm text-sm leading-relaxed text-muted-foreground sm:text-base"
           >
-            La plupart des outils se contentent d&apos;afficher des chiffres. LUMINA anticipe vos
+            La plupart des outils se contentent d&apos;afficher des chiffres. GiyaX anticipe vos
             besoins, automatise les tâches critiques et devient plus précis à chaque commande.
           </motion.p>
         </div>

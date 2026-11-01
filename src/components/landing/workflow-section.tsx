@@ -16,7 +16,7 @@ const STEPS = [
   {
     step: "02",
     title: "Ajoutez vos articles & Générez vos QR",
-    desc: "Importez votre menu, vos billets d'événements ou vos produits. LUMINA génère automatiquement vos QR codes vectoriels prêts à imprimer pour vos tables ou affiches.",
+    desc: "Importez votre menu, vos billets d'événements ou vos produits. GiyaX génère automatiquement vos QR codes vectoriels prêts à imprimer pour vos tables ou affiches.",
     icon: QrCode,
     badge: "QR HD Imprimables",
   },
@@ -41,7 +41,7 @@ export function WorkflowSection() {
             viewport={{ once: true }}
             className="font-display text-3xl font-extrabold tracking-tight text-foreground sm:text-5xl"
           >
-            Comment fonctionne LUMINA ?
+            Comment fonctionne GiyaX ?
           </motion.h2>
           <motion.p
             initial={{ opacity: 0, y: 20 }}

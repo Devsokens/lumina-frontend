@@ -76,7 +76,7 @@ export function HeroSection() {
               className="group h-13 rounded-full bg-primary px-8 text-base font-semibold text-white shadow-xl shadow-primary/30 transition-all hover:bg-primary/90 hover:shadow-primary/50 hover:scale-[1.02]"
             >
               <Link href="/signup" className="flex items-center gap-2">
-                <span>Créer mon compte Giya gratuit</span>
+                <span>Créer mon compte GiyaX gratuit</span>
                 <ArrowRight className="size-4 transition-transform group-hover:translate-x-1" />
               </Link>
             </Button>
@@ -137,7 +137,7 @@ export function HeroSection() {
               </div>
               <div className="flex items-center gap-2 text-xs text-muted-foreground">
                 <span className="flex size-2 rounded-full bg-emerald-500 animate-pulse" />
-                <span className="hidden sm:inline font-mono">Giya Realtime Sync (10ms)</span>
+                <span className="hidden sm:inline font-mono">GiyaX Realtime Sync (10ms)</span>
               </div>
             </div>
 

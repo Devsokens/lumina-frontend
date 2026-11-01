@@ -40,9 +40,9 @@ const FEATURE_CONFIGS: Record<
   }
 > = {
   AI_POSTER: {
-    badge: "Giya AI Studio",
+    badge: "GiyaX AI Studio",
     icon: Sparkles,
-    title: "Générez vos Affiches & Visuels avec Giya AI",
+    title: "Générez vos Affiches & Visuels avec GiyaX AI",
     subtitle:
       "Créez instantanément des visuels ultra-professionnels 4K adaptés à vos événements en Afrique sans passer par un graphiste.",
     benefitHighlight: "Génération illimitée d'affiches 4K & déclinaisons réseaux sociaux",
@@ -66,7 +66,7 @@ const FEATURE_CONFIGS: Record<
   GENERAL: {
     badge: "Passez à la Vitesse Supérieure",
     icon: Crown,
-    title: "Débloquez Toute la Puissance de Giya PRO",
+    title: "Débloquez Toute la Puissance de GiyaX PRO",
     subtitle:
       "Bénéficiez de toutes les fonctionnalités avancées pour propulser vos événements, restaurants et boutiques.",
     benefitHighlight: "Accès à toutes les fonctionnalités IA, encaissements prioritaires & support 24/7",
@@ -74,7 +74,7 @@ const FEATURE_CONFIGS: Record<
 };
 
 const PRO_PERKS = [
-  "Génération de visuels et affiches par IA générative (Giya AI Poster)",
+  "Génération de visuels et affiches par IA générative (GiyaX AI Poster)",
   "Certifications & diplômes PDF haute définition illimités avec QR code anti-fraude",
   "Gestion d'équipe illimitée avec rôles et permissions modulaires précises",
   "Encaissements Mobile Money instantanés (Airtel Money & Moov Money Gabon)",
@@ -145,7 +145,7 @@ export function PricingUpgradeModal({
           <div className="flex items-center justify-between">
             <div>
               <span className="text-xs font-bold uppercase tracking-wider text-primary">
-                Plan Giya PRO Événementiel
+                Plan GiyaX PRO Événementiel
               </span>
               <p className="font-display text-2xl font-extrabold text-foreground mt-0.5">
                 19 000 <span className="text-sm font-normal text-muted-foreground">FCFA / mois</span>

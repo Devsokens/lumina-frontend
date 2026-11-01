@@ -100,7 +100,7 @@ export function InteractiveDemo() {
             transition={{ delay: 0.1 }}
             className="mt-4 font-display text-3xl font-extrabold tracking-tight text-foreground sm:text-5xl"
           >
-            Expérimentez LUMINA en temps réel
+            Expérimentez GiyaX en temps réel
           </motion.h2>
           <motion.p
             initial={{ opacity: 0, y: 20 }}
@@ -300,7 +300,7 @@ export function InteractiveDemo() {
                       <QrCode className="size-32 text-foreground" />
                       <div className="absolute inset-0 flex items-center justify-center bg-background/5">
                         <div className="rounded-md bg-secondary/90 px-2 py-0.5 text-[10px] font-bold text-yellow-950">
-                          LUMINA ANTI-FRAUDE
+                          GiyaX ANTI-FRAUDE
                         </div>
                       </div>
                     </div>

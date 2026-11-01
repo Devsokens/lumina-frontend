@@ -110,7 +110,7 @@ function LoginContent() {
       </div>
       <h1 className="mt-6 font-display text-2xl font-bold text-foreground">Content de vous revoir</h1>
       <p className="mt-1 text-sm text-muted-foreground">
-        Connectez-vous pour accéder à votre tableau de bord Giya.
+        Connectez-vous pour accéder à votre tableau de bord GiyaX.
       </p>
 
       {searchParams.get("error") === "google_no_email" && (
@@ -265,7 +265,7 @@ function LoginContent() {
       <p className="mt-8 text-center text-sm text-muted-foreground">
         Pas encore de compte ?{" "}
         <Link href="/signup" className="font-semibold text-primary underline-offset-4 hover:underline">
-          Créer un compte Giya
+          Créer un compte GiyaX
         </Link>
       </p>
     </div>

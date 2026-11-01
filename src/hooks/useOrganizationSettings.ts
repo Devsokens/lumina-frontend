@@ -20,7 +20,7 @@ export interface ColorPreset {
 export const COLOR_PRESETS: ColorPreset[] = [
   {
     id: "emerald",
-    name: "Émeraude Royal (Giya)",
+    name: "Émeraude Royal (GiyaX)",
     primaryLight: "#0a4f3c",
     primaryDark: "#2fae86",
     ringLight: "#059669",

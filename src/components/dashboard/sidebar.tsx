@@ -85,7 +85,7 @@ export function Sidebar() {
           </nav>
         </div>
 
-        {/* Bottom of Sidebar: User Profile & Giya Brand at bottom */}
+        {/* Bottom of Sidebar: User Profile & GiyaX Brand at bottom */}
         <div className="space-y-3 pt-2">
           {/* User Profile Card */}
           <div className="rounded-2xl border border-white/15 bg-white/5 p-2.5 backdrop-blur-md">
@@ -106,7 +106,7 @@ export function Sidebar() {
             </div>
           </div>
 
-          {/* Giya Brand at the very bottom */}
+          {/* GiyaX Brand at the very bottom */}
           <div className="px-1 pt-1 border-t border-white/10 flex items-center justify-between">
             <Logo inverted />
             <span className="text-[9px] font-mono text-white/50 tracking-wider">PRO</span>

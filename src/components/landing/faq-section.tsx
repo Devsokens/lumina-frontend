@@ -12,19 +12,19 @@ const FAQS = [
   },
   {
     question: "Comment s'effectue l'encaissement via Airtel Money et Moov Money ?",
-    answer: "Le client sélectionne son opérateur et valide via le prompt USSD sur son téléphone. Les fonds sont sécurisés instantanément et votre tableau de bord Giya met à jour les ventes en temps réel.",
+    answer: "Le client sélectionne son opérateur et valide via le prompt USSD sur son téléphone. Les fonds sont sécurisés instantanément et votre tableau de bord GiyaX met à jour les ventes en temps réel.",
   },
   {
-    question: "Est-ce que Giya fonctionne en cas de coupure Internet ?",
-    answer: "Oui ! Giya intègre la technologie PWA Offline-First. Si la connexion coupe, vous pouvez continuer à saisir les commandes et scanner les billets d'entrée. Dès que le réseau revient, tout est synchronisé sans aucune perte de données.",
+    question: "Est-ce que GiyaX fonctionne en cas de coupure Internet ?",
+    answer: "Oui ! GiyaX intègre la technologie PWA Offline-First. Si la connexion coupe, vous pouvez continuer à saisir les commandes et scanner les billets d'entrée. Dès que le réseau revient, tout est synchronisé sans aucune perte de données.",
   },
   {
     question: "Comment fonctionne l'anti-fraude billetterie ?",
-    answer: "Chaque billet émis comporte un QR code cryptographique unique. Au scan avec l'application Giya, le billet est validé en moins de 1 seconde et marqué comme utilisé. Les captures d'écran et doublons sont rejetés immédiatement.",
+    answer: "Chaque billet émis comporte un QR code cryptographique unique. Au scan avec l'application GiyaX, le billet est validé en moins de 1 seconde et marqué comme utilisé. Les captures d'écran et doublons sont rejetés immédiatement.",
   },
   {
     question: "Qu'en est-il du secteur Hébergement & RBNB ?",
-    answer: "Giya gère vos appartements meublés et motels avec un calendrier en direct, l'encaissement d'acompte 30% Mobile Money anti-no-show, et l'émission automatique de reçus fiscaux certifiés avec signature électronique.",
+    answer: "GiyaX gère vos appartements meublés et motels avec un calendrier en direct, l'encaissement d'acompte 30% Mobile Money anti-no-show, et l'émission automatique de reçus fiscaux certifiés avec signature électronique.",
   },
 ];
 
@@ -56,7 +56,7 @@ export function FaqSection() {
             transition={{ delay: 0.2 }}
             className="mt-2 text-sm text-muted-foreground"
           >
-            Tout ce que vous devez savoir pour démarrer sereinement avec Giya.
+            Tout ce que vous devez savoir pour démarrer sereinement avec GiyaX.
           </motion.p>
         </div>
 

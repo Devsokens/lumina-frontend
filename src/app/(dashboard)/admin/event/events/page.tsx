@@ -255,7 +255,7 @@ export default function EventsListPage() {
                 {evt.hasCertificate && (
                   <div className="absolute bottom-2.5 left-3 flex items-center gap-1 rounded-md bg-amber-500/90 text-black px-2 py-0.5 text-[10px] font-extrabold shadow-sm">
                     <Award className="size-3" />
-                    <span>Attestation Certifiée Giya</span>
+                    <span>Attestation Certifiée GiyaX</span>
                   </div>
                 )}
               </div>

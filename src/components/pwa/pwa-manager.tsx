@@ -65,7 +65,7 @@ export function PwaManager() {
 
     const onInstalled = () => {
       setVisible(false);
-      toast.success("Giya est installée sur cet appareil.");
+      toast.success("GiyaX est installée sur cet appareil.");
     };
     window.addEventListener("appinstalled", onInstalled);
 
@@ -85,7 +85,7 @@ export function PwaManager() {
         hadController = true;
         return;
       }
-      toast.info("Nouvelle version de Giya disponible.", {
+      toast.info("Nouvelle version de GiyaX disponible.", {
         duration: Infinity,
         action: { label: "Actualiser", onClick: () => window.location.reload() },
       });
@@ -130,7 +130,7 @@ export function PwaManager() {
   return (
     <div
       role="dialog"
-      aria-label="Installer l'application Giya"
+      aria-label="Installer l'application GiyaX"
       className="fixed inset-x-3 z-50 mx-auto max-w-md rounded-2xl border border-border bg-card/95 p-4 shadow-2xl backdrop-blur-md animate-in slide-in-from-bottom-4 fade-in"
       style={{ bottom: "calc(env(safe-area-inset-bottom, 0px) + 12px)" }}
     >
@@ -146,7 +146,7 @@ export function PwaManager() {
         {/* eslint-disable-next-line @next/next/no-img-element */}
         <img src="/icons/icon-192.png" alt="" className="size-11 shrink-0 rounded-xl" />
         <div className="min-w-0 space-y-1">
-          <p className="text-sm font-bold">Installer Giya</p>
+          <p className="text-sm font-bold">Installer GiyaX</p>
           {showIosHelp && !deferred ? (
             <p className="text-xs text-muted-foreground">
               Touchez <Share className="inline size-3.5 align-text-bottom" /> <strong>Partager</strong>, puis{" "}

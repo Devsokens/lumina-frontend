@@ -21,7 +21,7 @@ import { Button } from "@/components/ui/button";
 const THEMES: { id: ShowcaseTheme; name: string; gradient: string }[] = [
   {
     id: "emerald",
-    name: "Émeraude Royal (Giya)",
+    name: "Émeraude Royal (GiyaX)",
     gradient: "from-emerald-500 to-teal-700",
   },
   {

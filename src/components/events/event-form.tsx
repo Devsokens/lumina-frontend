@@ -240,7 +240,7 @@ export function EventForm({ initialData, onSuccess, onCancel }: EventFormProps) 
       eventType: initialData?.eventType ?? "CONCERT",
       hasCertificate: initialData?.hasCertificate ?? false,
       certificateTitle: "Certificat d'Accomplissement & de Formation",
-      issuerName: "Institut Supérieur de Management & Giya",
+      issuerName: "Institut Supérieur de Management & GiyaX",
       signatoryName: "Dr. Paul Mba, Directeur Académique",
       certificateTemplate: initialData?.certificateTemplate ?? "ACADEMIC_GOLD",
       ticketTemplate: initialData?.ticketTemplate ?? "GOLD_VIP",
@@ -1552,7 +1552,7 @@ export function EventForm({ initialData, onSuccess, onCancel }: EventFormProps) 
                           <div className="h-0.5 w-16 mx-auto bg-blue-500/60" />
 
                           <p className="text-[7px] text-zinc-600 dark:text-zinc-400">
-                            Délivrée par <strong className="text-blue-600 dark:text-blue-300">{issuerValue || "Giya Executive"}</strong>
+                            Délivrée par <strong className="text-blue-600 dark:text-blue-300">{issuerValue || "GiyaX Executive"}</strong>
                           </p>
                           <p className="font-display font-bold text-[8px] text-zinc-800 dark:text-zinc-200 truncate">
                             {titleValue || "Leadership & Stratégie"}

@@ -90,7 +90,7 @@ export default function SignupPage() {
       <div className="flex size-14 items-center justify-center rounded-2xl bg-muted text-primary">
         <UserPlus className="size-6" />
       </div>
-      <h1 className="mt-6 font-display text-2xl font-bold text-foreground">Créer votre compte Giya</h1>
+      <h1 className="mt-6 font-display text-2xl font-bold text-foreground">Créer votre compte GiyaX</h1>
       <p className="mt-1 text-sm text-muted-foreground">
         Digitalisez votre activité en quelques minutes sans frais d&apos;entrée.
       </p>
@@ -223,7 +223,7 @@ export default function SignupPage() {
         <label className="flex items-start gap-2 text-sm">
           <input type="checkbox" className="mt-1 size-4 rounded border-input" {...register("acceptedTerms")} />
           <span className="text-muted-foreground">
-            J&apos;accepte les CGU et la politique de confidentialité de Giya.
+            J&apos;accepte les CGU et la politique de confidentialité de GiyaX.
           </span>
         </label>
         {errors.acceptedTerms && (

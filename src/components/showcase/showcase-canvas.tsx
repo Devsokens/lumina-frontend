@@ -61,7 +61,7 @@ interface ShowcaseCanvasProps {
 }
 
 const THEMES: { id: ShowcaseTheme; name: string; gradient: string }[] = [
-  { id: "emerald", name: "Émeraude Royal (Giya)", gradient: "from-emerald-500 to-teal-700" },
+  { id: "emerald", name: "Émeraude Royal (GiyaX)", gradient: "from-emerald-500 to-teal-700" },
   { id: "indigo", name: "Bleu Nuit / Indigo", gradient: "from-blue-600 to-indigo-900" },
   { id: "amber", name: "Ambre Solaire (Afro Vibes)", gradient: "from-amber-500 to-orange-600" },
   { id: "electric", name: "Nuit Électrique & Cyber", gradient: "from-cyan-500 to-blue-600" },
@@ -1165,7 +1165,7 @@ export function ShowcaseCanvas({ isEditorMode = false, liveEvents, onReserve }: 
             <p>© {new Date().getFullYear()} {orgName}. Tous droits réservés.</p>
             <p className="flex items-center gap-1.5 text-zinc-400">
               <span>Propulsé par la billetterie</span>
-              <strong className="text-white font-display">Giya</strong>
+              <strong className="text-white font-display">GiyaX</strong>
             </p>
           </div>
         </div>

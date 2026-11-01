@@ -1,7 +1,7 @@
 {
   "id": "/",
-  "name": "Giya — Commerce & gestion",
-  "short_name": "Giya",
+  "name": "GiyaX — Commerce & gestion",
+  "short_name": "GiyaX",
   "description": "Digitalisez votre activité : événementiel, restauration, commerce, avec paiement Mobile Money et mode hors ligne.",
   "start_url": "/login?source=pwa",
   "scope": "/",

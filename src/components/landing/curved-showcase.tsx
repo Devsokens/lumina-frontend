@@ -201,7 +201,7 @@ export function CurvedShowcase() {
         </h2>
 
         <p className="mt-2 text-sm text-neutral-300 sm:text-base max-w-2xl mx-auto">
-          Vitrine client, dashboard dirigeant, écran cuisine, scanner d&apos;entrée et gestion des stocks : une seule plateforme LUMINA, synchronisée en temps réel sur tous vos écrans.
+          Vitrine client, dashboard dirigeant, écran cuisine, scanner d&apos;entrée et gestion des stocks : une seule plateforme GiyaX, synchronisée en temps réel sur tous vos écrans.
         </p>
       </div>
 
@@ -465,7 +465,7 @@ export function CurvedShowcase() {
         <span className="hidden sm:inline">&bull;</span>
 
         <span className="text-neutral-400">
-          Un seul compte LUMINA, tous vos points de contact connectés
+          Un seul compte GiyaX, tous vos points de contact connectés
         </span>
       </div>
     </section>

@@ -213,10 +213,10 @@ const DEFAULT_EVENTS: EventItem[] = [
     time: "09h00 - 17h00",
     location: "Institut Français du Gabon, Libreville",
     description:
-      "Formation intensive et pratique avec délivrance d'une attestation officielle certifiée Giya. Automatisez vos ventes et intégrez les solutions de paiement Mobile Money.",
+      "Formation intensive et pratique avec délivrance d'une attestation officielle certifiée GiyaX. Automatisez vos ventes et intégrez les solutions de paiement Mobile Money.",
     coverImageUrl:
       "https://images.unsplash.com/photo-1524178232363-1fb2b075b655?q=80&w=1200&auto=format&fit=crop",
-    badge: "Certifiant Giya",
+    badge: "Certifiant GiyaX",
     startingPrice: 25000,
     isFeatured: false,
     lineup: [
@@ -229,7 +229,7 @@ const DEFAULT_EVENTS: EventItem[] = [
         name: "Pass Formation & Attestation",
         price: 25000,
         description: "Journée complète de formation, supports de cours PDF et Attestation officielle vérifiable par QR code.",
-        benefits: ["Accès toute la journée", "Supports & templates offerts", "Attestation certifiée Giya", "Pause-café & déjeuner inclus"],
+        benefits: ["Accès toute la journée", "Supports & templates offerts", "Attestation certifiée GiyaX", "Pause-café & déjeuner inclus"],
         stockLeft: 60,
       },
     ],
@@ -362,7 +362,7 @@ const DEFAULT_STATE: Omit<
     {
       id: "faq-2",
       question: "Comment se déroule le contrôle d'accès le jour de l'événement ?",
-      answer: "Présentez simplement votre QR Code sur votre téléphone à l'entrée. Nos équipes scannent votre billet en 1 seconde à l'aide de nos scanners officiels Giya certifiés.",
+      answer: "Présentez simplement votre QR Code sur votre téléphone à l'entrée. Nos équipes scannent votre billet en 1 seconde à l'aide de nos scanners officiels GiyaX certifiés.",
     },
     {
       id: "faq-3",

@@ -900,11 +900,11 @@ export default function EventManagePage({ params }: EventManagePageProps) {
                 <div className="flex justify-between items-end pt-3 border-t border-amber-600/30 text-[8px] text-zinc-500">
                   <div className="text-left">
                     <div className="font-serif italic font-bold text-amber-600 text-xs">Dr. Paul Mba</div>
-                    <span>Direction Pédagogique Giya</span>
+                    <span>Direction Pédagogique GiyaX</span>
                   </div>
                   <div className="flex items-center gap-1.5 bg-white dark:bg-black p-1 rounded-lg border border-amber-500/30">
                     <QrCode className="size-6 text-black dark:text-white" />
-                    <span className="text-[7px] font-mono font-bold">VÉRIFIÉ GIYA</span>
+                    <span className="text-[7px] font-mono font-bold">VÉRIFIÉ GIYAX</span>
                   </div>
                 </div>
               </div>

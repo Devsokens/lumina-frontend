@@ -29,7 +29,7 @@ export function TicketPreview({
   ticketName,
   price,
   holder,
-  code = "LUMINA-APERCU-0000",
+  code = "GIYAX-APERCU-0000",
   compact = false,
 }: TicketPreviewProps) {
   const t = getTicketTemplate(template);

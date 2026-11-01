@@ -309,7 +309,7 @@ export function TicketsManager({ initialTickets = DEFAULT_TICKETS }: TicketsMana
                   </div>
 
                   <div className="pt-1 border-t border-amber-500/20 flex justify-between items-center text-[7px] text-zinc-400 font-mono">
-                    <span>CONTRÔLE GIYA</span>
+                    <span>CONTRÔLE GIYAX</span>
                     <span>COCKTAIL INCLUS</span>
                   </div>
                 </div>

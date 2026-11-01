@@ -25,7 +25,7 @@ const TESTIMONIALS = [
     name: "Yannick Ndong",
     role: "Fondateur de Concept Store Mode",
     location: "Libreville, Gabon",
-    quote: "Je vendais uniquement sur WhatsApp sans traçabilité. Avec ma boutique LUMINA, mes clients sélectionnent leurs articles et paient directement via Airtel Money. C'est propre, rapide et rassurant pour mes acheteurs.",
+    quote: "Je vendais uniquement sur WhatsApp sans traçabilité. Avec ma boutique GiyaX, mes clients sélectionnent leurs articles et paient directement via Airtel Money. C'est propre, rapide et rassurant pour mes acheteurs.",
     rating: 5,
     sector: "Boutique & Retail",
   },
@@ -52,7 +52,7 @@ export function TestimonialsSection() {
             transition={{ delay: 0.2 }}
             className="mt-3 text-base text-muted-foreground sm:text-lg"
           >
-            Découvrez comment LUMINA transforme au quotidien la gestion et la rentabilité de leurs établissements.
+            Découvrez comment GiyaX transforme au quotidien la gestion et la rentabilité de leurs établissements.
           </motion.p>
         </div>
 

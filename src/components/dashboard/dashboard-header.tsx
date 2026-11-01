@@ -269,7 +269,7 @@ export function DashboardHeader() {
               Confirmer la déconnexion
             </DialogTitle>
             <DialogDescription className="text-sm text-muted-foreground">
-              Êtes-vous sûr de vouloir vous déconnecter de votre espace d&apos;administration Giya ?
+              Êtes-vous sûr de vouloir vous déconnecter de votre espace d&apos;administration GiyaX ?
             </DialogDescription>
           </DialogHeader>
 

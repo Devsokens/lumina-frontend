@@ -58,7 +58,7 @@ export function Footer() {
                 <span className="relative inline-flex size-2.5 rounded-full bg-emerald-500"></span>
               </span>
               <span className="text-xs font-medium text-emerald-300">
-                Tous les systèmes Giya opérationnels (99.9%)
+                Tous les systèmes GiyaX opérationnels (99.9%)
               </span>
             </div>
           </div>
@@ -128,7 +128,7 @@ export function Footer() {
               </li>
               <li>
                 <Link href="/signup" className="transition-colors hover:text-secondary">
-                  Créer un compte Giya
+                  Créer un compte GiyaX
                 </Link>
               </li>
               <li>
@@ -141,7 +141,7 @@ export function Footer() {
         {/* Bottom Bar */}
         <div className="mt-12 flex flex-col items-center justify-between gap-4 border-t border-white/10 pt-8 text-xs text-white/50 sm:flex-row">
           <p className="flex items-center">
-            © {new Date().getFullYear()} Giya Technologies. Tous droits réservés.
+            © {new Date().getFullYear()} GiyaX Technologies. Tous droits réservés.
           </p>
           <div className="flex items-center gap-6">
             <span>Confidentialité & RGPD/APDP</span>

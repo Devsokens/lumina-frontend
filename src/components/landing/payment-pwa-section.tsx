@@ -28,7 +28,7 @@ export function PaymentPwaSection() {
               className="mt-4 text-base leading-relaxed text-muted-foreground sm:text-lg"
             >
               Nous savons que les coupures Internet et les terminaux de paiement coûteux freinent votre croissance. 
-              LUMINA intègre les solutions de paiement que vos clients utilisent chaque jour et fonctionne même en zone blanche.
+              GiyaX intègre les solutions de paiement que vos clients utilisent chaque jour et fonctionne même en zone blanche.
             </motion.p>
 
             {/* Value bullets */}

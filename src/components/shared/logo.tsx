@@ -21,10 +21,10 @@ export function Logo({ className = "", size = "md", inverted = false }: LogoProp
         <Sun className={`${iconSize} animate-[spin_16s_linear_infinite] text-secondary`} strokeWidth={2.5} />
       </div>
       {inverted ? (
-        <span className={`${textSize} font-extrabold tracking-wider text-white`}>Giya</span>
+        <span className={`${textSize} font-extrabold tracking-wider text-white`}>GiyaX</span>
       ) : (
         <span className={`${textSize} font-extrabold tracking-wider bg-gradient-to-r from-primary via-[#047857] to-primary bg-clip-text text-transparent dark:from-white dark:to-emerald-300`}>
-          Giya
+          GiyaX
         </span>
       )}
     </Link>
