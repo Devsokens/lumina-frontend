@@ -881,7 +881,7 @@ export default function EventManagePage({ params }: EventManagePageProps) {
                     N° GA-CERT-2026-001
                   </span>
                   <span className="flex size-7 items-center justify-center rounded-full bg-amber-500 text-black text-xs font-extrabold shadow-sm">
-                    ★
+                    <Star className="size-3.5 fill-current" />
                   </span>
                 </div>
 
@@ -1003,8 +1003,8 @@ export default function EventManagePage({ params }: EventManagePageProps) {
 
             <div className="rounded-2xl border border-border bg-card p-4 shadow-xs">
               <span className="text-xs text-muted-foreground">Score de Satisfaction</span>
-              <p className="font-display text-2xl font-bold text-amber-500 mt-1">
-                4.8 / 5 ★
+              <p className="font-display text-2xl font-bold text-amber-500 mt-1 flex items-center gap-1.5">
+                4.8 / 5 <Star className="size-5 fill-current" />
               </p>
               <span className="text-[11px] text-muted-foreground mt-1 block">
                 Basé sur 184 réponses
@@ -1179,8 +1179,8 @@ export default function EventManagePage({ params }: EventManagePageProps) {
                   <h4 className="font-bold text-xs text-foreground">
                     3. Niveau de satisfaction globale / Attentes
                   </h4>
-                  <span className="text-[10px] font-mono rounded bg-amber-500/15 text-amber-600 px-2 py-0.5 font-bold">
-                    Échelle 1 à 5 ★
+                  <span className="text-[10px] font-mono rounded bg-amber-500/15 text-amber-600 px-2 py-0.5 font-bold inline-flex items-center gap-1">
+                    Échelle 1 à 5 <Star className="size-2.5 fill-current" />
                   </span>
                 </div>
 
@@ -1188,28 +1188,30 @@ export default function EventManagePage({ params }: EventManagePageProps) {
                   <div className="text-center">
                     <p className="font-display text-4xl font-extrabold text-amber-500">4.8</p>
                     <div className="flex justify-center text-amber-400 text-xs mt-1">
-                      ★★★★★
+                      {[1, 2, 3, 4, 5].map((s) => (
+                        <Star key={s} className="size-3 fill-current" />
+                      ))}
                     </div>
                     <span className="text-[10px] text-muted-foreground mt-1 block">184 avis</span>
                   </div>
 
                   <div className="flex-1 space-y-1.5 text-xs">
                     <div className="flex items-center gap-2">
-                      <span className="w-6 font-mono text-[11px]">5 ★</span>
+                      <span className="w-6 font-mono text-[11px] inline-flex items-center gap-0.5">5 <Star className="size-2.5 fill-current" /></span>
                       <div className="h-2 flex-1 rounded-full bg-muted overflow-hidden">
                         <div className="h-full bg-amber-500 rounded-full" style={{ width: "82%" }} />
                       </div>
                       <span className="font-bold w-8 text-right">82%</span>
                     </div>
                     <div className="flex items-center gap-2">
-                      <span className="w-6 font-mono text-[11px]">4 ★</span>
+                      <span className="w-6 font-mono text-[11px] inline-flex items-center gap-0.5">4 <Star className="size-2.5 fill-current" /></span>
                       <div className="h-2 flex-1 rounded-full bg-muted overflow-hidden">
                         <div className="h-full bg-amber-500 rounded-full" style={{ width: "14%" }} />
                       </div>
                       <span className="font-bold w-8 text-right">14%</span>
                     </div>
                     <div className="flex items-center gap-2">
-                      <span className="w-6 font-mono text-[11px]">3 ★</span>
+                      <span className="w-6 font-mono text-[11px] inline-flex items-center gap-0.5">3 <Star className="size-2.5 fill-current" /></span>
                       <div className="h-2 flex-1 rounded-full bg-muted overflow-hidden">
                         <div className="h-full bg-amber-500 rounded-full" style={{ width: "4%" }} />
                       </div>

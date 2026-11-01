@@ -10,7 +10,8 @@ import {
   Ticket,
   ShoppingBag,
   TrendingUp,
-  QrCode
+  QrCode,
+  Check,
 } from "lucide-react";
 
 
@@ -156,7 +157,7 @@ export function HeroSection() {
                 <p className="mt-1 text-[11px] text-muted-foreground line-clamp-2">Billetterie & scan PWA à la seconde.</p>
                 <div className="mt-3 flex items-center justify-between border-t border-border/40 pt-2 text-[11px] font-mono text-muted-foreground">
                   <span>Pass VIP</span>
-                  <span className="font-semibold text-emerald-500">Scanné ✓</span>
+                  <span className="font-semibold text-emerald-500 inline-flex items-center gap-1">Scanné <Check className="size-3" /></span>
                 </div>
               </div>
 

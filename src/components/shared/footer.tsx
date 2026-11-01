@@ -1,6 +1,6 @@
 import { Logo } from "./logo";
 import Link from "next/link";
-import { ShieldCheck, Smartphone, Zap } from "lucide-react";
+import { ShieldCheck, Smartphone, Zap, PartyPopper, UtensilsCrossed, ShoppingBag, Building2 } from "lucide-react";
 
 export function Footer() {
   return (
@@ -68,23 +68,23 @@ export function Footer() {
             <p className="text-sm font-semibold tracking-wider text-white uppercase">4 Secteurs</p>
             <ul className="mt-4 space-y-2.5 text-sm text-white/65">
               <li>
-                <a href="#secteurs" className="transition-colors hover:text-secondary">
-                  🎉 Événementiel & Billets
+                <a href="#secteurs" className="inline-flex items-center gap-2 transition-colors hover:text-secondary">
+                  <PartyPopper className="size-4" /> Événementiel & Billets
                 </a>
               </li>
               <li>
-                <a href="#secteurs" className="transition-colors hover:text-secondary">
-                  🍽️ Restauration & KDS
+                <a href="#secteurs" className="inline-flex items-center gap-2 transition-colors hover:text-secondary">
+                  <UtensilsCrossed className="size-4" /> Restauration & KDS
                 </a>
               </li>
               <li>
-                <a href="#secteurs" className="transition-colors hover:text-secondary">
-                  🛍️ E-Commerce & Stocks
+                <a href="#secteurs" className="inline-flex items-center gap-2 transition-colors hover:text-secondary">
+                  <ShoppingBag className="size-4" /> E-Commerce & Stocks
                 </a>
               </li>
               <li>
-                <a href="#secteurs" className="transition-colors hover:text-secondary">
-                  🏨 Hébergement & RBNB
+                <a href="#secteurs" className="inline-flex items-center gap-2 transition-colors hover:text-secondary">
+                  <Building2 className="size-4" /> Hébergement & RBNB
                 </a>
               </li>
             </ul>

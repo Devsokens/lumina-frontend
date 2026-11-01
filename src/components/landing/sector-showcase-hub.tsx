@@ -16,6 +16,9 @@ import {
   Sparkles,
   QrCode,
   Flame,
+  Hourglass,
+  Package,
+  Footprints,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import Link from "next/link";
@@ -418,7 +421,13 @@ function RestaurantSimulator() {
                 : "bg-muted text-muted-foreground"
             }`}
           >
-            {orderStatus === "PREPARING" ? "⏳ En Préparation (3 min)" : orderStatus === "READY" ? "✅ Prêt à Servir" : "📦 Livré"}
+            {orderStatus === "PREPARING" ? (
+              <><Hourglass className="inline size-3.5" /> En Préparation (3 min)</>
+            ) : orderStatus === "READY" ? (
+              <><CheckCircle2 className="inline size-3.5" /> Prêt à Servir</>
+            ) : (
+              <><Package className="inline size-3.5" /> Livré</>
+            )}
           </span>
         </div>
 
@@ -497,7 +506,7 @@ function ShopSimulator() {
       <div className="rounded-2xl border border-border bg-card p-5 shadow-sm space-y-4">
         <div className="flex items-center gap-4">
           <div className="size-16 rounded-xl bg-muted flex items-center justify-center font-display font-bold text-xl text-primary border border-border">
-            👟
+            <Footprints className="size-7" />
           </div>
           <div className="flex-1">
             <span className="text-[11px] font-semibold text-blue-400 uppercase">Sneakers Store LBV</span>

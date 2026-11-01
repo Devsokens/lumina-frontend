@@ -13,7 +13,9 @@ import {
   Zap,
   ShoppingBag,
   Wine,
-  PackageCheck
+  PackageCheck,
+  Check,
+  Shirt,
 } from "lucide-react";
 
 interface ShowcaseItem {
@@ -295,8 +297,8 @@ export function CurvedShowcase() {
                         <p className="text-[10px] text-white/80">Poisson frais + Alloco doré</p>
                         <p className="mt-1 font-mono text-xs font-extrabold text-secondary">8 500 FCFA</p>
                       </div>
-                      <div className="rounded-lg border border-emerald-500/40 bg-emerald-500/20 p-1.5 text-center text-[10px] font-mono font-bold text-emerald-200">
-                        ✓ Commande envoyée en cuisine
+                      <div className="rounded-lg border border-emerald-500/40 bg-emerald-500/20 p-1.5 text-center text-[10px] font-mono font-bold text-emerald-200 flex items-center justify-center gap-1">
+                        <Check className="size-3" /> Commande envoyée en cuisine
                       </div>
                     </div>
                   )}
@@ -348,7 +350,7 @@ export function CurvedShowcase() {
                       </div>
                       <div className="rounded-lg border border-white/15 bg-white/10 p-1.5 flex justify-between items-center text-[10px] font-mono">
                         <span className="text-white font-medium">TABLE 1</span>
-                        <span className="text-emerald-300 font-bold">Prêt Servir ✓</span>
+                        <span className="text-emerald-300 font-bold flex items-center gap-1">Prêt Servir <Check className="size-3" /></span>
                       </div>
                     </div>
                   )}
@@ -361,16 +363,16 @@ export function CurvedShowcase() {
                         <span className="font-mono text-xs font-bold">Vitrine Mode & Wax</span>
                       </div>
                       <div className="rounded-xl border border-white/15 bg-white/10 p-2 flex items-center gap-2.5">
-                        <div className="size-9 rounded-lg bg-blue-500/30 flex items-center justify-center text-base">
-                          👗
+                        <div className="size-9 rounded-lg bg-blue-500/30 flex items-center justify-center text-base text-blue-200">
+                          <Shirt className="size-5" />
                         </div>
                         <div>
                           <p className="text-xs font-bold text-white">Robe Soie Emeraude</p>
                           <p className="font-mono text-xs text-blue-300 font-black">38 000 FCFA</p>
                         </div>
                       </div>
-                      <div className="rounded-lg border border-blue-500/40 bg-blue-500/20 p-1.5 text-center text-[10px] font-mono font-bold text-blue-200">
-                        Paiement Moov Money reçu ✓
+                      <div className="rounded-lg border border-blue-500/40 bg-blue-500/20 p-1.5 text-center text-[10px] font-mono font-bold text-blue-200 flex items-center justify-center gap-1">
+                        Paiement Moov Money reçu <Check className="size-3" />
                       </div>
                     </div>
                   )}

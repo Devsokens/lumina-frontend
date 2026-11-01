@@ -1128,8 +1128,8 @@ export function EventForm({ initialData, onSuccess, onCancel }: EventFormProps) 
 
                   <div className="relative rounded-xl border border-amber-500/40 bg-gradient-to-r from-zinc-950 via-[#1a1508] to-zinc-950 p-3 shadow-inner overflow-hidden">
                     <div className="flex items-center justify-between border-b border-amber-500/30 pb-1.5">
-                      <span className="font-display font-extrabold text-[9px] text-amber-400 tracking-wider">
-                        ★ GIYA VIP PASS ★
+                      <span className="font-display font-extrabold text-[9px] text-amber-400 tracking-wider inline-flex items-center gap-1">
+                        <Star className="size-2 fill-current" /> GIYA VIP PASS <Star className="size-2 fill-current" />
                       </span>
                       <span className="rounded bg-amber-400/20 px-1 py-0.2 text-[7px] font-mono font-bold text-amber-300">
                         CARRÉ OR
@@ -1457,9 +1457,9 @@ export function EventForm({ initialData, onSuccess, onCancel }: EventFormProps) 
                             {[1, 2, 3, 4, 5].map((star) => (
                               <span
                                 key={star}
-                                className="flex size-7 items-center justify-center rounded-lg border border-border bg-card text-xs font-bold text-amber-500 shadow-xs"
+                                className="flex size-7 items-center justify-center rounded-lg border border-border bg-card text-xs font-bold text-amber-500 shadow-xs gap-0.5"
                               >
-                                {star} ★
+                                {star} <Star className="size-2.5 fill-current" />
                               </span>
                             ))}
                             <span className="text-[11px] text-muted-foreground ml-2">
@@ -1579,7 +1579,7 @@ export function EventForm({ initialData, onSuccess, onCancel }: EventFormProps) 
                               N° GA-CERT-2026
                             </span>
                             <span className="flex size-5 items-center justify-center rounded-full bg-amber-500 text-black text-[7px] font-extrabold shadow-xs">
-                              ★
+                              <Star className="size-2.5 fill-current" />
                             </span>
                           </div>
 

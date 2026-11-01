@@ -7,7 +7,7 @@ import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import slugify from "slugify";
 import { toast } from "sonner";
-import { Eye, EyeOff, UserPlus } from "lucide-react";
+import { Eye, EyeOff, UserPlus, PartyPopper, UtensilsCrossed, ShoppingBag, Building2 } from "lucide-react";
 import { signupSchema, type SignupInput } from "@/lib/validations";
 import { homePathFor, useAuth } from "@/hooks/useAuth";
 import { apiError } from "@/lib/api";
@@ -203,10 +203,10 @@ export default function SignupPage() {
               <SelectValue />
             </SelectTrigger>
             <SelectContent>
-              <SelectItem value="EVENT">🎉 Événementiel (Billetterie & Scan QR)</SelectItem>
-              <SelectItem value="RESTAURANT">🍽️ Restauration (Menu QR & KDS Cuisine)</SelectItem>
-              <SelectItem value="SHOP">🛍️ E-Commerce (Boutique & Stocks)</SelectItem>
-              <SelectItem value="ACCOMMODATION">🏨 Hébergement & RBNB (Calendrier & Reçus)</SelectItem>
+              <SelectItem value="EVENT"><PartyPopper className="size-4" /> Événementiel (Billetterie & Scan QR)</SelectItem>
+              <SelectItem value="RESTAURANT"><UtensilsCrossed className="size-4" /> Restauration (Menu QR & KDS Cuisine)</SelectItem>
+              <SelectItem value="SHOP"><ShoppingBag className="size-4" /> E-Commerce (Boutique & Stocks)</SelectItem>
+              <SelectItem value="ACCOMMODATION"><Building2 className="size-4" /> Hébergement & RBNB (Calendrier & Reçus)</SelectItem>
             </SelectContent>
           </Select>
         </div>

@@ -12,7 +12,10 @@ import {
   Smartphone,
   Plus,
   CreditCard,
-  ChefHat
+  ChefHat,
+  Zap,
+  Shirt,
+  Circle,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 
@@ -330,7 +333,7 @@ export function InteractiveDemo() {
                         disabled={isScanning}
                         className="w-full py-6 rounded-xl bg-secondary text-yellow-950 hover:bg-secondary/90 font-bold shadow-lg shadow-secondary/20"
                       >
-                        {isScanning ? "Scan du QR en cours (0.2s)..." : "⚡ Lancer le Scan d'Entrée"}
+                        {isScanning ? "Scan du QR en cours (0.2s)..." : <><Zap className="size-4" /> Lancer le Scan d&apos;Entrée</>}
                       </Button>
                     </div>
 
@@ -345,7 +348,7 @@ export function InteractiveDemo() {
                           <div className="flex items-center gap-3">
                             <CheckCircle2 className="size-8 text-emerald-500 shrink-0" />
                             <div>
-                              <p className="font-bold text-base">BILLET VALIDE ✓ ENTRÉE AUTORISÉE</p>
+                              <p className="font-bold text-base">BILLET VALIDE · ENTRÉE AUTORISÉE</p>
                               <p className="text-xs mt-0.5">{scannedTicket.holder} — {scannedTicket.type}</p>
                               <p className="font-mono text-[11px] text-muted-foreground mt-1">Validé à {scannedTicket.time} • Zéro duplicata</p>
                             </div>
@@ -386,7 +389,7 @@ export function InteractiveDemo() {
 
                   <div className="mt-5 rounded-2xl border border-border/70 bg-background p-4 flex items-center gap-4">
                     <div className="size-16 rounded-xl bg-accent/15 flex items-center justify-center text-accent text-xl font-bold">
-                      👗
+                      <Shirt className="size-7" />
                     </div>
                     <div className="flex-1">
                       <p className="font-display font-bold text-foreground">Robe Soie & Wax Moderne</p>
@@ -433,7 +436,7 @@ export function InteractiveDemo() {
                         disabled={payingWith !== null}
                         className="py-5 rounded-xl border border-red-500/30 bg-red-500/10 text-red-700 dark:text-red-400 hover:bg-red-500/20 font-bold"
                       >
-                        {payingWith === "airtel" ? "Validation..." : "🔴 Airtel Money"}
+                        {payingWith === "airtel" ? "Validation..." : <><Circle className="size-3 fill-current" /> Airtel Money</>}
                       </Button>
 
                       <Button
@@ -442,7 +445,7 @@ export function InteractiveDemo() {
                         disabled={payingWith !== null}
                         className="py-5 rounded-xl border border-blue-500/30 bg-blue-500/10 text-blue-700 dark:text-blue-400 hover:bg-blue-500/20 font-bold"
                       >
-                        {payingWith === "moov" ? "Validation..." : "🔵 Moov Money"}
+                        {payingWith === "moov" ? "Validation..." : <><Circle className="size-3 fill-current" /> Moov Money</>}
                       </Button>
                     </div>
 

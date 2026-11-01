@@ -1,7 +1,7 @@
 "use client";
 
 import { useState } from "react";
-import { Plus, Trash2, Edit2, Ticket, Check, AlertCircle, Sparkles, QrCode } from "lucide-react";
+import { Plus, Trash2, Edit2, Ticket, Check, AlertCircle, Sparkles, QrCode, Star } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -275,8 +275,8 @@ export function TicketsManager({ initialTickets = DEFAULT_TICKETS }: TicketsMana
                 {/* REAL PHYSICAL TICKET MOCKUP */}
                 <div className="relative rounded-xl border border-amber-500/40 bg-gradient-to-r from-zinc-950 via-[#1a1508] to-zinc-950 p-3 shadow-inner overflow-hidden">
                   <div className="flex items-center justify-between border-b border-amber-500/30 pb-1.5">
-                    <span className="font-display font-extrabold text-[9px] text-amber-400 tracking-wider">
-                      ★ VIP PASS ★
+                    <span className="font-display font-extrabold text-[9px] text-amber-400 tracking-wider inline-flex items-center gap-1">
+                      <Star className="size-2 fill-current" /> VIP PASS <Star className="size-2 fill-current" />
                     </span>
                     <span className="rounded bg-amber-400/20 px-1 py-0.2 text-[7px] font-mono font-bold text-amber-300">
                       CARRÉ OR

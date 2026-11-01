@@ -137,10 +137,10 @@ export function BentoSectors() {
               </p>
             </div>
 
-            <div className="mt-6 rounded-2xl border border-emerald-500/20 bg-emerald-500/5 p-4 text-xs font-mono text-emerald-800 dark:text-emerald-300">
-              ✓ Cache intelligent IndexedDB<br />
-              ✓ Zéro interruption de service<br />
-              ✓ Application PWA légère (&lt; 2 Mo)
+            <div className="mt-6 rounded-2xl border border-emerald-500/20 bg-emerald-500/5 p-4 text-xs font-mono text-emerald-800 dark:text-emerald-300 space-y-1">
+              <p className="flex items-center gap-2"><Check className="size-3.5" /> Cache intelligent IndexedDB</p>
+              <p className="flex items-center gap-2"><Check className="size-3.5" /> Zéro interruption de service</p>
+              <p className="flex items-center gap-2"><Check className="size-3.5" /> Application PWA légère (&lt; 2 Mo)</p>
             </div>
           </motion.div>
 

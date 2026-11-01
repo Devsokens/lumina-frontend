@@ -67,7 +67,7 @@ const DEFAULT_TEMPLATES: Record<EmailTemplateKey, EmailTemplate> = {
     label: "Billet & Pass QR",
     badge: "Immédiat",
     icon: Ticket,
-    subject: "Votre Pass officiel pour l'événement 🎟️",
+    subject: "Votre Pass officiel pour l'événement",
     htmlContent: `<p>Votre réservation est <strong>bien confirmée</strong> ! Nous avons hâte de vous compter parmi nous.</p><p>Veuillez présenter votre QR Code ci-dessous sur votre smartphone ou télécharger votre pass sécurisé avant votre arrivée au contrôle d'accès.</p>`,
     ctaText: "Accéder à mon Pass & QR Code",
   },
@@ -76,7 +76,7 @@ const DEFAULT_TEMPLATES: Record<EmailTemplateKey, EmailTemplate> = {
     label: "Certificat Officiel",
     badge: "Post-Scan",
     icon: GraduationCap,
-    subject: "Félicitations ! Votre Certificat de Présence 🎓",
+    subject: "Félicitations ! Votre Certificat de Présence",
     htmlContent: `<p>Nous vous remercions chaleureusement pour votre participation active et votre présence.</p><p>Votre présence a été validée avec succès lors du contrôle d'accès. Vous pouvez dès maintenant télécharger votre <strong>Certificat d'Accomplissement officiel sécurisé</strong>.</p>`,
     ctaText: "Télécharger mon Certificat (PDF)",
   },
@@ -85,7 +85,7 @@ const DEFAULT_TEMPLATES: Record<EmailTemplateKey, EmailTemplate> = {
     label: "Rappel J-1 & Horaires",
     badge: "J-1 Avant",
     icon: Bell,
-    subject: "Rappel : Rendez-vous demain pour l'événement ⏰",
+    subject: "Rappel : Rendez-vous demain pour l'événement",
     htmlContent: `<p>L'événement a lieu très bientôt !</p><p>Pensez à arriver 30 minutes avant l'heure d'ouverture pour fluidifier le contrôle d'accès. N'oubliez pas d'avoir votre pass QR Code à portée de main sur votre téléphone.</p>`,
     ctaText: "Afficher mon Billet & Plan d'accès",
   },
@@ -94,7 +94,7 @@ const DEFAULT_TEMPLATES: Record<EmailTemplateKey, EmailTemplate> = {
     label: "Questionnaire & Avis",
     badge: "Post-Event",
     icon: FileQuestion,
-    subject: "Votre avis compte : donnez votre retour d'expérience ⭐",
+    subject: "Votre avis compte : donnez votre retour d'expérience",
     htmlContent: `<p>Vous avez récemment assisté à notre événement.</p><p>Afin de nous aider à nous améliorer pour nos prochaines éditions, pourriez-vous prendre <strong>2 minutes</strong> pour répondre à notre questionnaire d'évaluation rapide ?</p>`,
     ctaText: "Remplir le questionnaire",
   },
@@ -712,7 +712,7 @@ export default function EventSettingsPage() {
 
                       <div className="pt-2 border-t border-border/60 flex items-center justify-between text-[10px]">
                         <span className="font-mono text-muted-foreground">N° Billet : GA-EVT-9081</span>
-                        <span className="font-mono font-bold text-primary">QR Code Vérifié ✓</span>
+                        <span className="font-mono font-bold text-primary inline-flex items-center gap-1">QR Code Vérifié <Check className="size-3" /></span>
                       </div>
                     </div>
 
