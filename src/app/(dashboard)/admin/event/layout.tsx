@@ -8,7 +8,7 @@ export default function EventAdminLayout({ children }: { children: React.ReactNo
       <Sidebar />
       <div className="flex flex-1 flex-col">
         <DashboardHeader />
-        <main className="flex-1 p-4 sm:p-6">
+        <main className="mobile-readable flex-1 p-4 sm:p-6">
           <SectorGuard>{children}</SectorGuard>
         </main>
       </div>

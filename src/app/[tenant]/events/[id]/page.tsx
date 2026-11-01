@@ -30,7 +30,7 @@ export default function PublicEventPage({ params }: { params: Promise<{ id: stri
       )}
 
       {event && (
-        <article className="space-y-6">
+        <article className="mobile-readable space-y-6">
           <header className="space-y-2">
             <p className="text-xs font-semibold uppercase tracking-wide text-primary">{tenant.name}</p>
             <h1 className="font-display text-2xl font-bold text-foreground sm:text-3xl">

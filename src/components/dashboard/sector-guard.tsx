@@ -5,6 +5,7 @@ import { usePathname, useRouter } from "next/navigation";
 import { Skeleton } from "@/components/ui/skeleton";
 import { useTenantSector } from "@/hooks/useTenantSector";
 import { navLinks } from "@/lib/navigation";
+import { useAuthStore } from "@/stores/useAuthStore";
 
 // Sous-pages ouvertes à un secteur : celles de sa navigation (source unique,
 // lib/navigation.ts). Rôle OWNER pour lister toutes les pages du métier.
@@ -18,17 +19,22 @@ function sectorPages(sector: string): string[] {
 // Garde l'interface dans le métier du compte :
 // - /admin/{autre-secteur}/... → espace du secteur du compte ;
 // - sous-page d'un autre métier (ex. /admin/shop/qr) → tableau de bord ;
-// - `allow` : écrans hors /admin réservés à certains secteurs (KDS, scan).
+// - `allow` : écrans hors /admin réservés à certains secteurs (KDS, scan) ;
+// - Scanner (STAFF événementiel) : uniquement /scan.
 // Les données restent protégées par le backend (filtre par tenant) : ce
 // garde évite d'afficher l'interface d'un autre métier.
 export function SectorGuard({ children, allow }: { children: React.ReactNode; allow?: string[] }) {
   const { sector, isLoading } = useTenantSector();
   const pathname = usePathname();
   const router = useRouter();
+  const role = useAuthStore((s) => s.user?.role);
 
   let target: string | null = null;
   if (sector) {
-    if (allow) {
+    if (sector === "event" && role === "STAFF" && pathname.startsWith("/admin")) {
+      // Rôle Scanner (spec V1) : contrôle d'accès uniquement.
+      target = "/scan";
+    } else if (allow) {
       if (!allow.includes(sector)) target = `/admin/${sector}`;
     } else {
       const [, , urlSector, first] = pathname.split("/");

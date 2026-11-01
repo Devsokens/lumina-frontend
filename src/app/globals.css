@@ -148,6 +148,28 @@
   }
 }
 
+/* Brief « Afro-Tech Lumineux » : 16px minimum sur mobile. Champs de saisie
+   partout (évite aussi le zoom automatique d'iOS) ; texte courant et petits
+   libellés dans les zones `.mobile-readable` (écrans événementiel). Les
+   aperçus de billets (`.ticket-art`) gardent leurs proportions. */
+@media (max-width: 639px) {
+  input,
+  select,
+  textarea {
+    font-size: 1rem !important;
+  }
+
+  .mobile-readable :is(.text-sm, .text-xs):not(.ticket-art, .ticket-art *) {
+    font-size: 1rem;
+    line-height: 1.5rem;
+  }
+
+  .mobile-readable :is(.text-\[9px\], .text-\[10px\], .text-\[11px\]):not(.ticket-art, .ticket-art *) {
+    font-size: 0.875rem;
+    line-height: 1.25rem;
+  }
+}
+
 /* SaaS Landing Visual Accents */
 .bg-grid-pattern {
   background-size: 32px 32px;

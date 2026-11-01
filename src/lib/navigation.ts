@@ -31,9 +31,9 @@ export function navLinks(sectorParam: string | undefined, role: Role | undefined
   if (sector === "event") {
     links = [
       { href: base, label: "Tableau de bord", icon: LayoutDashboard, exact: true },
-      { href: `${base}/events`, label: "Mes Événements", icon: CalendarDays },
+      { href: `${base}/events`, label: "Mes Événements", icon: CalendarDays, roles: OWNER_MANAGER },
       { href: `${base}/reservations`, label: "Réservations", icon: ClipboardList, roles: OWNER_MANAGER },
-      { href: `${base}/attendees`, label: "Participants", icon: Users },
+      { href: `${base}/attendees`, label: "Participants", icon: Users, roles: OWNER_MANAGER },
       { href: "/scan", label: "Contrôle d'Accès", icon: ScanLine, roles: ["OWNER", "MANAGER", "STAFF"] },
       { href: `${base}/showcase`, label: "Site Vitrine & Éditeur", icon: Globe, roles: OWNER_MANAGER },
       { href: `${base}/customers`, label: "Clients", icon: Contact, roles: OWNER_MANAGER },

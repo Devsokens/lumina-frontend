@@ -61,7 +61,7 @@ export function TicketPreview({
   if (t.layout === "badge") {
     return (
       <div
-        className={`flex flex-col items-center overflow-hidden rounded-2xl text-center shadow-lg ${compact ? "w-24 p-2" : "w-60 p-4"}`}
+        className={`ticket-art flex flex-col items-center overflow-hidden rounded-2xl text-center shadow-lg ${compact ? "w-24 p-2" : "w-60 p-4"}`}
         style={{ background: t.background, color: t.foreground }}
       >
         <div className={`w-full rounded-md ${compact ? "mb-1 h-1.5" : "mb-3 h-2"}`} style={{ background: t.accent }} />
@@ -87,7 +87,7 @@ export function TicketPreview({
   if (t.layout === "wristband") {
     return (
       <div
-        className={`flex items-center overflow-hidden rounded-full shadow-lg ${compact ? "w-44 gap-1.5 py-1 pr-1 pl-3" : "w-full max-w-md gap-3 py-2 pr-2 pl-6"}`}
+        className={`ticket-art flex items-center overflow-hidden rounded-full shadow-lg ${compact ? "w-44 gap-1.5 py-1 pr-1 pl-3" : "w-full max-w-md gap-3 py-2 pr-2 pl-6"}`}
         style={{ background: t.background, color: t.foreground }}
       >
         <div className="min-w-0 flex-1">
@@ -112,7 +112,7 @@ export function TicketPreview({
   // stub
   return (
     <div
-      className={`flex overflow-hidden rounded-2xl shadow-lg ${compact ? "w-44" : "w-full max-w-md"}`}
+      className={`ticket-art flex overflow-hidden rounded-2xl shadow-lg ${compact ? "w-44" : "w-full max-w-md"}`}
       style={{ background: t.background, color: t.foreground }}
     >
       <div className={`min-w-0 flex-1 ${compact ? "p-2" : "p-4"}`}>

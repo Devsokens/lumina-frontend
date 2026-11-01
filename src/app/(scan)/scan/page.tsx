@@ -1,14 +1,17 @@
 "use client";
 
 import { useCallback, useEffect, useRef, useState } from "react";
-import { CloudOff, WifiOff } from "lucide-react";
+import { CloudOff, LogOut, WifiOff } from "lucide-react";
 import { QrScanner } from "@/components/scan/qr-scanner";
 import { ScanResult } from "@/components/scan/scan-result";
 import { ManualEntry } from "@/components/scan/manual-entry";
 import { OfflinePanel } from "@/components/scan/offline-panel";
+import { EntryCounter } from "@/components/scan/entry-counter";
+import { useQueryClient } from "@tanstack/react-query";
 import { Button } from "@/components/ui/button";
 import { useApiQuery } from "@/hooks/useApi";
 import { useOnlineStatus } from "@/hooks/useOnlineStatus";
+import { useAuth } from "@/hooks/useAuth";
 import { useScanStore, type ScanOutcome } from "@/stores/useScanStore";
 import type { Event } from "@/types/api";
 
@@ -22,6 +25,10 @@ export default function ScanPage() {
   const [busy, setBusy] = useState(false);
   const [panelOpen, setPanelOpen] = useState(false);
   const busyRef = useRef(false);
+  const queryClient = useQueryClient();
+  const { user, signOut } = useAuth();
+  // Le Scanner n'a pas accès au back-office : déconnexion depuis cet écran.
+  const scannerOnly = user?.role === "STAFF";
 
   const { data: events } = useApiQuery<Event[]>(["admin-events"], "/admin/events", online);
 
@@ -44,13 +51,18 @@ export default function ScanPage() {
       busyRef.current = true;
       setBusy(true);
       try {
-        setOutcome(await submit(code));
+        const result = await submit(code);
+        setOutcome(result);
+        // Entrée acceptée : compteur à jour sans attendre le prochain rafraîchissement.
+        if (result.type === "verdict" && result.kind === "valid" && !result.offline && eventId) {
+          void queryClient.invalidateQueries({ queryKey: ["admin-event-tickets", eventId] });
+        }
       } finally {
         busyRef.current = false;
         setBusy(false);
       }
     },
-    [submit]
+    [submit, eventId, queryClient]
   );
 
   const activeEvents = (events ?? []).filter(
@@ -58,7 +70,7 @@ export default function ScanPage() {
   );
 
   return (
-    <div className="relative h-dvh overflow-hidden bg-black">
+    <div className="mobile-readable relative h-dvh overflow-hidden bg-black">
       <QrScanner onResult={(code) => void handleCode(code)} paused={busy || outcome !== null} />
 
       <header className="absolute inset-x-0 top-0 z-10 flex flex-col gap-2 p-3">
@@ -111,7 +123,14 @@ export default function ScanPage() {
             <CloudOff className="size-4" />
             <span className="hidden sm:inline">Hors ligne</span>
           </Button>
+          {scannerOnly && (
+            <Button variant="secondary" className="h-10" onClick={() => void signOut()} aria-label="Se déconnecter">
+              <LogOut className="size-4" />
+            </Button>
+          )}
         </div>
+
+        <EntryCounter eventId={eventId} enabled={online} />
       </header>
 
       {!outcome && (
