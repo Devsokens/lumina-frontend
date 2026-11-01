@@ -1,16 +1,43 @@
 {
-  "name": "LUMINA",
-  "short_name": "LUMINA",
-  "description": "Digitalisez votre activité en 5 minutes.",
-  "start_url": "/",
+  "id": "/",
+  "name": "Giya — Commerce & gestion",
+  "short_name": "Giya",
+  "description": "Digitalisez votre activité : événementiel, restauration, commerce, avec paiement Mobile Money et mode hors ligne.",
+  "start_url": "/login?source=pwa",
+  "scope": "/",
   "display": "standalone",
-  "background_color": "#F8F7F4",
+  "display_override": ["window-controls-overlay", "standalone", "minimal-ui"],
+  "orientation": "any",
+  "background_color": "#0A4F3C",
   "theme_color": "#0A4F3C",
-  "orientation": "portrait",
   "lang": "fr",
+  "dir": "ltr",
+  "categories": ["business", "productivity", "food", "entertainment"],
+  "prefer_related_applications": false,
   "icons": [
-    { "src": "/icons/icon-192.png", "sizes": "192x192", "type": "image/png" },
-    { "src": "/icons/icon-512.png", "sizes": "512x512", "type": "image/png" },
+    { "src": "/icons/icon-192.png", "sizes": "192x192", "type": "image/png", "purpose": "any" },
+    { "src": "/icons/icon-512.png", "sizes": "512x512", "type": "image/png", "purpose": "any" },
+    { "src": "/icons/icon-192-maskable.png", "sizes": "192x192", "type": "image/png", "purpose": "maskable" },
     { "src": "/icons/icon-512-maskable.png", "sizes": "512x512", "type": "image/png", "purpose": "maskable" }
+  ],
+  "shortcuts": [
+    {
+      "name": "Scanner les billets",
+      "short_name": "Scanner",
+      "url": "/scan?source=pwa",
+      "icons": [{ "src": "/icons/shortcut.png", "sizes": "96x96", "type": "image/png" }]
+    },
+    {
+      "name": "Écran cuisine",
+      "short_name": "Cuisine",
+      "url": "/kitchen?source=pwa",
+      "icons": [{ "src": "/icons/shortcut.png", "sizes": "96x96", "type": "image/png" }]
+    },
+    {
+      "name": "Tableau de bord",
+      "short_name": "Accueil",
+      "url": "/login?source=pwa",
+      "icons": [{ "src": "/icons/shortcut.png", "sizes": "96x96", "type": "image/png" }]
+    }
   ]
 }

@@ -63,6 +63,9 @@ const nextConfig: NextConfig = {
 const withSerwist = withSerwistInit({
   swSrc: "src/app/sw.ts",
   swDest: "public/sw.js",
+  // Page hors ligne précachée (fallback des navigations, voir sw.ts).
+  additionalPrecacheEntries: [{ url: "/~offline", revision: process.env.VERCEL_GIT_COMMIT_SHA ?? "dev" }],
+  reloadOnOnline: false,
   disable: process.env.NODE_ENV === "development",
 });
 
