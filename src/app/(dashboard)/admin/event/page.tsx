@@ -92,10 +92,10 @@ export default function EventDashboardPage() {
   ];
 
   return (
-    <div className="space-y-6 pb-8">
+    <div className="space-y-4 pb-8">
       <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
         <div>
-          <h1 className="font-display text-2xl font-bold text-foreground sm:text-3xl">
+          <h1 className="font-display text-xl font-bold text-foreground sm:text-2xl">
             Tableau de bord
           </h1>
           <p className="mt-0.5 text-xs text-muted-foreground sm:text-sm">
@@ -116,29 +116,29 @@ export default function EventDashboardPage() {
         </p>
       )}
 
-      <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-4">
+      <div className="grid grid-cols-2 gap-3 lg:grid-cols-4">
         {kpis.map((k, i) => (
           <StatCard key={k.label} index={i} {...k} />
         ))}
       </div>
 
       {!statsDenied && (
-        <div className="grid gap-4 lg:grid-cols-3">
-          <Card className="rounded-3xl border border-border/80 bg-card p-5 shadow-xs lg:col-span-2">
-            <h2 className="font-display text-base font-bold">Recettes par événement</h2>
-            <p className="mb-3 text-xs text-muted-foreground">Billets payés, dans l&apos;ordre des dates</p>
+        <div className="grid gap-3 lg:grid-cols-12">
+          <Card className="rounded-2xl border border-border/80 bg-card p-4 shadow-xs lg:col-span-5">
+            <h2 className="font-display text-sm font-bold">Recettes par événement</h2>
+            <p className="mb-2 text-[11px] text-muted-foreground">Billets payés, par date</p>
             <AreaChart data={revenueSeries} format={formatXaf} />
           </Card>
-          <Card className="rounded-3xl border border-border/80 bg-card p-5 shadow-xs">
-            <h2 className="mb-3 font-display text-base font-bold">Répartition des billets</h2>
+          <Card className="rounded-2xl border border-border/80 bg-card p-4 shadow-xs lg:col-span-4">
+            <h2 className="mb-2 font-display text-sm font-bold">Répartition des billets</h2>
             <DonutChart
               data={ticketSplit}
               centerValue={totals.issued.toLocaleString("fr-FR")}
               centerLabel="billets émis"
             />
           </Card>
-          <Card className="rounded-3xl border border-border/80 bg-card p-5 shadow-xs lg:col-span-3">
-            <h2 className="mb-3 font-display text-base font-bold">Événements les plus vendus</h2>
+          <Card className="rounded-2xl border border-border/80 bg-card p-4 shadow-xs lg:col-span-3">
+            <h2 className="mb-2 font-display text-sm font-bold">Les plus vendus</h2>
             <BarList data={ticketsByEvent} format={(v) => `${Math.round(v).toLocaleString("fr-FR")} billets`} />
           </Card>
         </div>
@@ -179,8 +179,8 @@ export default function EventDashboardPage() {
         </Card>
       )}
 
-      <Card className="rounded-3xl border border-border/80 bg-card p-5 shadow-xs">
-        <h2 className="mb-4 font-display text-lg font-bold text-foreground">Ventes par événement</h2>
+      <Card className="rounded-2xl border border-border/80 bg-card p-4 shadow-xs">
+        <h2 className="mb-3 font-display text-sm font-bold text-foreground">Ventes par événement</h2>
         {isLoading && <p className="text-sm text-muted-foreground">Chargement…</p>}
         {eventsError && (
           <p className="text-sm text-destructive">
@@ -198,7 +198,7 @@ export default function EventDashboardPage() {
             </Link>
           </p>
         )}
-        <div className="space-y-4">
+        <div className="grid gap-2 md:grid-cols-2">
           {rows.map(({ event, stats: s }) => {
             const capacity = s?.capacity || event.capacity || 0;
             const fill = pct(s?.issued ?? 0, capacity);
@@ -207,15 +207,15 @@ export default function EventDashboardPage() {
               <Link
                 key={event.id}
                 href={`/admin/event/events/${event.id}`}
-                className="block rounded-2xl border border-border/60 p-4 transition-colors hover:border-primary/50"
+                className="block rounded-xl border border-border/60 px-3 py-2.5 transition-colors hover:border-primary/50"
               >
                 <div className="flex flex-wrap items-baseline justify-between gap-2">
-                  <p className="font-semibold text-foreground">{event.title}</p>
+                  <p className="truncate text-sm font-semibold text-foreground">{event.title}</p>
                   <p className="text-xs text-muted-foreground">
                     {new Date(event.startDate).toLocaleDateString("fr-FR", { dateStyle: "medium" })}
                   </p>
                 </div>
-                <div className="mt-3 grid grid-cols-2 gap-3 text-xs sm:grid-cols-4">
+                <div className="mt-1.5 grid grid-cols-2 gap-x-3 gap-y-0.5 text-[11px] sm:grid-cols-4">
                   <span>
                     <strong className="text-foreground">{s?.issued ?? 0}</strong>
                     <span className="text-muted-foreground"> / {capacity} billets</span>

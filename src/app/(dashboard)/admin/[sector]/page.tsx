@@ -89,10 +89,10 @@ export default function DashboardHomePage() {
   }
 
   return (
-    <div className="space-y-6 pb-8">
+    <div className="space-y-4 pb-8">
       <div className="flex items-center justify-between">
         <div>
-          <h1 className="font-display text-2xl font-bold sm:text-3xl">Tableau de bord</h1>
+          <h1 className="font-display text-xl font-bold sm:text-2xl">Tableau de bord</h1>
           <p className="text-xs text-muted-foreground sm:text-sm">Activité des 7 derniers jours</p>
         </div>
         {sector === "restaurant" && (
@@ -106,9 +106,9 @@ export default function DashboardHomePage() {
       </div>
 
       {canSeeKpis && (
-        <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
+        <div className="grid grid-cols-2 gap-3 lg:grid-cols-4">
           {kpisLoading ? (
-            Array.from({ length: 4 }).map((_, i) => <Skeleton key={i} className="h-32 rounded-3xl" />)
+            Array.from({ length: 4 }).map((_, i) => <Skeleton key={i} className="h-20 rounded-2xl" />)
           ) : (
             <>
               <StatCard index={0} label="Ventes du jour" value={kpis?.salesToday ?? 0} format={fcfa} icon={Wallet} />
@@ -121,29 +121,29 @@ export default function DashboardHomePage() {
       )}
 
       {ordersLoading ? (
-        <Skeleton className="h-64 rounded-3xl" />
+        <Skeleton className="h-48 rounded-2xl" />
       ) : (
-        <div className="grid gap-4 lg:grid-cols-3">
-          <Card className="rounded-3xl lg:col-span-2">
-            <CardHeader className="pb-2">
-              <CardTitle className="font-display text-base">Chiffre d&apos;affaires</CardTitle>
+        <div className="grid gap-3 lg:grid-cols-12">
+          <Card className="rounded-2xl gap-2 py-4 lg:col-span-5">
+            <CardHeader className="pb-0">
+              <CardTitle className="font-display text-sm">Chiffre d&apos;affaires (7 j)</CardTitle>
             </CardHeader>
             <CardContent>
               <AreaChart data={charts.revenue} format={fcfa} />
             </CardContent>
           </Card>
-          <Card className="rounded-3xl">
-            <CardHeader className="pb-2">
-              <CardTitle className="font-display text-base">Statut des commandes</CardTitle>
+          <Card className="rounded-2xl gap-2 py-4 lg:col-span-4">
+            <CardHeader className="pb-0">
+              <CardTitle className="font-display text-sm">Statut des commandes</CardTitle>
             </CardHeader>
             <CardContent>
               <DonutChart data={charts.status} centerValue={String(charts.count)} centerLabel="commandes" />
             </CardContent>
           </Card>
-          <Card className="rounded-3xl lg:col-span-3">
-            <CardHeader className="pb-2">
-              <CardTitle className="font-display text-base">
-                {sector === "shop" ? "Produits les plus vendus" : "Plats les plus commandés"}
+          <Card className="rounded-2xl gap-2 py-4 lg:col-span-3">
+            <CardHeader className="pb-0">
+              <CardTitle className="font-display text-sm">
+                {sector === "shop" ? "Top produits" : "Top plats"}
               </CardTitle>
             </CardHeader>
             <CardContent>
@@ -153,9 +153,9 @@ export default function DashboardHomePage() {
         </div>
       )}
 
-      <Card className="rounded-3xl">
-        <CardHeader>
-          <CardTitle className="font-display">Dernières commandes</CardTitle>
+      <Card className="rounded-2xl gap-2 py-4">
+        <CardHeader className="pb-0">
+          <CardTitle className="font-display text-sm">Dernières commandes</CardTitle>
         </CardHeader>
         <CardContent>
           {ordersLoading ? (

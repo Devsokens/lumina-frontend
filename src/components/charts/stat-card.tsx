@@ -25,19 +25,19 @@ export function StatCard({
       initial={{ opacity: 0, y: 12 }}
       animate={{ opacity: 1, y: 0 }}
       transition={{ duration: 0.4, delay: index * 0.07 }}
-      className="group relative overflow-hidden rounded-3xl border border-border/80 bg-card p-5 shadow-xs transition-shadow hover:shadow-md"
+      className="group relative overflow-hidden rounded-2xl border border-border/80 bg-card px-4 py-3 shadow-xs transition-shadow hover:shadow-md"
     >
-      <div className="pointer-events-none absolute -right-8 -top-8 size-28 rounded-full bg-primary/10 blur-2xl transition-transform group-hover:scale-125" />
+      <div className="pointer-events-none absolute -right-8 -top-8 size-20 rounded-full bg-primary/10 blur-2xl transition-transform group-hover:scale-125" />
       <div className="flex items-center justify-between">
-        <p className="text-xs font-semibold text-muted-foreground">{label}</p>
-        <span className="flex size-8 items-center justify-center rounded-xl bg-primary/10 text-primary">
-          <Icon className="size-4" />
+        <p className="truncate text-[11px] font-semibold text-muted-foreground">{label}</p>
+        <span className="flex size-6 shrink-0 items-center justify-center rounded-lg bg-primary/10 text-primary">
+          <Icon className="size-3.5" />
         </span>
       </div>
-      <p className="mt-3 font-display text-3xl font-extrabold text-foreground">
+      <p className="mt-1 font-display text-xl font-extrabold text-foreground sm:text-2xl">
         <AnimatedNumber value={value} format={format} />
       </p>
-      {hint && <p className="mt-1 text-[11px] text-muted-foreground">{hint}</p>}
+      {hint && <p className="truncate text-[10px] text-muted-foreground">{hint}</p>}
     </motion.div>
   );
 }

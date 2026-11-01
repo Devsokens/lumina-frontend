@@ -27,7 +27,7 @@ function smoothPath(pts: [number, number][]) {
 
 export function AreaChart({
   data,
-  height = 200,
+  height = 150,
   format = (v: number) => v.toLocaleString("fr-FR"),
 }: {
   data: Point[];
@@ -136,7 +136,7 @@ export function DonutChart({ data, centerLabel, centerValue }: { data: Slice[]; 
   let offset = 0;
   return (
     <div className="flex flex-col items-center gap-4 sm:flex-row">
-      <div className="relative size-40 shrink-0">
+      <div className="relative size-28 shrink-0">
         <svg viewBox="0 0 100 100" className="size-full -rotate-90">
           <circle cx="50" cy="50" r={R} fill="none" stroke="currentColor" strokeWidth="12" className="text-muted" />
           {total > 0 &&
@@ -163,11 +163,11 @@ export function DonutChart({ data, centerLabel, centerValue }: { data: Slice[]; 
             })}
         </svg>
         <div className="absolute inset-0 flex flex-col items-center justify-center">
-          <span className="font-display text-2xl font-extrabold">{centerValue}</span>
+          <span className="font-display text-lg font-extrabold">{centerValue}</span>
           <span className="text-[10px] text-muted-foreground">{centerLabel}</span>
         </div>
       </div>
-      <ul className="w-full space-y-2 text-xs">
+      <ul className="w-full space-y-1.5 text-[11px]">
         {data.map((s) => (
           <li key={s.label} className="flex items-center justify-between gap-3">
             <span className="flex items-center gap-2">
@@ -197,14 +197,14 @@ export function BarList({
   const max = Math.max(1, ...data.map((d) => d.value));
   if (data.length === 0) return <EmptyChart height={120} />;
   return (
-    <ul className="space-y-3">
+    <ul className="space-y-2">
       {data.map((d, i) => (
         <li key={`${d.label}-${i}`} className="space-y-1">
           <div className="flex justify-between gap-3 text-xs">
             <span className="truncate font-medium">{d.label}</span>
             <span className="shrink-0 font-semibold">{format(d.value)}</span>
           </div>
-          <div className="h-2 overflow-hidden rounded-full bg-muted">
+          <div className="h-1.5 overflow-hidden rounded-full bg-muted">
             <motion.div
               className="h-full rounded-full bg-gradient-to-r from-primary/70 to-primary"
               initial={{ width: 0 }}
