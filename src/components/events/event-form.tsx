@@ -1,13 +1,12 @@
 "use client";
 
-import { useState, useRef } from "react";
+import { useState } from "react";
 import { useForm } from "react-hook-form";
 import { toast } from "sonner";
 import {
   Calendar,
   MapPin,
   Sparkles,
-  Upload,
   Music,
   GraduationCap,
   Wine,
@@ -16,11 +15,8 @@ import {
   Theater,
   Award,
   Ticket,
-  CheckCircle2,
-  Image as ImageIcon,
   Check,
   Trash2,
-  RefreshCw,
   QrCode,
   ShieldCheck,
   Plus,
@@ -39,6 +35,7 @@ import {
   Star,
   ListFilter,
   BadgeCheck,
+  Clock,
   type LucideIcon,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
@@ -55,7 +52,12 @@ import type {
   QuestionnaireQuestion,
   QuestionType,
 } from "@/types/api";
-import { PricingUpgradeModal } from "@/components/shared/pricing-upgrade-modal";
+import { PosterUpload } from "@/components/events/poster-upload";
+import { AiDescriptionButton } from "@/components/events/ai-description-button";
+import { TicketTemplatePicker } from "@/components/events/ticket-template-picker";
+import { TicketPreview } from "@/components/events/ticket-preview";
+import { TICKET_TEMPLATES, defaultTemplateFor } from "@/lib/ticket-templates";
+import { FEATURES } from "@/lib/features";
 
 interface EventFormProps {
   initialData?: Partial<Event>;
@@ -147,14 +149,25 @@ const QUESTION_TYPE_CONFIG: { type: QuestionType; label: string; icon: LucideIco
   { type: "DROPDOWN", label: "Menu déroulant", icon: ListFilter, desc: "Liste déroulante d'options" },
 ];
 
+// Raccourcis de l'éditeur de formule : le nom reste modifiable.
+const FORMULA_PRESETS: { label: string; name: string; free: boolean; price: number; template?: TicketTemplate }[] = [
+  { label: "Gratuit", name: "Entrée libre", free: true, price: 0 },
+  { label: "Standard", name: "Pass Standard", free: false, price: 10000 },
+  { label: "VIP", name: "Pass VIP", free: false, price: 25000, template: "GOLD_VIP" },
+  { label: "Early bird", name: "Early Bird", free: false, price: 7500 },
+  { label: "Étudiant", name: "Tarif Étudiant", free: false, price: 5000 },
+];
+
+// ISO → valeur d'un <input type="datetime-local"> (heure locale).
+function toLocalInput(iso: string) {
+  const d = new Date(iso);
+  return new Date(d.getTime() - d.getTimezoneOffset() * 60_000).toISOString().slice(0, 16);
+}
+
 export function EventForm({ initialData, onSuccess, onCancel }: EventFormProps) {
   const [currentStep, setCurrentStep] = useState<1 | 2 | 3 | 4>(1);
   const [submitting, setSubmitting] = useState(false);
-  const [generatingAi, setGeneratingAi] = useState(false);
-
-  const fileInputRef = useRef<HTMLInputElement | null>(null);
   const [uploadedImage, setUploadedImage] = useState<string | null>(initialData?.imageUrl ?? null);
-  const [fileName, setFileName] = useState<string | null>(null);
 
   const [selectedType, setSelectedType] = useState<EventType>(
     initialData?.eventType ?? "CONCERT"
@@ -166,9 +179,8 @@ export function EventForm({ initialData, onSuccess, onCancel }: EventFormProps) 
     initialData?.certificateTemplate ?? "ACADEMIC_GOLD"
   );
   const [selectedTicketTemplate, setSelectedTicketTemplate] = useState<TicketTemplate>(
-    initialData?.ticketTemplate ?? "GOLD_VIP"
+    initialData?.ticketTemplate ?? defaultTemplateFor(initialData?.eventType ?? "CONCERT")
   );
-  const [isAiPosterModalOpen, setIsAiPosterModalOpen] = useState(false);
 
   // Ticket Formulas State
   const [ticketFormulas, setTicketFormulas] = useState<TicketType[]>(
@@ -182,7 +194,10 @@ export function EventForm({ initialData, onSuccess, onCancel }: EventFormProps) 
   const [newFormulaPrice, setNewFormulaPrice] = useState<number>(10000);
   const [newFormulaQuantity, setNewFormulaQuantity] = useState<number>(100);
   const [newFormulaDesc, setNewFormulaDesc] = useState("");
-  const [newFormulaTemplate, setNewFormulaTemplate] = useState<TicketTemplate>("GOLD_VIP");
+  const [newFormulaTemplate, setNewFormulaTemplate] = useState<TicketTemplate | "">("");
+  const [newFormulaFree, setNewFormulaFree] = useState(false);
+  // Early bird : fin de vente de la formule (datetime-local, heure locale).
+  const [newFormulaSaleEnds, setNewFormulaSaleEnds] = useState("");
 
   // Questionnaire (Google Forms Style) State
   const [hasQuestionnaire, setHasQuestionnaire] = useState<boolean>(
@@ -233,62 +248,18 @@ export function EventForm({ initialData, onSuccess, onCancel }: EventFormProps) 
   const issuerValue = watch("issuerName");
   const certTitleValue = watch("certificateTitle");
   const signatoryValue = watch("signatoryName");
-
-  // Handle Real Image Upload
-  function handleImageUpload(e: React.ChangeEvent<HTMLInputElement>) {
-    const file = e.target.files?.[0];
-    if (file) {
-      if (!file.type.startsWith("image/")) {
-        toast.error("Veuillez sélectionner un fichier image valide (PNG, JPG, WEBP).");
-        return;
-      }
-      setFileName(`${file.name} (${(file.size / (1024 * 1024)).toFixed(2)} Mo)`);
-      const reader = new FileReader();
-      reader.onload = () => {
-        const result = reader.result as string;
-        setUploadedImage(result);
-        setValue("imageUrl", result);
-        toast.success("Affiche téléversée avec succès !");
-      };
-      reader.readAsDataURL(file);
-    }
-  }
-
-  function handleRemoveImage() {
-    setUploadedImage(null);
-    setFileName(null);
-    setValue("imageUrl", "");
-    if (fileInputRef.current) fileInputRef.current.value = "";
-  }
+  const previewDate = dateValue
+    ? `${new Date(`${dateValue}T${startTimeValue || "00:00"}`).toLocaleDateString("fr-FR", { day: "numeric", month: "short", year: "numeric" })} · ${startTimeValue}`
+    : undefined;
 
   function handleTypeChange(type: EventType) {
     setSelectedType(type);
     setValue("eventType", type);
+    setSelectedTicketTemplate(defaultTemplateFor(type));
     if (type === "CONFERENCE") {
       setHasCert(true);
       setValue("hasCertificate", true);
-      setSelectedTicketTemplate("CONFERENCE_BADGE");
-    } else if (type === "CONCERT") {
-      setSelectedTicketTemplate("FESTIVAL_WRISTBAND");
-    } else if (type === "NIGHTLIFE") {
-      setSelectedTicketTemplate("GOLD_VIP");
     }
-  }
-
-  function handleGenerateAiDescription() {
-    if (!titleValue) {
-      toast.error("Veuillez d'abord saisir un titre pour l'événement");
-      return;
-    }
-    setGeneratingAi(true);
-    setTimeout(() => {
-      setValue(
-        "description",
-        `Participez à ${titleValue} ! Une expérience inoubliable avec artistes et intervenants d'exception, networking de haut niveau, billetterie instantanée et contrôle d'accès sécurisé par QR code.`
-      );
-      setGeneratingAi(false);
-      toast.success("Description générée par l'Assistant Giya !");
-    }, 700);
   }
 
   // Ticket Formulas Actions
@@ -297,7 +268,9 @@ export function EventForm({ initialData, onSuccess, onCancel }: EventFormProps) 
     setNewFormulaPrice(15000);
     setNewFormulaQuantity(100);
     setNewFormulaDesc("");
-    setNewFormulaTemplate(selectedTicketTemplate);
+    setNewFormulaTemplate("");
+    setNewFormulaFree(false);
+    setNewFormulaSaleEnds("");
     setEditingTicketId(null);
     setIsAddingTicket(true);
   }
@@ -307,7 +280,9 @@ export function EventForm({ initialData, onSuccess, onCancel }: EventFormProps) 
     setNewFormulaPrice(formula.price / 100);
     setNewFormulaQuantity(formula.quantity);
     setNewFormulaDesc(formula.description ?? "");
-    setNewFormulaTemplate(formula.ticketTemplate ?? "GOLD_VIP");
+    setNewFormulaTemplate(formula.ticketTemplate ?? "");
+    setNewFormulaFree(formula.price === 0);
+    setNewFormulaSaleEnds(formula.saleEndsAt ? toLocalInput(formula.saleEndsAt) : "");
     setEditingTicketId(formula.id);
     setIsAddingTicket(true);
   }
@@ -317,6 +292,17 @@ export function EventForm({ initialData, onSuccess, onCancel }: EventFormProps) 
       toast.error("Veuillez renseigner le nom de la formule (ex: Pass VIP)");
       return;
     }
+    if (!newFormulaFree && newFormulaPrice <= 0) {
+      toast.error("Indiquez un prix, ou choisissez « Gratuit ».");
+      return;
+    }
+    if (newFormulaQuantity < 1) {
+      toast.error("Le quota doit être d'au moins 1 place.");
+      return;
+    }
+    const saleEndsAt = newFormulaSaleEnds ? new Date(newFormulaSaleEnds).toISOString() : null;
+    const price = newFormulaFree ? 0 : Math.round(newFormulaPrice * 100);
+    const ticketTemplate = newFormulaTemplate || undefined;
 
     if (editingTicketId) {
       setTicketFormulas((prev) =>
@@ -325,10 +311,11 @@ export function EventForm({ initialData, onSuccess, onCancel }: EventFormProps) 
             ? {
                 ...f,
                 name: newFormulaName,
-                price: newFormulaPrice * 100,
+                price,
                 quantity: newFormulaQuantity,
                 description: newFormulaDesc,
-                ticketTemplate: newFormulaTemplate,
+                ticketTemplate,
+                saleEndsAt,
               }
             : f
         )
@@ -339,11 +326,12 @@ export function EventForm({ initialData, onSuccess, onCancel }: EventFormProps) 
         id: `tf-${Date.now()}`,
         eventId: initialData?.id ?? "evt-new",
         name: newFormulaName,
-        price: newFormulaPrice * 100,
+        price,
         quantity: newFormulaQuantity,
         sold: 0,
         description: newFormulaDesc,
-        ticketTemplate: newFormulaTemplate,
+        ticketTemplate,
+        saleEndsAt,
       };
       setTicketFormulas((prev) => [...prev, newFormula]);
       toast.success("Nouvelle formule de billet ajoutée");
@@ -725,17 +713,15 @@ export function EventForm({ initialData, onSuccess, onCancel }: EventFormProps) 
                   <Label htmlFor="description" className="text-xs font-bold text-foreground">
                     Description & Programme
                   </Label>
-                  <Button
-                    type="button"
-                    variant="ghost"
-                    size="sm"
-                    className="h-6 text-[11px] text-primary hover:text-primary/80 gap-1 px-2"
-                    onClick={handleGenerateAiDescription}
-                    disabled={generatingAi}
-                  >
-                    <Sparkles className="size-3" />
-                    {generatingAi ? "Rédaction IA..." : "Rédiger avec IA Giya"}
-                  </Button>
+                  <AiDescriptionButton
+                    context={{
+                      title: titleValue,
+                      eventType: selectedType,
+                      venueName: venueValue,
+                      startDate: dateValue,
+                    }}
+                    onApply={(text) => setValue("description", text, { shouldDirty: true })}
+                  />
                 </div>
                 <Textarea
                   id="description"
@@ -747,99 +733,16 @@ export function EventForm({ initialData, onSuccess, onCancel }: EventFormProps) 
               </div>
             </div>
 
-            <div className="space-y-2 pt-2 border-t border-border/60">
-              <div className="flex items-center justify-between gap-2 flex-wrap sm:flex-nowrap">
-                <Label className="text-xs font-bold text-foreground flex items-center gap-1.5 whitespace-nowrap shrink-0">
-                  <ImageIcon className="size-4 text-primary" />
-                  <span>Affiche de l&apos;événement</span>
-                </Label>
-
-                <div className="flex items-center gap-2 shrink-0">
-                  <Button
-                    type="button"
-                    variant="outline"
-                    size="sm"
-                    className="h-7 text-[11px] font-bold text-amber-600 dark:text-amber-400 bg-amber-500/10 border-amber-500/30 hover:bg-amber-500/20 gap-1.5 rounded-xl shadow-xs whitespace-nowrap"
-                    onClick={() => setIsAiPosterModalOpen(true)}
-                  >
-                    <Sparkles className="size-3.5 text-amber-500" />
-                    <span>Générer avec Giya AI</span>
-                    <span className="text-[9px] bg-amber-500/20 px-1.5 py-0.2 rounded font-mono font-extrabold">PRO</span>
-                  </Button>
-
-                  {uploadedImage && (
-                    <span className="text-[10px] text-emerald-500 font-semibold flex items-center gap-1 whitespace-nowrap">
-                      <CheckCircle2 className="size-3" /> Chargée
-                    </span>
-                  )}
-                </div>
-              </div>
-
-              <input
-                ref={fileInputRef}
-                type="file"
-                accept="image/png, image/jpeg, image/webp"
-                onChange={handleImageUpload}
-                className="hidden"
+            <div className="pt-2 border-t border-border/60">
+              <PosterUpload
+                value={uploadedImage ?? ""}
+                onChange={(url) => {
+                  setUploadedImage(url || null);
+                  setValue("imageUrl", url);
+                }}
+                eventTitle={titleValue}
+                eventType={selectedType}
               />
-
-              {uploadedImage ? (
-                <div className="relative rounded-2xl border border-border overflow-hidden bg-black/40 group">
-                  <div className="relative h-44 w-full">
-                    {/* eslint-disable-next-line @next/next/no-img-element */}
-                    <img
-                      src={uploadedImage}
-                      alt="Aperçu affiche"
-                      className="h-full w-full object-cover"
-                    />
-                    <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-black/20 to-transparent" />
-
-                    <div className="absolute bottom-3 left-3 right-3 flex items-center justify-between">
-                      <span className="text-xs font-medium text-white/90 truncate max-w-[240px]">
-                        {fileName ?? "Image personnalisée"}
-                      </span>
-
-                      <div className="flex gap-2">
-                        <Button
-                          type="button"
-                          size="sm"
-                          variant="secondary"
-                          className="h-7 text-xs rounded-xl bg-white/20 backdrop-blur-md text-white hover:bg-white/30"
-                          onClick={() => fileInputRef.current?.click()}
-                        >
-                          <RefreshCw className="size-3 mr-1" />
-                          Remplacer
-                        </Button>
-                        <Button
-                          type="button"
-                          size="sm"
-                          variant="destructive"
-                          className="h-7 text-xs rounded-xl"
-                          onClick={handleRemoveImage}
-                        >
-                          <Trash2 className="size-3 mr-1" />
-                          Retirer
-                        </Button>
-                      </div>
-                    </div>
-                  </div>
-                </div>
-              ) : (
-                <div
-                  onClick={() => fileInputRef.current?.click()}
-                  className="border-2 border-dashed border-primary/40 hover:border-primary rounded-2xl p-6 text-center cursor-pointer transition-all bg-primary/5 hover:bg-primary/10 group"
-                >
-                  <div className="flex size-12 items-center justify-center rounded-2xl bg-primary/10 text-primary mx-auto mb-2 group-hover:scale-110 transition-transform">
-                    <Upload className="size-6" />
-                  </div>
-                  <p className="text-xs font-bold text-foreground">
-                    Cliquez pour téléverser votre affiche ou glissez votre fichier
-                  </p>
-                  <p className="text-[11px] text-muted-foreground mt-1">
-                    PNG, JPG, WEBP haute résolution recommandés (jusqu&apos;à 10 Mo)
-                  </p>
-                </div>
-              )}
             </div>
 
             <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 pt-2 border-t border-border/60">
@@ -971,26 +874,65 @@ export function EventForm({ initialData, onSuccess, onCancel }: EventFormProps) 
                     </Button>
                   </div>
 
+                  <div className="flex flex-wrap gap-1.5">
+                    {FORMULA_PRESETS.map((preset) => (
+                      <button
+                        key={preset.label}
+                        type="button"
+                        onClick={() => {
+                          setNewFormulaName(preset.name);
+                          setNewFormulaFree(preset.free);
+                          if (!preset.free) setNewFormulaPrice(preset.price);
+                          setNewFormulaTemplate(preset.template ?? "");
+                        }}
+                        className="rounded-full border border-border bg-card px-3 py-1 text-[11px] font-semibold hover:border-primary hover:text-primary"
+                      >
+                        {preset.label}
+                      </button>
+                    ))}
+                  </div>
+
                   <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
                     <div className="space-y-1 sm:col-span-2">
-                      <Label className="text-[11px] font-semibold">Nom de la formule</Label>
+                      <Label className="text-[11px] font-semibold">Nom du type de billet</Label>
                       <Input
                         value={newFormulaName}
                         onChange={(e) => setNewFormulaName(e.target.value)}
                         placeholder="Ex: Pass VIP Carré Or, Pass 2 Jours, Early Bird..."
+                        maxLength={80}
                         className="h-9 rounded-xl text-xs"
                       />
                     </div>
 
                     <div className="space-y-1">
-                      <Label className="text-[11px] font-semibold">Prix de vente (FCFA)</Label>
-                      <Input
-                        type="number"
-                        value={newFormulaPrice}
-                        onChange={(e) => setNewFormulaPrice(Number(e.target.value))}
-                        placeholder="15000"
-                        className="h-9 rounded-xl text-xs font-mono"
-                      />
+                      <Label className="text-[11px] font-semibold">Tarif</Label>
+                      <div className="flex rounded-xl border border-border p-0.5">
+                        {[
+                          { free: false, label: "Payant" },
+                          { free: true, label: "Gratuit" },
+                        ].map((o) => (
+                          <button
+                            key={o.label}
+                            type="button"
+                            onClick={() => setNewFormulaFree(o.free)}
+                            className={`flex-1 rounded-lg py-1 text-[11px] font-semibold ${
+                              newFormulaFree === o.free ? "bg-primary text-primary-foreground" : "text-muted-foreground"
+                            }`}
+                          >
+                            {o.label}
+                          </button>
+                        ))}
+                      </div>
+                      {!newFormulaFree && (
+                        <Input
+                          type="number"
+                          min={1}
+                          value={newFormulaPrice}
+                          onChange={(e) => setNewFormulaPrice(Number(e.target.value))}
+                          placeholder="Prix en FCFA"
+                          className="h-9 rounded-xl text-xs font-mono"
+                        />
+                      )}
                     </div>
                   </div>
 
@@ -1015,6 +957,56 @@ export function EventForm({ initialData, onSuccess, onCancel }: EventFormProps) 
                         className="h-9 rounded-xl text-xs"
                       />
                     </div>
+                  </div>
+
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                    <div className="space-y-1">
+                      <Label className="text-[11px] font-semibold flex items-center gap-1.5">
+                        <Clock className="size-3.5 text-primary" /> Fin des ventes (early bird)
+                      </Label>
+                      <Input
+                        type="datetime-local"
+                        value={newFormulaSaleEnds}
+                        onChange={(e) => setNewFormulaSaleEnds(e.target.value)}
+                        className="h-9 rounded-xl text-xs"
+                      />
+                      <p className="text-[10px] text-muted-foreground">
+                        Vide = en vente jusqu&apos;à l&apos;événement. Après cette date, la formule n&apos;est plus proposée.
+                      </p>
+                    </div>
+                    <div className="space-y-1">
+                      <Label className="text-[11px] font-semibold">Modèle de billet</Label>
+                      <select
+                        value={newFormulaTemplate}
+                        onChange={(e) => setNewFormulaTemplate(e.target.value as TicketTemplate | "")}
+                        className="h-9 w-full rounded-xl border border-input bg-background px-2 text-xs"
+                      >
+                        <option value="">Modèle de l&apos;événement</option>
+                        {TICKET_TEMPLATES.map((t) => (
+                          <option key={t.id} value={t.id}>
+                            {t.label} ({t.category})
+                          </option>
+                        ))}
+                      </select>
+                    </div>
+                  </div>
+
+                  {!FEATURES.ticketExtras && (newFormulaSaleEnds || newFormulaTemplate) && (
+                    <p className="rounded-xl border border-warning/40 bg-warning/10 p-2 text-[11px]">
+                      La date de fin de vente et le modèle propre à la formule ne sont pas encore enregistrés par le
+                      serveur : ils servent à l&apos;aperçu.
+                    </p>
+                  )}
+
+                  <div className="flex justify-center rounded-2xl bg-muted/40 p-4">
+                    <TicketPreview
+                      template={newFormulaTemplate || selectedTicketTemplate}
+                      eventTitle={titleValue}
+                      dateLabel={previewDate}
+                      venue={venueValue}
+                      ticketName={newFormulaName || "Nom du billet"}
+                      price={newFormulaFree ? 0 : Math.round(newFormulaPrice * 100)}
+                    />
                   </div>
 
                   <div className="flex justify-end gap-2 pt-2 border-t border-border/60">
@@ -1059,6 +1051,12 @@ export function EventForm({ initialData, onSuccess, onCancel }: EventFormProps) 
                             <span className="rounded-full bg-primary/10 px-2 py-0.2 text-[10px] font-bold text-primary font-mono">
                               {formula.quantity} places
                             </span>
+                            {formula.saleEndsAt && (
+                              <span className="flex items-center gap-1 rounded-full bg-secondary/20 px-2 py-0.2 text-[10px] font-bold text-foreground">
+                                <Clock className="size-3" />
+                                Jusqu&apos;au {new Date(formula.saleEndsAt).toLocaleString("fr-FR", { dateStyle: "short", timeStyle: "short" })}
+                              </span>
+                            )}
                           </div>
                           <p className="text-[11px] text-muted-foreground mt-0.5">
                             {formula.description || "Accès standard à l'événement"}
@@ -1068,7 +1066,7 @@ export function EventForm({ initialData, onSuccess, onCancel }: EventFormProps) 
 
                       <div className="flex items-center justify-between sm:justify-end gap-4 border-t border-border/50 pt-2 sm:border-0 sm:pt-0">
                         <span className="font-display font-bold text-sm text-foreground font-mono">
-                          {((formula.price ?? 0) / 100).toLocaleString("fr-FR")} FCFA
+                          {formula.price === 0 ? "Gratuit" : `${((formula.price ?? 0) / 100).toLocaleString("fr-FR")} FCFA`}
                         </span>
 
                         <div className="flex items-center gap-1">
@@ -1101,213 +1099,21 @@ export function EventForm({ initialData, onSuccess, onCancel }: EventFormProps) 
             </div>
 
             <div className="space-y-3 pt-2 border-t border-border/60">
-              <div className="flex items-center justify-between">
-                <Label className="text-xs font-bold text-foreground flex items-center gap-1.5">
-                  <Ticket className="size-4 text-primary" />
-                  <span>Modèle Visuel de Billet / Pass QR (3 modèles au choix)</span>
-                </Label>
-                <span className="text-[10px] text-muted-foreground font-mono">Design du Pass</span>
-              </div>
-
-              <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
-                {/* VRAI BILLET 1: Pass VIP Golden */}
-                <button
-                  type="button"
-                  onClick={() => setSelectedTicketTemplate("GOLD_VIP")}
-                  className={`group relative flex flex-col justify-between rounded-2xl border-2 p-3 text-left transition-all bg-[#0d0d0d] text-white ${
-                    selectedTicketTemplate === "GOLD_VIP"
-                      ? "border-amber-400 ring-2 ring-amber-400/50 shadow-xl"
-                      : "border-zinc-800 hover:border-amber-400/60 opacity-85 hover:opacity-100"
-                  }`}
-                >
-                  {selectedTicketTemplate === "GOLD_VIP" && (
-                    <span className="absolute top-2 right-2 flex size-4 items-center justify-center rounded-full bg-amber-400 text-black z-20 shadow-md">
-                      <Check className="size-2.5 font-bold" />
-                    </span>
-                  )}
-
-                  <div className="relative rounded-xl border border-amber-500/40 bg-gradient-to-r from-zinc-950 via-[#1a1508] to-zinc-950 p-3 shadow-inner overflow-hidden">
-                    <div className="flex items-center justify-between border-b border-amber-500/30 pb-1.5">
-                      <span className="font-display font-extrabold text-[9px] text-amber-400 tracking-wider inline-flex items-center gap-1">
-                        <Star className="size-2 fill-current" /> GIYA VIP PASS <Star className="size-2 fill-current" />
-                      </span>
-                      <span className="rounded bg-amber-400/20 px-1 py-0.2 text-[7px] font-mono font-bold text-amber-300">
-                        CARRÉ OR
-                      </span>
-                    </div>
-
-                    <div className="grid grid-cols-12 gap-1 py-2 items-center">
-                      <div className="col-span-8 space-y-1">
-                        <p className="font-display font-bold text-[10px] text-white truncate">
-                          {titleValue || "Festival Afro 2026"}
-                        </p>
-                        <p className="text-[8px] text-amber-300/90 truncate flex items-center gap-1">
-                          <MapPin className="size-2.5 shrink-0" />
-                          {venueValue || "Palais des Sports"}
-                        </p>
-                        <p className="text-[8px] text-zinc-400 font-mono">
-                          {dateValue || "05 Sept. 2026"} • {startTimeValue || "19:00"}
-                        </p>
-                      </div>
-
-                      <div className="col-span-1 flex justify-center h-full">
-                        <div className="border-r border-dashed border-amber-500/40 h-10" />
-                      </div>
-
-                      <div className="col-span-3 flex flex-col items-center justify-center">
-                        <div className="bg-white p-0.5 rounded">
-                          <QrCode className="size-6 text-black" />
-                        </div>
-                        <span className="text-[6px] font-mono text-amber-400/80 mt-0.5">#GA-9082</span>
-                      </div>
-                    </div>
-
-                    <div className="pt-1 border-t border-amber-500/20 flex justify-between items-center text-[7px] text-zinc-400 font-mono">
-                      <span>PRIX: 35 000 FCFA</span>
-                      <span>CONTRÔLE VIP</span>
-                    </div>
-                  </div>
-
-                  <div className="mt-2.5">
-                    <p className="font-bold text-xs text-amber-400">Billet VIP Golden</p>
-                    <p className="text-[10px] text-zinc-400 mt-0.5">
-                      Dorures or, souche détachable et QR code crypté.
-                    </p>
-                  </div>
-                </button>
-
-                {/* VRAI BILLET 2: Festival Neon Pass */}
-                <button
-                  type="button"
-                  onClick={() => setSelectedTicketTemplate("FESTIVAL_WRISTBAND")}
-                  className={`group relative flex flex-col justify-between rounded-2xl border-2 p-3 text-left transition-all bg-[#06140e] text-white ${
-                    selectedTicketTemplate === "FESTIVAL_WRISTBAND"
-                      ? "border-emerald-400 ring-2 ring-emerald-400/50 shadow-xl"
-                      : "border-zinc-800 hover:border-emerald-400/60 opacity-85 hover:opacity-100"
-                  }`}
-                >
-                  {selectedTicketTemplate === "FESTIVAL_WRISTBAND" && (
-                    <span className="absolute top-2 right-2 flex size-4 items-center justify-center rounded-full bg-emerald-400 text-black z-20 shadow-md">
-                      <Check className="size-2.5 font-bold" />
-                    </span>
-                  )}
-
-                  <div className="relative rounded-xl border border-emerald-500/40 bg-gradient-to-r from-zinc-950 via-[#071f15] to-zinc-950 p-3 shadow-inner overflow-hidden">
-                    <div className="flex items-center justify-between border-b border-emerald-500/30 pb-1.5">
-                      <span className="font-display font-extrabold text-[9px] text-emerald-400 tracking-wider">
-                        FESTIVAL LIVE PASS
-                      </span>
-                      <span className="rounded bg-emerald-500/20 px-1 py-0.2 text-[7px] font-mono font-bold text-emerald-300">
-                        ACCÈS TOTAL
-                      </span>
-                    </div>
-
-                    <div className="grid grid-cols-12 gap-1 py-2 items-center">
-                      <div className="col-span-8 space-y-1">
-                        <p className="font-display font-bold text-[10px] text-white truncate">
-                          {titleValue || "Festival Afro 2026"}
-                        </p>
-                        <p className="text-[8px] text-emerald-300/90 truncate flex items-center gap-1">
-                          <MapPin className="size-2.5 shrink-0" />
-                          SCÈNE PRINCIPALE
-                        </p>
-                        <p className="text-[8px] text-zinc-400 font-mono">
-                          PASS 2 JOURS • ILLIMITÉ
-                        </p>
-                      </div>
-
-                      <div className="col-span-1 flex justify-center h-full">
-                        <div className="border-r border-dashed border-emerald-500/40 h-10" />
-                      </div>
-
-                      <div className="col-span-3 flex flex-col items-center justify-center">
-                        <div className="bg-white p-0.5 rounded">
-                          <QrCode className="size-6 text-black" />
-                        </div>
-                        <span className="text-[6px] font-mono text-emerald-400/80 mt-0.5">SCAN NÉON</span>
-                      </div>
-                    </div>
-
-                    <div className="pt-1 border-t border-emerald-500/20 flex justify-between items-center text-[7px] text-zinc-400 font-mono">
-                      <span>PRIX: 10 000 FCFA</span>
-                      <span>PORTES OUVERTES</span>
-                    </div>
-                  </div>
-
-                  <div className="mt-2.5">
-                    <p className="font-bold text-xs text-emerald-400">Festival Neon Pass</p>
-                    <p className="text-[10px] text-zinc-400 mt-0.5">
-                      Style concert avec scènes et scan rapide.
-                    </p>
-                  </div>
-                </button>
-
-                {/* VRAI BILLET 3: Badge Conférence Pro */}
-                <button
-                  type="button"
-                  onClick={() => setSelectedTicketTemplate("CONFERENCE_BADGE")}
-                  className={`group relative flex flex-col justify-between rounded-2xl border-2 p-3 text-left transition-all bg-[#081220] text-white ${
-                    selectedTicketTemplate === "CONFERENCE_BADGE"
-                      ? "border-blue-400 ring-2 ring-blue-400/50 shadow-xl"
-                      : "border-zinc-800 hover:border-blue-400/60 opacity-85 hover:opacity-100"
-                  }`}
-                >
-                  {selectedTicketTemplate === "CONFERENCE_BADGE" && (
-                    <span className="absolute top-2 right-2 flex size-4 items-center justify-center rounded-full bg-blue-400 text-black z-20 shadow-md">
-                      <Check className="size-2.5 font-bold" />
-                    </span>
-                  )}
-
-                  <div className="relative rounded-xl border border-blue-500/40 bg-gradient-to-r from-zinc-950 via-[#0a1b33] to-zinc-950 p-3 shadow-inner overflow-hidden">
-                    <div className="flex items-center justify-between border-b border-blue-500/30 pb-1.5">
-                      <span className="font-display font-extrabold text-[9px] text-blue-400 tracking-wider">
-                        BADGE PRO B2B
-                      </span>
-                      <span className="rounded bg-blue-500/20 px-1 py-0.2 text-[7px] font-mono font-bold text-blue-300">
-                        DÉLÉGUÉ
-                      </span>
-                    </div>
-
-                    <div className="grid grid-cols-12 gap-1 py-2 items-center">
-                      <div className="col-span-8 space-y-1">
-                        <p className="font-display font-bold text-[10px] text-white truncate">
-                          {titleValue || "Executive Summit 2026"}
-                        </p>
-                        <p className="text-[8px] text-blue-300/90 truncate flex items-center gap-1">
-                          <UserCheck className="size-2.5 shrink-0" />
-                          ACCRÉDITATION PRO
-                        </p>
-                        <p className="text-[8px] text-zinc-400 font-mono">
-                          ACCÈS PLÉNIÈRES & SALON
-                        </p>
-                      </div>
-
-                      <div className="col-span-1 flex justify-center h-full">
-                        <div className="border-r border-dashed border-blue-500/40 h-10" />
-                      </div>
-
-                      <div className="col-span-3 flex flex-col items-center justify-center">
-                        <div className="bg-white p-0.5 rounded">
-                          <QrCode className="size-6 text-black" />
-                        </div>
-                        <span className="text-[6px] font-mono text-blue-400/80 mt-0.5">PRO-ACCESS</span>
-                      </div>
-                    </div>
-
-                    <div className="pt-1 border-t border-blue-500/20 flex justify-between items-center text-[7px] text-zinc-400 font-mono">
-                      <span>PRIX: 50 000 FCFA</span>
-                      <span>NETWORKING VIP</span>
-                    </div>
-                  </div>
-
-                  <div className="mt-2.5">
-                    <p className="font-bold text-xs text-blue-400">Badge Conférence Pro</p>
-                    <p className="text-[10px] text-zinc-400 mt-0.5">
-                      Format badge officiel tour de cou B2B.
-                    </p>
-                  </div>
-                </button>
-              </div>
+              <Label className="text-xs font-bold text-foreground flex items-center gap-1.5">
+                <QrCode className="size-4 text-primary" />
+                <span>Modèle du billet (appliqué aux formules sans modèle propre)</span>
+              </Label>
+              <TicketTemplatePicker
+                value={selectedTicketTemplate}
+                onChange={setSelectedTicketTemplate}
+                preview={{
+                  eventTitle: titleValue,
+                  dateLabel: previewDate,
+                  venue: venueValue,
+                  ticketName: ticketFormulas[0]?.name ?? "Pass Standard",
+                  price: ticketFormulas[0]?.price ?? 0,
+                }}
+              />
             </div>
           </div>
         )}
@@ -1866,12 +1672,6 @@ export function EventForm({ initialData, onSuccess, onCancel }: EventFormProps) 
       </form>
     </div>
 
-    {/* Giya AI Poster Studio Upgrade Modal */}
-    <PricingUpgradeModal
-      isOpen={isAiPosterModalOpen}
-      onClose={() => setIsAiPosterModalOpen(false)}
-      feature="AI_POSTER"
-    />
   </div>
   );
 }

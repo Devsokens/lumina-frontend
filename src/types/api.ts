@@ -112,12 +112,26 @@ export type CertificateTemplate =
   | "TECH_INNOVATION"
   | "MINIMALIST_ECO";
 
+// Catalogue et rendu : lib/ticket-templates.ts.
 export type TicketTemplate =
   | "GOLD_VIP"
+  | "GALA_BLACK_TIE"
+  | "ROYAL_PURPLE"
   | "FESTIVAL_WRISTBAND"
-  | "CONFERENCE_BADGE"
+  | "NEON_RAVE"
+  | "AFRO_WAX"
+  | "SUNSET_GRADIENT"
+  | "OCEAN_BEACH"
   | "NIGHTLIFE_DARK"
-  | "CLASSIC_PASS";
+  | "THEATRE_RED"
+  | "CONFERENCE_BADGE"
+  | "CORPORATE_BLUE"
+  | "EMERALD_SUMMIT"
+  | "SPORT_STADIUM"
+  | "RACE_BIB"
+  | "CLASSIC_PASS"
+  | "MINIMAL_MONO"
+  | "PASTEL_BRUNCH";
 
 export type QuestionType =
   | "SINGLE_CHOICE"
@@ -186,6 +200,8 @@ export type TicketType = {
   eventId: string;
   description?: string | null;
   ticketTemplate?: TicketTemplate;
+  // Fin de vente de la formule (early bird). ISO 8601, null = jusqu'à l'événement.
+  saleEndsAt?: string | null;
 };
 
 export type Attendee = {

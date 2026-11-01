@@ -2,7 +2,8 @@
 
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { api, type ApiResponse } from "@/lib/api";
-import { toEventPayload } from "@/lib/events";
+import { FEATURES } from "@/lib/features";
+import { toEventPayload, ticketTypeBody } from "@/lib/events";
 import type { Event, EventStatus, Tenant } from "@/types/api";
 import type {
   ApiEvent,
@@ -127,12 +128,7 @@ export function useSaveEvent() {
         const created = await api.post<ApiResponse<ApiEvent>>("/admin/events", body);
         const event = created.data.data as ApiEvent;
         for (const f of formulas) {
-          await api.post(`/admin/events/${event.id}/ticket-types`, {
-            name: f.name,
-            price: f.price,
-            quantity: f.quantity,
-            ...(f.description ? { description: f.description } : {}),
-          });
+          await api.post(`/admin/events/${event.id}/ticket-types`, ticketTypeBody(f));
         }
         if (form.status === "PUBLISHED") {
           await api.patch(`/admin/events/${event.id}`, { status: "PUBLISHED" });
@@ -157,18 +153,19 @@ export function useSaveEvent() {
             ...((f.description ?? null) !== before.description
               ? { description: f.description ?? "" }
               : {}),
+            ...(FEATURES.ticketExtras && (f.saleEndsAt ?? null) !== (before.saleEndsAt ?? null)
+              ? { saleEndsAt: f.saleEndsAt ?? null }
+              : {}),
+            ...(FEATURES.ticketExtras && (f.ticketTemplate ?? null) !== (before.template ?? null)
+              ? { template: f.ticketTemplate ?? null }
+              : {}),
           };
           if (Object.keys(patch).length > 0) {
             await api.patch(`/admin/ticket-types/${f.id}`, patch);
           }
         }
         for (const f of added) {
-          await api.post(`/admin/events/${existing.id}/ticket-types`, {
-            name: f.name,
-            price: f.price,
-            quantity: f.quantity,
-            ...(f.description ? { description: f.description } : {}),
-          });
+          await api.post(`/admin/events/${existing.id}/ticket-types`, ticketTypeBody(f));
         }
       };
 

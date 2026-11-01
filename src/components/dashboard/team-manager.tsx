@@ -35,7 +35,21 @@ const ROLE_LABELS: Record<Member["role"], string> = {
   KITCHEN: "Cuisine",
   CASHIER: "Caisse",
 };
+// Événementiel (spec V1) : Organisateur, Manager, Scanner.
+export const EVENT_ROLE_LABELS: Record<Member["role"], string> = {
+  ...ROLE_LABELS,
+  OWNER: "Organisateur",
+  MANAGER: "Manager",
+  STAFF: "Scanner",
+};
 const MEMBER_ROLES: MemberRole[] = ["MANAGER", "STAFF", "KITCHEN", "CASHIER"];
+
+function rolesFor(sector: string | undefined): MemberRole[] {
+  if (sector === "restaurant") return MEMBER_ROLES;
+  // Événementiel : pas de caisse ni de cuisine (paiement en ligne, scan).
+  if (sector === "event") return ["MANAGER", "STAFF"];
+  return MEMBER_ROLES.filter((r) => r !== "KITCHEN");
+}
 const STRONG = /^(?=.*[A-Z])(?=.*\d).{8,}$/;
 
 // Mot de passe temporaire lisible, communiqué par l'OWNER au membre (qui
@@ -51,9 +65,10 @@ export function TeamManager() {
   const role = useAuthStore((s) => s.user?.role);
   const isOwner = role === "OWNER";
   const canRead = isOwner || role === "MANAGER";
-  // Rôle Cuisine (écran KDS) : restauration uniquement.
+  // Rôles proposés selon le métier (Cuisine : restauration uniquement).
   const { sector } = useTenantSector();
-  const roles = sector === "restaurant" ? MEMBER_ROLES : MEMBER_ROLES.filter((r) => r !== "KITCHEN");
+  const roles = rolesFor(sector);
+  const labels = sector === "event" ? EVENT_ROLE_LABELS : ROLE_LABELS;
   const { data: members, isLoading, isError } = useMembers(canRead);
   const create = useCreateMember();
   const update = useUpdateMember();
@@ -161,7 +176,7 @@ export function TeamManager() {
                     >
                       {roles.map((r) => (
                         <option key={r} value={r}>
-                          {ROLE_LABELS[r]}
+                          {labels[r]}
                         </option>
                       ))}
                     </select>
@@ -173,7 +188,7 @@ export function TeamManager() {
                     </Button>
                   </>
                 ) : (
-                  <Badge variant="secondary">{ROLE_LABELS[m.role]}</Badge>
+                  <Badge variant="secondary">{labels[m.role]}</Badge>
                 )}
               </div>
             </li>
@@ -208,7 +223,7 @@ export function TeamManager() {
               >
                 {roles.map((r) => (
                   <option key={r} value={r}>
-                    {ROLE_LABELS[r]}
+                    {labels[r]}
                   </option>
                 ))}
               </select>

@@ -11,6 +11,10 @@ export type ApiTicketType = {
   sold: number; // places réservées (payées + en attente de paiement)
   description: string | null;
   eventId: string;
+  // Champs V1 (voir docs/API_CONTRACT.md §14) : absents tant que le serveur
+  // ne les gère pas.
+  saleEndsAt?: string | null;
+  template?: string | null;
 };
 
 export type ApiEvent = {
@@ -119,6 +123,8 @@ export type PublicTicketType = {
   price: number;
   description: string | null;
   remaining: number;
+  // Early bird (si le serveur le fournit) : plus en vente après cette date.
+  saleEndsAt?: string | null;
 };
 
 export type PublicEvent = Omit<ApiEvent, "ticketTypes" | "status" | "createdAt"> & {

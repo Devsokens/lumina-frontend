@@ -256,11 +256,18 @@ audit `REFUND_PARTIAL_REVIEW` pour revue manuelle. `refund.pending` / `refund.pr
 
 ---
 
-## 9. IA (à venir — non encore consommé par le frontend)
+## 9. IA — **à implémenter** (déjà appelé par le frontend)
 
-Prévu : `POST /ai/generate` `{ type, prompt }` → `{ text }`, protégé Bearer + rate limit
-10/min/tenant. Sera ajouté ici dès qu'un composant frontend l'utilisera (génération de
-description produit).
+Clé du fournisseur IA côté serveur uniquement. Bearer (OWNER/MANAGER), rate limit conseillé
+10/min/tenant. **402/403** si la formule du tenant n'inclut pas l'IA (le frontend affiche alors
+l'offre d'abonnement), **404** tant que la route n'existe pas (message « pas encore disponible »).
+
+| Méthode | Route | Body | Réponse |
+|---|---|---|---|
+| POST | `/admin/ai/event-description` | `{ title, eventType?, venueName?, startDate?, tone?: "festif" \| "professionnel" \| "premium", notes? }` | `{ description }` (texte brut, FR) |
+| POST | `/admin/ai/event-visual` | `{ title, eventType?, style, prompt? }` | `{ url }` : image **https** hébergée (mêmes règles que §16) |
+
+Écrans : `components/events/ai-description-button.tsx`, `components/events/poster-upload.tsx`.
 
 ---
 
@@ -365,7 +372,29 @@ Un événement n'est visible et achetable qu'en `PUBLISHED`/`ONGOING`. La somme 
 types de billets ne peut pas dépasser `capacity` (**409**). Validation à l'entrée : §7
 (`/admin/scan/validate`, un billet `PENDING` répond `invalid`).
 
+### Champs V1 des types de billets — **à implémenter**
+
+Envoyés uniquement si `NEXT_PUBLIC_FEATURES` contient `ticket-extras` (`lib/features.ts`) : un
+serveur à validation stricte refuserait sinon la requête.
+
+| Champ | Routes | Type | Effet attendu |
+|---|---|---|---|
+| `saleEndsAt` | POST/PATCH ticket-types, GET admin et public | ISO 8601 \| `null` | Early bird : après cette date, `POST /events/:id/tickets` refuse la formule (**409**). Renvoyé aussi dans `/tenants/:slug/events*` (le frontend grise la formule et affiche « Tarif valable jusqu'au… »). |
+| `template` | POST/PATCH ticket-types, GET admin | identifiant de modèle (`lib/ticket-templates.ts`, ex. `GOLD_VIP`) | Mise en page du PDF du billet. Le modèle d'événement par défaut n'est pas stocké : une formule sans `template` utilise le modèle choisi dans le formulaire au moment de l'enregistrement. |
+
+## 16. Upload d'images — **à implémenter**
+
+| Méthode | Route | Auth | Body | Réponse |
+|---|---|---|---|---|
+| POST | `/admin/uploads` | Bearer (OWNER/MANAGER) | `multipart/form-data`, champ `file` (PNG, JPEG, WEBP, 5 Mo max) | `{ url }` (https) — **413** trop lourd, **415** type refusé |
+
+Le type réel du fichier doit être vérifié côté serveur (pas seulement l'extension). L'origine des
+URL renvoyées doit être ajoutée à `NEXT_PUBLIC_IMAGE_ORIGINS` (CSP `img-src`, `next.config.ts`).
+
 ## Historique
+
+- **2026-11-01** — IA événementiel (§9), champs `saleEndsAt`/`template` des types de billets
+  (§14), upload d'images (§16) : routes appelées par le frontend, à implémenter côté backend.
 
 
 - **2026-10-05** — Synchronisé avec le backend : stats billetterie (§6), statut de paiement

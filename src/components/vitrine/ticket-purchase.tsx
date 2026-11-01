@@ -16,8 +16,14 @@ const PHONE_FORMAT = /^\+?[0-9]{8,15}$/;
 
 // Achat de billets (EF-E05). Le montant affiché n'est qu'indicatif : le
 // serveur recalcule le prix et réserve les places de façon atomique.
+// Formule plus en vente : complète, ou date de fin (early bird) dépassée.
+// Le serveur refuse de toute façon la vente ; ceci évite un formulaire voué à l'échec.
+function saleClosed(t: PublicEvent["ticketTypes"][number]) {
+  return t.remaining === 0 || (!!t.saleEndsAt && new Date(t.saleEndsAt).getTime() <= Date.now());
+}
+
 export function TicketPurchase({ event }: { event: PublicEvent }) {
-  const available = event.ticketTypes.filter((t) => t.remaining > 0);
+  const available = event.ticketTypes.filter((t) => !saleClosed(t));
   const [ticketTypeId, setTicketTypeId] = useState(available[0]?.id ?? "");
   const [quantity, setQuantity] = useState(1);
   const [name, setName] = useState("");
@@ -33,7 +39,7 @@ export function TicketPurchase({ event }: { event: PublicEvent }) {
   if (available.length === 0) {
     return (
       <p className="rounded-2xl border border-border bg-muted/40 p-4 text-sm text-muted-foreground">
-        Complet : plus aucun billet disponible.
+        Plus aucun billet en vente pour cet événement.
       </p>
     );
   }
@@ -96,7 +102,7 @@ export function TicketPurchase({ event }: { event: PublicEvent }) {
             key={t.id}
             className={`flex cursor-pointer items-start justify-between gap-3 rounded-2xl border p-3 ${
               t.id === ticketTypeId ? "border-primary bg-primary/5" : "border-border"
-            } ${t.remaining === 0 ? "cursor-not-allowed opacity-50" : ""}`}
+            } ${saleClosed(t) ? "cursor-not-allowed opacity-50" : ""}`}
           >
             <span className="flex items-start gap-2">
               <input
@@ -104,7 +110,7 @@ export function TicketPurchase({ event }: { event: PublicEvent }) {
                 name="ticketType"
                 value={t.id}
                 checked={t.id === ticketTypeId}
-                disabled={t.remaining === 0}
+                disabled={saleClosed(t)}
                 onChange={() => {
                   setTicketTypeId(t.id);
                   setQuantity(1);
@@ -117,8 +123,18 @@ export function TicketPurchase({ event }: { event: PublicEvent }) {
                   <span className="block text-xs text-muted-foreground">{t.description}</span>
                 )}
                 <span className="block text-xs text-muted-foreground">
-                  {t.remaining === 0 ? "Complet" : `${t.remaining} place(s) restante(s)`}
+                  {t.remaining === 0
+                    ? "Complet"
+                    : saleClosed(t)
+                      ? "Ventes terminées"
+                      : `${t.remaining} place(s) restante(s)`}
                 </span>
+                {t.saleEndsAt && !saleClosed(t) && (
+                  <span className="block text-xs font-semibold text-warning">
+                    Tarif valable jusqu&apos;au{" "}
+                    {new Date(t.saleEndsAt).toLocaleString("fr-FR", { dateStyle: "short", timeStyle: "short" })}
+                  </span>
+                )}
               </span>
             </span>
             <span className="shrink-0 text-sm font-bold text-foreground">

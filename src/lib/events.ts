@@ -1,5 +1,6 @@
 import { isAxiosError } from "axios";
-import type { Attendee, Event, TicketType } from "@/types/api";
+import type { Attendee, Event, TicketTemplate, TicketType } from "@/types/api";
+import { FEATURES } from "@/lib/features";
 import type { ApiEvent, ApiTicket, EventStats, PublicEvent } from "@/types/events";
 import type { EventItem } from "@/stores/useShowcaseStore";
 
@@ -33,6 +34,8 @@ export function toUiEvent(event: ApiEvent, stats?: EventStats): Event {
         // réservées (inclut les paiements en attente).
         sold: statsByType.get(t.id)?.issued ?? t.sold,
         description: t.description,
+        saleEndsAt: t.saleEndsAt ?? null,
+        ticketTemplate: (t.template as TicketTemplate | null) ?? undefined,
       })
     ),
     soldTicketsCount: stats?.issued ?? event.ticketTypes.reduce((n, t) => n + t.sold, 0),
@@ -94,6 +97,19 @@ export function toEventPayload(form: Partial<Event>): EventPayload {
     ...(form.venueName ? { venueName: form.venueName } : {}),
     ...(form.eventType ? { eventType: form.eventType } : {}),
     ...(form.capacity ? { capacity: form.capacity } : {}),
+  };
+}
+
+// Corps de création d'un type de billet. `saleEndsAt` et `template` ne
+// partent que si le serveur les gère (FEATURES.ticketExtras).
+export function ticketTypeBody(f: TicketType) {
+  return {
+    name: f.name,
+    price: f.price,
+    quantity: f.quantity,
+    ...(f.description ? { description: f.description } : {}),
+    ...(FEATURES.ticketExtras && f.saleEndsAt ? { saleEndsAt: f.saleEndsAt } : {}),
+    ...(FEATURES.ticketExtras && f.ticketTemplate ? { template: f.ticketTemplate } : {}),
   };
 }
 
