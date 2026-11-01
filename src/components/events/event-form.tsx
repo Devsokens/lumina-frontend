@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 import { useForm } from "react-hook-form";
 import { toast } from "sonner";
 import {
@@ -58,6 +58,8 @@ import { TicketTemplatePicker } from "@/components/events/ticket-template-picker
 import { TicketPreview } from "@/components/events/ticket-preview";
 import { TICKET_TEMPLATES, defaultTemplateFor } from "@/lib/ticket-templates";
 import { FEATURES } from "@/lib/features";
+import { useAuthStore } from "@/stores/useAuthStore";
+import { clearEventDraft, readEventDraft, writeEventDraft, type EventDraft } from "@/lib/event-draft";
 
 interface EventFormProps {
   initialData?: Partial<Event>;
@@ -165,28 +167,41 @@ function toLocalInput(iso: string) {
 }
 
 export function EventForm({ initialData, onSuccess, onCancel }: EventFormProps) {
-  const [currentStep, setCurrentStep] = useState<1 | 2 | 3 | 4>(1);
+  // Brouillon enregistré automatiquement à chaque modification (par compte et
+  // par événement) : rien n'est perdu en changeant d'étape, en rechargeant
+  // la page ou en revenant plus tard. Supprimé après publication.
+  const tenantId = useAuthStore((s) => s.user?.tenantId);
+  const draftKey = `giya_event_draft:${tenantId ?? "anon"}:${initialData?.id ?? "new"}`;
+  const [draft] = useState<EventDraft | null>(() => readEventDraft(draftKey));
+  const [draftSavedAt, setDraftSavedAt] = useState<string | null>(draft?.savedAt ?? null);
+
+  const [currentStep, setCurrentStep] = useState<1 | 2 | 3 | 4>(draft?.currentStep ?? 1);
   const [submitting, setSubmitting] = useState(false);
-  const [uploadedImage, setUploadedImage] = useState<string | null>(initialData?.imageUrl ?? null);
+  const [uploadedImage, setUploadedImage] = useState<string | null>(
+    draft ? draft.uploadedImage : initialData?.imageUrl ?? null
+  );
 
   const [selectedType, setSelectedType] = useState<EventType>(
-    initialData?.eventType ?? "CONCERT"
+    draft?.selectedType ?? initialData?.eventType ?? "CONCERT"
   );
   const [hasCert, setHasCert] = useState<boolean>(
-    initialData?.hasCertificate ?? (initialData?.eventType === "CONFERENCE")
+    draft?.hasCert ?? initialData?.hasCertificate ?? (initialData?.eventType === "CONFERENCE")
   );
   const [selectedCertTemplate, setSelectedCertTemplate] = useState<CertificateTemplate>(
-    initialData?.certificateTemplate ?? "ACADEMIC_GOLD"
+    draft?.selectedCertTemplate ?? initialData?.certificateTemplate ?? "ACADEMIC_GOLD"
   );
   const [selectedTicketTemplate, setSelectedTicketTemplate] = useState<TicketTemplate>(
-    initialData?.ticketTemplate ?? defaultTemplateFor(initialData?.eventType ?? "CONCERT")
+    draft?.selectedTicketTemplate ??
+      initialData?.ticketTemplate ??
+      defaultTemplateFor(initialData?.eventType ?? "CONCERT")
   );
 
   // Ticket Formulas State
   const [ticketFormulas, setTicketFormulas] = useState<TicketType[]>(
-    initialData?.ticketTypes && initialData.ticketTypes.length > 0
-      ? initialData.ticketTypes
-      : DEFAULT_TICKET_FORMULAS
+    draft?.ticketFormulas ??
+      (initialData?.ticketTypes && initialData.ticketTypes.length > 0
+        ? initialData.ticketTypes
+        : DEFAULT_TICKET_FORMULAS)
   );
   const [isAddingTicket, setIsAddingTicket] = useState(false);
   const [editingTicketId, setEditingTicketId] = useState<string | null>(null);
@@ -201,12 +216,13 @@ export function EventForm({ initialData, onSuccess, onCancel }: EventFormProps) 
 
   // Questionnaire (Google Forms Style) State
   const [hasQuestionnaire, setHasQuestionnaire] = useState<boolean>(
-    initialData?.questionnaireEnabled ?? true
+    draft?.hasQuestionnaire ?? initialData?.questionnaireEnabled ?? true
   );
   const [questions, setQuestions] = useState<QuestionnaireQuestion[]>(
-    initialData?.questionnaire && initialData.questionnaire.length > 0
-      ? initialData.questionnaire
-      : DEFAULT_QUESTIONS
+    draft?.questions ??
+      (initialData?.questionnaire && initialData.questionnaire.length > 0
+        ? initialData.questionnaire
+        : DEFAULT_QUESTIONS)
   );
 
   const {
@@ -215,6 +231,7 @@ export function EventForm({ initialData, onSuccess, onCancel }: EventFormProps) 
     setValue,
     watch,
     trigger,
+    getValues,
     formState: { errors },
   } = useForm<EventFormData>({
     defaultValues: {
@@ -237,8 +254,74 @@ export function EventForm({ initialData, onSuccess, onCancel }: EventFormProps) 
       venueName: initialData?.venueName ?? "",
       location: initialData?.location ?? "",
       capacity: initialData?.capacity ?? 450,
+      ...((draft?.values ?? {}) as Partial<EventFormData>),
     },
   });
+
+  // Sauvegarde automatique (anti-rebond 500 ms) de tous les réglages.
+  const latest = useRef<Omit<EventDraft, "values" | "savedAt"> | null>(null);
+  useEffect(() => {
+    latest.current = {
+      currentStep,
+      uploadedImage,
+      selectedType,
+      hasCert,
+      selectedCertTemplate,
+      selectedTicketTemplate,
+      ticketFormulas,
+      hasQuestionnaire,
+      questions,
+    };
+  });
+  const saveTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const published = useRef(false);
+  const scheduleDraftSave = useCallback(() => {
+    if (saveTimer.current) clearTimeout(saveTimer.current);
+    saveTimer.current = setTimeout(() => {
+      if (published.current || !latest.current) return;
+      const savedAt = writeEventDraft(draftKey, {
+        ...latest.current,
+        values: getValues() as unknown as Record<string, unknown>,
+      });
+      if (savedAt) setDraftSavedAt(savedAt);
+    }, 500);
+  }, [draftKey, getValues]);
+
+  // Champs du formulaire.
+  useEffect(() => {
+    const sub = watch(() => scheduleDraftSave());
+    return () => sub.unsubscribe();
+  }, [watch, scheduleDraftSave]);
+
+  // Étape, formules, modèles, questionnaire, affiche.
+  useEffect(() => {
+    scheduleDraftSave();
+  }, [
+    scheduleDraftSave,
+    currentStep,
+    uploadedImage,
+    selectedType,
+    hasCert,
+    selectedCertTemplate,
+    selectedTicketTemplate,
+    ticketFormulas,
+    hasQuestionnaire,
+    questions,
+  ]);
+
+  useEffect(
+    () => () => {
+      if (saveTimer.current) clearTimeout(saveTimer.current);
+    },
+    [],
+  );
+
+  function handleDiscardDraft() {
+    if (!confirm("Effacer le brouillon et repartir des valeurs enregistrées ?")) return;
+    published.current = true;
+    clearEventDraft(draftKey);
+    window.location.reload();
+  }
 
   const titleValue = watch("title");
   const descValue = watch("description");
@@ -458,6 +541,12 @@ export function EventForm({ initialData, onSuccess, onCancel }: EventFormProps) 
   }
 
   async function onSubmit(values: EventFormData) {
+    // Publication uniquement depuis la dernière étape, par le bouton dédié :
+    // jamais par la touche Entrée ni par le clic « Continuer ».
+    if (currentStep < 4) {
+      await handleNextStep();
+      return;
+    }
     setSubmitting(true);
     try {
       const payload: Partial<Event> = {
@@ -482,6 +571,9 @@ export function EventForm({ initialData, onSuccess, onCancel }: EventFormProps) 
       // Le parent enregistre réellement (API) et signale l'échec en levant
       // une erreur : le toast de succès n'est affiché qu'après coup.
       await onSuccess?.(payload);
+      published.current = true;
+      if (saveTimer.current) clearTimeout(saveTimer.current);
+      clearEventDraft(draftKey);
       toast.success(initialData?.id ? "Événement mis à jour" : "Événement créé avec succès !");
     } catch (err) {
       toast.error(err instanceof Error && err.message ? err.message : "Erreur lors de l'enregistrement");
@@ -645,7 +737,14 @@ export function EventForm({ initialData, onSuccess, onCancel }: EventFormProps) 
 
       {/* RIGHT CONTENT PANEL (FORM & ACTIONS) */}
       <div className="flex-1 min-w-0 w-full">
-        <form onSubmit={handleSubmit(onSubmit)} className="space-y-6">
+        <form
+          onSubmit={handleSubmit(onSubmit)}
+          // Entrée dans un champ ne publie pas l'événement (zones de texte libres).
+          onKeyDown={(e) => {
+            if (e.key === "Enter" && (e.target as HTMLElement).tagName === "INPUT") e.preventDefault();
+          }}
+          className="space-y-6"
+        >
           {/* ========================================================================= */}
           {/* ÉTAPE 1 : INFORMATIONS GÉNÉRALES, PROGRAMME, AFFICHE, LIEU & HORAIRES */}
           {/* ========================================================================= */}
@@ -1644,8 +1743,21 @@ export function EventForm({ initialData, onSuccess, onCancel }: EventFormProps) 
           </div>
 
           <div className="flex items-center gap-2">
+            {draftSavedAt && (
+              <span className="hidden sm:inline text-[11px] text-muted-foreground">
+                Brouillon enregistré à {draftSavedAt}
+                {" · "}
+                <button type="button" className="underline" onClick={handleDiscardDraft}>
+                  effacer
+                </button>
+              </span>
+            )}
+            {/* Clés distinctes : React ne réutilise pas le même bouton DOM.
+                Sans elles, le clic « Continuer » de l'étape 3 devenait un
+                submit et publiait l'événement à l'arrivée sur l'étape 4. */}
             {currentStep < 4 ? (
               <Button
+                key="next"
                 type="button"
                 className="rounded-xl bg-primary text-white font-semibold text-xs gap-1.5 shadow-md shadow-primary/20"
                 onClick={handleNextStep}
@@ -1655,6 +1767,7 @@ export function EventForm({ initialData, onSuccess, onCancel }: EventFormProps) 
               </Button>
             ) : (
               <Button
+                key="submit"
                 type="submit"
                 className="rounded-xl bg-primary text-white font-semibold text-xs shadow-md shadow-primary/20 gap-1.5"
                 disabled={submitting}

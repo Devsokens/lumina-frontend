@@ -27,7 +27,9 @@ const csp = [
   "default-src 'self'",
   `script-src 'self' 'unsafe-inline'${isDev ? " 'unsafe-eval'" : ""}`,
   "style-src 'self' 'unsafe-inline'",
-  `img-src 'self' ${apiOrigin} ${imageOrigins} data: blob:`,
+  // Images par URL : tout hôte https (affiches et visuels collés par les
+  // organisateurs). Risque faible : une image ne peut pas exécuter de script.
+  `img-src 'self' https: ${apiOrigin} ${imageOrigins} data: blob:`,
   `connect-src 'self' ${apiOrigin} ${wsOrigin}${isDev ? " ws:" : ""}`,
   "font-src 'self'",
   "frame-ancestors 'none'",

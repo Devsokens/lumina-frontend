@@ -8,7 +8,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from "@/components/ui/dialog";
-import { IMAGE_TYPES, MAX_IMAGE_BYTES, uploadError, useUploadImage } from "@/hooks/useUpload";
+import { ACCEPTED_IMAGE_TYPES, isHttpsImageUrl, prepareImage } from "@/lib/image";
 import { aiError, isPlanLimited, useGenerateVisual } from "@/hooks/useAi";
 import { PricingUpgradeModal } from "@/components/shared/pricing-upgrade-modal";
 import { cn } from "@/lib/utils";
@@ -31,8 +31,8 @@ type Props = {
 };
 
 // Affiche de l'événement : import (glisser-déposer ou parcourir), URL, ou
-// génération IA. Seule une URL http(s) renvoyée par le serveur est
-// enregistrée : jamais d'image en base64 dans l'événement.
+// génération IA. Un fichier importé est ré-encodé dans le navigateur
+// (EXIF retiré, taille plafonnée) puis vérifié par le serveur (IsImageRef).
 export function PosterUpload({ value, onChange, eventTitle, eventType }: Props) {
   const inputRef = useRef<HTMLInputElement>(null);
   const [dragging, setDragging] = useState(false);
@@ -43,35 +43,26 @@ export function PosterUpload({ value, onChange, eventTitle, eventType }: Props) 
   const [upgradeOpen, setUpgradeOpen] = useState(false);
   const [aiStyle, setAiStyle] = useState(AI_STYLES[0].id);
   const [aiPrompt, setAiPrompt] = useState("");
-  const upload = useUploadImage();
   const generate = useGenerateVisual();
 
   async function handleFile(file: File) {
-    if (!IMAGE_TYPES.includes(file.type)) {
-      toast.error("Format non pris en charge : PNG, JPG ou WEBP.");
-      return;
-    }
-    if (file.size > MAX_IMAGE_BYTES) {
-      toast.error("Image trop lourde (5 Mo maximum).");
-      return;
-    }
-    setProgress(0);
+    setProgress(50);
     try {
-      const url = await upload.mutateAsync({ file, onProgress: setProgress });
-      onChange(url);
+      onChange(await prepareImage(file));
       toast.success("Affiche importée.");
     } catch (err) {
-      toast.error(uploadError(err));
-      setShowUrl(true);
+      toast.error(err instanceof Error ? err.message : "Échec de l'import de l'image.");
     } finally {
       setProgress(null);
       if (inputRef.current) inputRef.current.value = "";
     }
   }
 
-  function applyUrl() {
-    const url = urlDraft.trim();
-    if (!/^https:\/\/\S+$/.test(url)) {
+  // Appliquée dès qu'une adresse valide est collée ou saisie : l'aperçu
+  // s'affiche immédiatement.
+  function applyUrl(raw = urlDraft) {
+    const url = raw.trim();
+    if (!isHttpsImageUrl(url)) {
       toast.error("Saisissez une adresse d'image commençant par https://");
       return;
     }
@@ -125,7 +116,7 @@ export function PosterUpload({ value, onChange, eventTitle, eventType }: Props) 
       <input
         ref={inputRef}
         type="file"
-        accept={IMAGE_TYPES.join(",")}
+        accept={ACCEPTED_IMAGE_TYPES.join(",")}
         className="hidden"
         onChange={(e) => {
           const file = e.target.files?.[0];
@@ -136,7 +127,12 @@ export function PosterUpload({ value, onChange, eventTitle, eventType }: Props) 
       {value ? (
         <div className="relative overflow-hidden rounded-2xl border border-border bg-black/40">
           {/* eslint-disable-next-line @next/next/no-img-element */}
-          <img src={value} alt="Affiche" className="h-52 w-full object-cover" />
+          <img
+            src={value}
+            alt="Affiche"
+            className="h-52 w-full object-cover"
+            onError={() => toast.error("Image introuvable à cette adresse : vérifiez le lien (il doit pointer vers une image).")}
+          />
           <div className="absolute inset-x-0 bottom-0 flex justify-end gap-2 bg-gradient-to-t from-black/80 to-transparent p-3">
             <Button type="button" size="sm" variant="secondary" className="h-7 rounded-xl text-xs" onClick={() => inputRef.current?.click()} disabled={busy}>
               <RefreshCw className="size-3" /> Remplacer
@@ -172,9 +168,9 @@ export function PosterUpload({ value, onChange, eventTitle, eventType }: Props) 
             {busy ? <Loader2 className="size-6 animate-spin" /> : <Upload className="size-6" />}
           </div>
           <p className="text-xs font-bold">
-            {busy ? `Envoi en cours… ${progress}%` : "Glissez votre affiche ici ou cliquez pour parcourir"}
+            {busy ? "Préparation de l'image…" : "Glissez votre affiche ici ou cliquez pour parcourir"}
           </p>
-          <p className="mt-1 text-[11px] text-muted-foreground">PNG, JPG ou WEBP, 5 Mo maximum. Format portrait conseillé.</p>
+          <p className="mt-1 text-[11px] text-muted-foreground">PNG, JPG ou WEBP. Redimensionnée automatiquement. Format portrait conseillé.</p>
           {busy && (
             <div className="mx-auto mt-3 h-1.5 w-48 overflow-hidden rounded-full bg-muted">
               <div className="h-full bg-primary transition-all" style={{ width: `${progress}%` }} />
@@ -187,11 +183,21 @@ export function PosterUpload({ value, onChange, eventTitle, eventType }: Props) 
         <div className="flex gap-2">
           <Input
             value={urlDraft}
-            onChange={(e) => setUrlDraft(e.target.value)}
+            onChange={(e) => {
+              setUrlDraft(e.target.value);
+              // Collage d'une adresse complète : appliquée sans clic.
+              if (isHttpsImageUrl(e.target.value) && e.target.value.length - urlDraft.length > 8) applyUrl(e.target.value);
+            }}
+            onKeyDown={(e) => {
+              if (e.key === "Enter") {
+                e.preventDefault();
+                applyUrl();
+              }
+            }}
             placeholder="https://… (adresse de l'image)"
             className="h-9 rounded-xl text-xs"
           />
-          <Button type="button" size="sm" className="h-9 rounded-xl" onClick={applyUrl}>
+          <Button type="button" size="sm" className="h-9 rounded-xl" onClick={() => applyUrl()}>
             Utiliser
           </Button>
         </div>

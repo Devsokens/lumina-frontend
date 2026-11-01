@@ -49,6 +49,7 @@ import {
   DialogTitle,
 } from "@/components/ui/dialog";
 import { toast } from "sonner";
+import { prepareImage } from "@/lib/image";
 
 interface ShowcaseCanvasProps {
   isEditorMode?: boolean;
@@ -144,20 +145,20 @@ export function ShowcaseCanvas({ isEditorMode = false, liveEvents, onReserve }: 
     onSuccess: (dataUrl: string) => void,
     successMessage: string
   ) {
-    const file = e.target.files?.[0];
-    if (file) {
-      if (!file.type.startsWith("image/")) {
-        toast.error("Veuillez sélectionner un fichier image (PNG, JPG, SVG, WebP).");
-        return;
-      }
-      const reader = new FileReader();
-      reader.onload = () => {
-        const result = reader.result as string;
-        onSuccess(result);
+    const input = e.target;
+    const file = input.files?.[0];
+    if (!file) return;
+    // Ré-encodée et compressée (EXIF retiré) : acceptée par le serveur à la
+    // publication. Le même fichier peut être ré-importé ensuite.
+    prepareImage(file)
+      .then((dataUrl) => {
+        onSuccess(dataUrl);
         toast.success(successMessage);
-      };
-      reader.readAsDataURL(file);
-    }
+      })
+      .catch((err: unknown) => toast.error(err instanceof Error ? err.message : "Image illisible."))
+      .finally(() => {
+        input.value = "";
+      });
   }
 
   // Theme styling helpers

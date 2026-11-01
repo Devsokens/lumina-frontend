@@ -48,6 +48,7 @@ import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { Switch } from "@/components/ui/switch";
 import { toast } from "sonner";
+import { prepareImage } from "@/lib/image";
 import { useOrganizationSettings, COLOR_PRESETS } from "@/hooks/useOrganizationSettings";
 
 type EmailTemplateKey = "TICKET" | "CERTIFICATE" | "REMINDER" | "SURVEY";
@@ -156,21 +157,20 @@ export default function EventSettingsPage() {
   const logoInputRef = useRef<HTMLInputElement>(null);
 
   function handleLogoUpload(e: React.ChangeEvent<HTMLInputElement>) {
-    const file = e.target.files?.[0];
-    if (file) {
-      if (!file.type.startsWith("image/")) {
-        toast.error("Veuillez sélectionner un fichier image valide (PNG, JPG, SVG, WebP).");
-        return;
-      }
-      const reader = new FileReader();
-      reader.onload = () => {
-        const result = reader.result as string;
+    const input = e.target;
+    const file = input.files?.[0];
+    if (!file) return;
+    // Logo réduit (512 px) : tient dans le stockage local, EXIF retiré.
+    prepareImage(file, 512)
+      .then((result) => {
         setOrgLogo(result);
         saveOrgSettings({ logo: result });
         toast.success("Logo de l'organisation mis à jour !");
-      };
-      reader.readAsDataURL(file);
-    }
+      })
+      .catch((err: unknown) => toast.error(err instanceof Error ? err.message : "Image illisible."))
+      .finally(() => {
+        input.value = "";
+      });
   }
 
   function handleRemoveLogo() {
