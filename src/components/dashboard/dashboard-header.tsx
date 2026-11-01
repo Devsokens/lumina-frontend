@@ -39,6 +39,7 @@ import {
 import { useAuth } from "@/hooks/useAuth";
 import { useRouter, useParams, usePathname } from "next/navigation";
 import { navLinks } from "@/lib/navigation";
+import { useTenantSector } from "@/hooks/useTenantSector";
 import { Sheet, SheetContent, SheetHeader, SheetTitle } from "@/components/ui/sheet";
 import type { Role } from "@/lib/constants";
 
@@ -55,7 +56,9 @@ import { toast } from "sonner";
 export function DashboardHeader() {
   const { user, signOut } = useAuth();
   const router = useRouter();
-  const { sector } = useParams<{ sector?: string }>();
+  const { sector: urlSector } = useParams<{ sector?: string }>();
+  const { sector: tenantSector } = useTenantSector();
+  const sector = tenantSector ?? urlSector;
   const currentSector = (sector ?? "event").toLowerCase();
 
   const [searchQuery, setSearchQuery] = useState("");

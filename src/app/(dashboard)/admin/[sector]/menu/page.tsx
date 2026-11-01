@@ -1,5 +1,6 @@
 "use client";
 
+import { useTenantSector } from "@/hooks/useTenantSector";
 import { useState } from "react";
 import { toast } from "sonner";
 import { Pencil, Plus, Trash2 } from "lucide-react";
@@ -19,6 +20,7 @@ import type { Product } from "@/types/api";
 export default function MenuPage() {
   const role = useAuthStore((s) => s.user?.role);
   const canEdit = role === "OWNER" || role === "MANAGER";
+  const { sector } = useTenantSector();
   const { data: categories, isLoading: categoriesLoading } = useAdminCategories();
   const { data: products, isLoading: productsLoading } = useAdminProducts();
   const save = useSaveProduct();
@@ -88,7 +90,9 @@ export default function MenuPage() {
         </div>
       ) : (products ?? []).length === 0 ? (
         <p className="py-8 text-center text-sm text-muted-foreground">
-          Aucun article. Ajoutez votre premier plat pour publier votre menu.
+          {sector === "shop"
+            ? "Aucun article. Ajoutez votre premier produit pour publier votre catalogue."
+            : "Aucun article. Ajoutez votre premier plat pour publier votre menu."}
         </p>
       ) : (
         <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">

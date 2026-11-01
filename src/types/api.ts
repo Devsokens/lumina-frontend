@@ -15,6 +15,7 @@ export type Tenant = {
   config: Record<string, unknown>;
   settings: Record<string, unknown>;
   customDomain: string | null;
+  createdAt?: string;
 };
 
 export type User = {

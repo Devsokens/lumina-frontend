@@ -3,6 +3,7 @@
 import { useState } from "react";
 import { toast } from "sonner";
 import { KeyRound, Plus } from "lucide-react";
+import { useTenantSector } from "@/hooks/useTenantSector";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -50,6 +51,9 @@ export function TeamManager() {
   const role = useAuthStore((s) => s.user?.role);
   const isOwner = role === "OWNER";
   const canRead = isOwner || role === "MANAGER";
+  // Rôle Cuisine (écran KDS) : restauration uniquement.
+  const { sector } = useTenantSector();
+  const roles = sector === "restaurant" ? MEMBER_ROLES : MEMBER_ROLES.filter((r) => r !== "KITCHEN");
   const { data: members, isLoading, isError } = useMembers(canRead);
   const create = useCreateMember();
   const update = useUpdateMember();
@@ -155,7 +159,7 @@ export function TeamManager() {
                       onChange={(e) => void changeRole(m, e.target.value as MemberRole)}
                       className="h-8 rounded-md border border-border bg-background px-2 text-sm"
                     >
-                      {MEMBER_ROLES.map((r) => (
+                      {roles.map((r) => (
                         <option key={r} value={r}>
                           {ROLE_LABELS[r]}
                         </option>
@@ -202,7 +206,7 @@ export function TeamManager() {
                 onChange={(e) => setForm({ ...form, role: e.target.value as MemberRole })}
                 className="h-9 w-full rounded-md border border-border bg-background px-2 text-sm"
               >
-                {MEMBER_ROLES.map((r) => (
+                {roles.map((r) => (
                   <option key={r} value={r}>
                     {ROLE_LABELS[r]}
                   </option>

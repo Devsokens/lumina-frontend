@@ -1,6 +1,7 @@
 "use client";
 
 import { TenantSettingsForm } from "@/components/dashboard/tenant-settings-form";
+import { AccountSummary } from "@/components/dashboard/account-summary";
 import { useState, useEffect, useRef } from "react";
 import {
   Mail,
@@ -121,9 +122,9 @@ export default function EventSettingsPage() {
   const [activeSection, setActiveSection] = useState<string>("section-email");
 
   // Email General Config State
-  const [senderEmail, setSenderEmail] = useState("billetterie@urban-festival.ga");
-  const [senderName, setSenderName] = useState("Giya Billetterie • Festival Urban 2026");
-  const [replyToEmail, setReplyToEmail] = useState("contact@urban-festival.ga");
+  const [senderEmail, setSenderEmail] = useState("");
+  const [senderName, setSenderName] = useState("");
+  const [replyToEmail, setReplyToEmail] = useState("");
   const [emailFooterText, setEmailFooterText] = useState(
     "Cet email contient votre billet officiel sécurisé ou votre attestation certifiée Giya. Présentez le QR code au contrôle d'accès le jour de l'événement."
   );
@@ -137,21 +138,21 @@ export default function EventSettingsPage() {
   const editorRef = useRef<HTMLDivElement>(null);
 
   // Mobile Money Accounts State (Obligatoire)
-  const [airtelMoneyPhone, setAirtelMoneyPhone] = useState("+241 77 12 34 56");
-  const [airtelAccountName, setAirtelAccountName] = useState("SOKENS DIGITAL EVENT SARL");
-  const [moovMoneyPhone, setMoovMoneyPhone] = useState("+241 66 98 76 54");
-  const [moovAccountName, setMoovAccountName] = useState("SOKENS DIGITAL EVENT SARL");
+  const [airtelMoneyPhone, setAirtelMoneyPhone] = useState("");
+  const [airtelAccountName, setAirtelAccountName] = useState("");
+  const [moovMoneyPhone, setMoovMoneyPhone] = useState("");
+  const [moovAccountName, setMoovAccountName] = useState("");
 
   // Organization & Theme Settings Hook
   const { settings: orgSettings, saveSettings: saveOrgSettings, activePreset } = useOrganizationSettings();
 
   // Organization Info State
-  const [orgName, setOrgName] = useState(orgSettings.name || "SOKENS DIGITAL EVENT");
+  const [orgName, setOrgName] = useState(orgSettings.name || "");
   const [orgLogo, setOrgLogo] = useState<string | null>(orgSettings.logo || null);
   const [selectedColorId, setSelectedColorId] = useState<string>(orgSettings.colorId || "emerald");
-  const [orgNif, setOrgNif] = useState("GA-1092837-NIF");
-  const [orgRccm, setOrgRccm] = useState("RCCM-LBV-2024-B-8902");
-  const [supportPhone, setSupportPhone] = useState("+241 74 55 66 77");
+  const [orgNif, setOrgNif] = useState("");
+  const [orgRccm, setOrgRccm] = useState("");
+  const [supportPhone, setSupportPhone] = useState("");
   const logoInputRef = useRef<HTMLInputElement>(null);
 
   function handleLogoUpload(e: React.ChangeEvent<HTMLInputElement>) {
@@ -361,6 +362,7 @@ export default function EventSettingsPage() {
         </p>
       </div>
 
+      <AccountSummary />
       <TenantSettingsForm />
 
       <p className="rounded-2xl border border-warning/40 bg-warning/10 p-3 text-xs">

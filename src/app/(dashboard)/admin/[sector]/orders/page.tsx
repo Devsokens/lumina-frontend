@@ -1,6 +1,7 @@
 "use client";
 
 import { useAuthStore } from "@/stores/useAuthStore";
+import { useTenantSector } from "@/hooks/useTenantSector";
 import { toast } from "sonner";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Card, CardContent } from "@/components/ui/card";
@@ -105,6 +106,9 @@ export default function OrdersPage() {
   const tenantId = useAuthStore((s) => s.user?.tenantId ?? null);
   const { connected } = useOrdersRealtime(tenantId);
   const { data: orders, isLoading } = useOrdersList({ poll: !connected });
+  // Pas de cuisine en boutique : même statuts, libellé métier.
+  const { sector } = useTenantSector();
+  const tabs = sector === "shop" ? TABS.map((t) => (t.value === "kitchen" ? { ...t, label: "En préparation" } : t)) : TABS;
 
   return (
     <div className="space-y-6">
@@ -116,7 +120,7 @@ export default function OrdersPage() {
       </div>
       <Tabs defaultValue="pending">
         <TabsList className="flex-wrap">
-          {TABS.map((tab) => {
+          {tabs.map((tab) => {
             const count = (orders ?? []).filter((o) => tab.statuses.includes(o.status)).length;
             return (
               <TabsTrigger key={tab.value} value={tab.value}>
@@ -125,7 +129,7 @@ export default function OrdersPage() {
             );
           })}
         </TabsList>
-        {TABS.map((tab) => {
+        {tabs.map((tab) => {
           const filtered = (orders ?? []).filter((o) => tab.statuses.includes(o.status));
           return (
             <TabsContent key={tab.value} value={tab.value} className="mt-4">

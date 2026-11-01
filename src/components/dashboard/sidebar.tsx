@@ -9,10 +9,13 @@ import { cn } from "@/lib/utils";
 import { useAuth } from "@/hooks/useAuth";
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 import { useOrganizationSettings } from "@/hooks/useOrganizationSettings";
+import { useTenantSector } from "@/hooks/useTenantSector";
 
 export function Sidebar() {
   const pathname = usePathname();
-  const { sector } = useParams<{ sector: string }>();
+  const { sector: urlSector } = useParams<{ sector: string }>();
+  const { sector: tenantSector, tenant } = useTenantSector();
+  const sector = tenantSector ?? urlSector;
   const { user } = useAuth();
   const { settings: orgSettings, activePreset } = useOrganizationSettings();
 
@@ -20,6 +23,8 @@ export function Sidebar() {
   const initials = (user?.fullName ?? user?.email ?? "Admin").slice(0, 2).toUpperCase();
 
   const links = navLinks(sector ?? "event", user?.role);
+  // Nom saisi à l'inscription (serveur) en priorité sur la préférence locale.
+  const orgName = tenant?.name || orgSettings.name;
 
   return (
     <>
@@ -37,17 +42,17 @@ export function Sidebar() {
               /* eslint-disable-next-line @next/next/no-img-element */
               <img
                 src={orgSettings.logo}
-                alt={orgSettings.name}
+                alt={orgName}
                 className="size-9 rounded-xl object-contain bg-white/10 p-0.5 border border-white/20 shadow-sm shrink-0"
               />
             ) : (
               <div className="flex size-9 shrink-0 items-center justify-center rounded-xl bg-white/15 text-white font-extrabold text-sm border border-white/20 shadow-sm">
-                {orgSettings.name?.charAt(0) || "O"}
+                {orgName?.charAt(0) || "O"}
               </div>
             )}
             <div className="min-w-0 flex-1">
-              <h2 className="font-display text-sm font-extrabold text-white tracking-tight leading-snug truncate" title={orgSettings.name}>
-                {orgSettings.name || "Mon espace"}
+              <h2 className="font-display text-sm font-extrabold text-white tracking-tight leading-snug truncate" title={orgName}>
+                {orgName || "Mon espace"}
               </h2>
             </div>
           </div>

@@ -47,12 +47,14 @@ export default function DashboardHomePage() {
     <div className="space-y-6">
       <div className="flex items-center justify-between">
         <h1 className="font-display text-2xl font-semibold">Tableau de bord</h1>
-        <Button asChild variant="outline">
-          <Link href={`/admin/${sector}/qr`}>
-            <QrCode className="size-4" />
-            Voir mon QR code
-          </Link>
-        </Button>
+        {sector === "restaurant" && (
+          <Button asChild variant="outline">
+            <Link href={`/admin/${sector}/qr`}>
+              <QrCode className="size-4" />
+              Voir mon QR code
+            </Link>
+          </Button>
+        )}
       </div>
 
       <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">

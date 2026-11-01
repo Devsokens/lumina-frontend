@@ -1,6 +1,7 @@
 "use client";
 
 import { useState, useEffect } from "react";
+import { useAuthStore } from "@/stores/useAuthStore";
 
 export interface ColorPreset {
   id: string;
@@ -105,12 +106,24 @@ export interface OrganizationSettings {
 }
 
 const DEFAULT_SETTINGS: OrganizationSettings = {
-  name: "SOKENS DIGITAL EVENT",
+  name: "",
   logo: null,
   colorId: "emerald",
 };
 
-const STORAGE_KEY = "giya_org_settings";
+// Une préférence par compte : deux comptes sur le même navigateur ne
+// partagent ni logo, ni nom, ni couleurs.
+const storageKey = (tenantId?: string) => `giya_org_settings:${tenantId ?? "anon"}`;
+
+function readSettings(key: string): OrganizationSettings {
+  if (typeof window === "undefined") return DEFAULT_SETTINGS;
+  try {
+    const stored = localStorage.getItem(key);
+    return stored ? { ...DEFAULT_SETTINGS, ...JSON.parse(stored) } : DEFAULT_SETTINGS;
+  } catch {
+    return DEFAULT_SETTINGS;
+  }
+}
 const EVENT_NAME = "giya_org_settings_changed";
 
 export function applyThemeVariables(preset: ColorPreset) {
@@ -127,15 +140,17 @@ export function applyThemeVariables(preset: ColorPreset) {
 }
 
 export function useOrganizationSettings() {
-  const [settings, setSettings] = useState<OrganizationSettings>(() => {
-    if (typeof window === "undefined") return DEFAULT_SETTINGS;
-    try {
-      const stored = localStorage.getItem(STORAGE_KEY);
-      return stored ? { ...DEFAULT_SETTINGS, ...JSON.parse(stored) } : DEFAULT_SETTINGS;
-    } catch {
-      return DEFAULT_SETTINGS;
-    }
-  });
+  const tenantId = useAuthStore((s) => s.user?.tenantId);
+  const STORAGE_KEY = storageKey(tenantId);
+  const [settings, setSettings] = useState<OrganizationSettings>(() => readSettings(STORAGE_KEY));
+
+  // Changement de compte : recharger les préférences du nouveau tenant
+  // (ajustement pendant le rendu, sans effet en cascade).
+  const [loadedKey, setLoadedKey] = useState(STORAGE_KEY);
+  if (loadedKey !== STORAGE_KEY) {
+    setLoadedKey(STORAGE_KEY);
+    setSettings(readSettings(STORAGE_KEY));
+  }
 
   const activePreset =
     COLOR_PRESETS.find((p) => p.id === settings.colorId) ?? COLOR_PRESETS[0];
@@ -163,7 +178,7 @@ export function useOrganizationSettings() {
       window.removeEventListener(EVENT_NAME, handleStorageChange);
       window.removeEventListener("storage", handleStorageChange);
     };
-  }, [activePreset]);
+  }, [activePreset, STORAGE_KEY]);
 
   function saveSettings(newSettings: Partial<OrganizationSettings>) {
     const updated = { ...settings, ...newSettings };
