@@ -1,65 +1,76 @@
-# Module événementiel — état du branchement API (2026-10-05)
+# Module événementiel — état réel (2026-11-01)
 
-Ce que chaque écran du secteur « événementiel » fait réellement, et ce qui reste en données d'exemple
-ou sans support serveur. Contrat des routes : `docs/API_CONTRACT.md` §6, §7, §8, §13, §14.
+Ce que chaque écran du secteur « événementiel » fait réellement. Remplace la version du
+2026-10-05. Vue d'ensemble des deux dépôts : `giyax/ETAT_PROJET.md`. Contrat des routes :
+`giyax/docs/API_CONTRACT.md` (la copie de ce dépôt a divergé, voir « Limites »).
 
-## Écrans branchés sur l'API
+Vérifié : `tsc`, lint (0 erreur), `next build`. Aucun test automatisé, rien testé sur appareil réel.
 
-| Écran | Route | Données / actions réelles |
+## Back-office
+
+| Écran | Route | Comportement |
 |---|---|---|
-| Tableau de bord | `/admin/event` | KPI (événements, billets émis, recettes HT, entrées scannées), ventes par événement, cas manuels (OWNER). Rafraîchi toutes les 15 s. |
-| Mes événements | `/admin/event/events` | Liste, création et modification (formulaire en 4 étapes), recettes et remplissage réels. |
-| Détail d'un événement | `/admin/event/events/[id]` | Infos, formules, participants, pointage manuel (même validation que `/scan`), ouverture/pause de la vente, statistiques. |
-| Réservations | `/admin/event/reservations` | Commandes par événement, filtres, recherche, **remboursement** (OWNER/MANAGER) avec choix « remettre les places en vente ». |
-| Participants | `/admin/event/attendees` | Billets payés/entrés/remboursés, ouverture du PDF, export CSV local. |
-| Contrôle d'accès | `/scan` | Scanner réel (en ligne, hors ligne, saisie manuelle). `/admin/event/scanner` redirige ici. |
-| Vitrine publique | `/{slug}`, `/{slug}/event` | Mise en page de l'éditeur, **événements réels**, « Réserver » mène à la page d'achat. |
-| Liste publique | `/{slug}/events` | Événements en vente. |
-| Achat | `/{slug}/events/[id]` | Choix de formule, quantité, coordonnées, idempotence, gratuit → billets immédiats, payant → Paystack. |
-| Retour de paiement | `/{slug}/events/confirmation` | Statut du paiement (polling ~1 min), liens PDF des billets une fois payés. |
+| Tableau de bord | `/admin/event` | KPI compacts (`StatCard`), graphiques animés : ventes 7 jours (aire), répartition (anneau), top événements ; erreur de chargement avec « Réessayer » |
+| Mes événements | `/admin/event/events` | Liste, création, modification |
+| Formulaire d'événement | `/admin/event/events/new`, `[id]` | 4 étapes ; « Suivant » ne publie jamais (bouton `key` distinct, Entrée bloquée dans les champs) ; publication seulement à l'étape 4 |
+| Brouillon | (même écran) | Enregistré en direct dans le navigateur 500 ms après chaque saisie, clé `giya_event_draft:{tenantId}:{eventId\|new}` ; indicateur « Brouillon enregistré à HH:MM · effacer » ; effacé après publication |
+| Affiche | (même écran) | Import depuis l'appareil : ré-encodage WebP/JPEG côté client, EXIF retiré, 1600 px max (`src/lib/image.ts`) ; URL `https://` appliquée au collage ou à Entrée ; erreur si l'image ne charge pas |
+| Questionnaire, modèles | (même écran) | Envoyés dans `settings` et relus au rechargement (`src/lib/events.ts`) |
+| Éditeur de vitrine | `/admin/event/showcase` | Part de la vitrine en ligne ; **publication automatique 2 s après chaque modification** ; « Publier » force l'envoi ; « Annuler » revient à la dernière version en ligne ; lien vers le vrai site |
+| Paramètres | `/admin/event/settings` | « Mon compte », « Abonnement », « Adresse du site » (données réelles) ; logo importé ré-encodé ; thème de couleur stocké dans le navigateur |
+| Réservations, participants, scan | `/admin/event/reservations`, `/attendees`, `/scan` | Inchangés : remboursement, export CSV, scan en ligne et hors ligne |
 
-## Ce qui n'est pas enregistré côté serveur
+Garde de secteur : un compte d'un autre secteur est redirigé vers son propre back-office
+(`components/dashboard/sector-guard.tsx`).
 
-Le formulaire d'événement collecte plus que ce que le backend stocke. Ces champs sont **ignorés à
-l'enregistrement** (ils ne réapparaissent pas après rechargement) :
+## Site public d'un organisateur
 
-- modèle de pass (`ticketTemplate`) et modèle d'attestation ;
-- attestations (`hasCertificate`, intitulé, signataire) : l'onglet « Certifications » affiche un
-  avertissement, aucun certificat n'est généré ni envoyé ;
-- questionnaire d'inscription ;
-- affiche importée depuis l'appareil : il n'existe pas d'endpoint d'upload. Seule une URL `https://`
-  est enregistrée, et un message prévient l'utilisateur.
+| Page | Route | Comportement |
+|---|---|---|
+| Accueil (vitrine) | `/{slug}` | Contenu publié depuis l'éditeur + événements réellement en vente. Compte relu sans cache au chargement, puis toutes les 60 s et au retour sur l'onglet ; vitrine réappliquée à chaque nouvelle publication (`hooks/useTenant.tsx`, `components/vitrine/live-showcase.tsx`) |
+| Liste | `/{slug}/events` | Événements en vente |
+| Détail + achat | `/{slug}/events/[id]` | Affiche, infos, formules, quantité, coordonnées ; gratuit → billets immédiats ; payant → paiement |
+| Paiement simulé | `/{slug}/pay/simulate?reference=SIM-…` | Mode test du backend (`PAYMENT_SIMULATION=true`) : montant, choix Airtel/Moov, « Payer » ou « Simuler un échec », puis page de confirmation |
+| Confirmation | `/{slug}/events/confirmation?reference=…` | Statut du paiement, billets PDF/QR une fois payés |
 
-Enregistrés : titre, description, dates, lieu (`venueName`) et ville (`location`), type
-d'événement, jauge, formules (nom, prix, quantité, description), statut.
+**Navigation** : barre fixe en haut de chaque page ci-dessus, sauf l'accueil
+(`components/vitrine/public-top-bar.tsx`). Elle contient « ← Retour » vers le niveau précédent et
+« Accueil » (avec le logo du compte s'il existe). En bas du détail, un bouton « Retour à
+l'accueil ». Mêmes boutons sur mobile et ordinateur.
 
-## Limites connues
+**Adresse** : `{slug}.{NEXT_PUBLIC_ROOT_DOMAIN}` si l'application tourne sur ce domaine, sinon
+`{NEXT_PUBLIC_APP_URL}/{slug}` (`src/lib/tenant-url.ts`). Sur `giyax.vercel.app`, c'est donc
+`giyax.vercel.app/{slug}`.
 
-- **Images d'affiche** : la CSP (`next.config.ts`, `img-src`) n'autorise que le site et l'API. Une
-  affiche hébergée ailleurs ne s'affichera pas en production. Il faudra un endpoint d'upload
-  (backend) ou ajouter l'origine de l'hébergeur d'images à la CSP.
-- **Vitrine** : thème, textes d'accueil, galerie, témoignages et FAQ viennent toujours de l'éditeur
-  local (`useShowcaseStore`, non sauvegardé côté serveur). Seuls les événements sont réels.
-- **Renvoi de billet** : pas d'envoi WhatsApp/SMS côté serveur. Les boutons ouvrent le PDF du
-  billet, à transmettre manuellement.
-- **Temps réel** : pas de canal push pour la billetterie, uniquement un rafraîchissement toutes les
-  15 s.
-- **Rôles** : les stats et les commandes sont réservées à OWNER/MANAGER (le STAFF voit les écrans
-  sans chiffres). Les cas manuels sont réservés à OWNER.
-- **Écrans encore en données d'exemple** : `/admin/event/users` (équipe), `/admin/event/settings`
-  (paramètres), `/admin/event/showcase` (éditeur de vitrine, local). `components/events/tickets-manager.tsx`
-  n'est plus utilisé.
-- Prix affichés en vitrine hors taxes éventuelles : le total exact (TVA du tenant) est calculé par
-  le serveur à la commande.
+## PWA
 
-## Parcours d'achat (à tester de bout en bout en mode test Paystack)
+- Installable : bannière Android/ordinateur (`beforeinstallprompt`), aide « Partager → Sur l'écran
+  d'accueil » sur iOS après 15 s, fermée pour 14 jours (`components/pwa/pwa-manager.tsx`).
+- Icônes normales et adaptatives, raccourcis Scanner / Cuisine / Tableau de bord, zones sûres iOS.
+- Hors ligne : page `/~offline` ; seule l'API publique en lecture est mise en cache, jamais le
+  back-office (`src/app/sw.ts`).
+- Les règles de cache par défaut ne s'appliquent qu'au même domaine. Les images d'autres domaines
+  (Unsplash, affiches par URL) sont chargées directement par le navigateur : plus d'erreurs CSP
+  `connect-src`.
 
-1. `/{slug}/events/{id}` : choisir une formule, puis saisir le téléphone (obligatoire) et l'e-mail
-   (recommandé).
-2. Le serveur crée la commande et réserve les places. Ensuite :
-   - formule gratuite : billets affichés tout de suite ;
-   - formule payante : redirection Paystack.
-3. Paystack renvoie sur `{FRONTEND_URL}/{slug}/events/confirmation?reference=…`. La page affiche
-   les billets dès que le paiement est confirmé (webhook ou vérification directe par le serveur).
-4. Back-office : la commande apparaît dans Réservations et les billets dans Participants. Le
-   remboursement y invalide les billets : `/scan` répond alors « invalide ».
+## Parcours de test de bout en bout (mode simulation)
+
+Prérequis : backend avec `PAYMENT_SIMULATION=true`.
+
+1. Back-office : créer un événement avec une formule payante et le publier. Modifier la vitrine,
+   attendre « Publié automatiquement ».
+2. Ouvrir `/{slug}` : la vitrine modifiée et l'événement apparaissent.
+3. « Réserver » → détail → formule, téléphone, e-mail → « Payer et recevoir mes billets ».
+4. Page de paiement simulé → « Payer » → confirmation avec les billets.
+5. Back-office : la commande apparaît dans Réservations (payée, Mobile Money) et les billets dans
+   Participants. Scanner un billet sur `/scan` → valide ; rembourser → nouveau scan « invalide ».
+
+## Limites
+
+- Questionnaire enregistré mais pas encore présenté à l'acheteur ; attestations non générées.
+- Images stockées en data URL (pas de stockage objet).
+- Routes IA appelées par le formulaire (`/admin/ai/*`) absentes côté backend.
+- `docs/API_CONTRACT.md` de ce dépôt diverge de celui du backend : ici, sections scan et IA en
+  plus ; vitrine et paiement simulé en moins. La copie du backend fait foi.
+- Pas d'envoi WhatsApp/SMS des billets ; pas de push temps réel pour la billetterie (polling).
+- Sous-domaines impossibles sur `*.vercel.app` : il faut un domaine propre avec DNS wildcard.
