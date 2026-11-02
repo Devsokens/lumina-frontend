@@ -214,8 +214,7 @@ export default function SignupPage() {
               <SelectItem value="EVENT"><PartyPopper className="size-4" /> Événementiel (Billetterie & Scan QR)</SelectItem>
               <SelectItem value="RESTAURANT"><UtensilsCrossed className="size-4" /> Restauration (Menu QR & KDS Cuisine)</SelectItem>
               <SelectItem value="SHOP"><ShoppingBag className="size-4" /> E-Commerce (Boutique & Stocks)</SelectItem>
-              {/* Hébergement pas encore géré par le serveur (inscription refusée). */}
-              <SelectItem value="ACCOMMODATION" disabled><Building2 className="size-4" /> Hébergement & RBNB (bientôt disponible)</SelectItem>
+              <SelectItem value="ACCOMMODATION"><Building2 className="size-4" /> Hébergement & RBNB (Logements & Réservations)</SelectItem>
             </SelectContent>
           </Select>
         </div>
