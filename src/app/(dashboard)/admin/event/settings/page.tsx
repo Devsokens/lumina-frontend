@@ -49,6 +49,7 @@ import { Textarea } from "@/components/ui/textarea";
 import { Switch } from "@/components/ui/switch";
 import { toast } from "sonner";
 import { prepareImage } from "@/lib/image";
+import { useAdminTenantInfo, useUpdateTenant } from "@/hooks/useAdmin";
 import { useOrganizationSettings, COLOR_PRESETS } from "@/hooks/useOrganizationSettings";
 
 type EmailTemplateKey = "TICKET" | "CERTIFICATE" | "REMINDER" | "SURVEY";
@@ -156,14 +157,30 @@ export default function EventSettingsPage() {
   const [supportPhone, setSupportPhone] = useState("");
   const logoInputRef = useRef<HTMLInputElement>(null);
 
+  // Logo enregistré côté serveur (tenant.config.logoUrl) : utilisé sur les
+  // billets PDF et partagé entre appareils. Copie locale pour la barre latérale.
+  const { data: tenantInfo } = useAdminTenantInfo();
+  const updateTenant = useUpdateTenant();
+  const serverLogo = (tenantInfo?.config?.logoUrl as string | undefined) ?? null;
+  const [syncedLogo, setSyncedLogo] = useState<string | null>(null);
+  if (tenantInfo && serverLogo !== syncedLogo) {
+    setSyncedLogo(serverLogo);
+    if (serverLogo) {
+      setOrgLogo(serverLogo);
+      saveOrgSettings({ logo: serverLogo });
+    }
+  }
+
   function handleLogoUpload(e: React.ChangeEvent<HTMLInputElement>) {
     const input = e.target;
     const file = input.files?.[0];
     if (!file) return;
-    // Logo réduit (512 px) : tient dans le stockage local, EXIF retiré.
+    // Logo réduit (512 px), EXIF retiré, puis enregistré sur le serveur.
     prepareImage(file, 512)
-      .then((result) => {
+      .then(async (result) => {
+        await updateTenant.mutateAsync({ logoUrl: result });
         setOrgLogo(result);
+        setSyncedLogo(result);
         saveOrgSettings({ logo: result });
         toast.success("Logo de l'organisation mis à jour !");
       })
@@ -174,10 +191,16 @@ export default function EventSettingsPage() {
   }
 
   function handleRemoveLogo() {
-    setOrgLogo(null);
-    saveOrgSettings({ logo: null });
-    if (logoInputRef.current) logoInputRef.current.value = "";
-    toast.success("Logo retiré.");
+    updateTenant
+      .mutateAsync({ logoUrl: "" })
+      .then(() => {
+        setOrgLogo(null);
+        setSyncedLogo(null);
+        saveOrgSettings({ logo: null });
+        if (logoInputRef.current) logoInputRef.current.value = "";
+        toast.success("Logo retiré.");
+      })
+      .catch(() => toast.error("Logo non retiré : réessayez."));
   }
 
   function handleColorChange(colorId: string) {

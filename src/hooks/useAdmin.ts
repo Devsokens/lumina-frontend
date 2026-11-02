@@ -40,6 +40,7 @@ export type TenantUpdate = {
   address?: string;
   taxRate?: number; // points de base : 1800 = 18 %
   taxIncluded?: boolean;
+  logoUrl?: string; // https ou data URL ; "" = retirer
 };
 
 export function useUpdateTenant() {
