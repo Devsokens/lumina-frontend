@@ -13,6 +13,7 @@ import {
   Contact,
   ScrollText,
   Palette,
+  BedDouble,
   type LucideIcon,
 } from "lucide-react";
 import type { Role } from "@/lib/constants";
@@ -43,9 +44,11 @@ export function navLinks(sectorParam: string | undefined, role: Role | undefined
       { href: `${base}/settings`, label: "Paramètres", icon: Settings, roles: OWNER_MANAGER },
     ];
   } else if (sector === "accommodation") {
-    // Module hébergement pas encore disponible côté serveur.
     links = [
       { href: base, label: "Tableau de bord", icon: LayoutDashboard, exact: true },
+      { href: `${base}/listings`, label: "Logements", icon: BedDouble, roles: OWNER_MANAGER },
+      { href: `${base}/bookings`, label: "Réservations", icon: CalendarDays },
+      { href: `${base}/customers`, label: "Clients", icon: Contact, roles: OWNER_MANAGER },
       { href: `${base}/team`, label: "Équipe", icon: Users, roles: OWNER_MANAGER },
       { href: `${base}/settings`, label: "Paramètres", icon: Settings, roles: OWNER_MANAGER },
     ];

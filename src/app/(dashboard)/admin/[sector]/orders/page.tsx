@@ -40,6 +40,7 @@ const TYPE_LABELS: Record<Order["type"], string> = {
   TAKEAWAY: "À emporter",
   DELIVERY: "Livraison",
   EVENT: "Billetterie",
+  STAY: "Séjour",
 };
 
 function OrderTile({ order }: { order: Order }) {

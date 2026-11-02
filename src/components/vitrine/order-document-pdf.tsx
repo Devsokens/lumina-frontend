@@ -57,7 +57,7 @@ function money(cents: number) {
   return `${Math.round(cents / 100).toLocaleString("fr-FR").replace(/[  ]/g, " ")} FCFA`;
 }
 
-const ORDER_TYPES = { DINE_IN: "Sur place", TAKEAWAY: "À emporter", DELIVERY: "Livraison", EVENT: "Billetterie" };
+const ORDER_TYPES = { DINE_IN: "Sur place", TAKEAWAY: "À emporter", DELIVERY: "Livraison", EVENT: "Billetterie", STAY: "Séjour" };
 
 export function OrderDocumentPdf({ data, appLogoUrl }: { data: OrderDocumentData; appLogoUrl?: string | null }) {
   const invoice = data.kind === "INVOICE";

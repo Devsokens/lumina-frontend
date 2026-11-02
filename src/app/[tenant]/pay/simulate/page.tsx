@@ -36,7 +36,7 @@ function SimulatedCheckout() {
   });
 
   function confirmationUrl(type: string) {
-    const page = type === "EVENT" ? "events" : "orders";
+    const page = type === "EVENT" ? "events" : type === "STAY" ? "stays" : "orders";
     return `/${tenant.slug}/${page}/confirmation?reference=${encodeURIComponent(reference)}`;
   }
 

@@ -13,6 +13,7 @@ import { useParams } from "next/navigation";
 import { useAuthStore } from "@/stores/useAuthStore";
 import { AreaChart, BarList, DonutChart } from "@/components/charts/charts";
 import { StatCard } from "@/components/charts/stat-card";
+import { StaysDashboard } from "@/components/stays/stays-dashboard";
 
 type DashboardKpis = {
   salesToday: number; // centimes
@@ -76,17 +77,7 @@ export default function DashboardHomePage() {
     };
   }, [orders, now]);
 
-  if (sector === "accommodation") {
-    return (
-      <div className="space-y-4">
-        <h1 className="font-display text-2xl font-semibold">Tableau de bord</h1>
-        <p className="rounded-2xl border border-border bg-muted/40 p-4 text-sm text-muted-foreground">
-          Le module Hébergement (propriétés, calendrier, réservations) est en préparation. Vous pouvez
-          déjà gérer votre équipe et les informations de votre activité.
-        </p>
-      </div>
-    );
-  }
+  if (sector === "accommodation") return <StaysDashboard />;
 
   return (
     <div className="space-y-4 pb-8">

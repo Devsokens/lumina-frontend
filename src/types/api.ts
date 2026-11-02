@@ -65,7 +65,7 @@ export type OrderStatus =
   | "COMPLETED"
   | "CANCELLED";
 
-export type OrderType = "DINE_IN" | "TAKEAWAY" | "DELIVERY" | "EVENT";
+export type OrderType = "DINE_IN" | "TAKEAWAY" | "DELIVERY" | "EVENT" | "STAY";
 
 export type PaymentMethod = "CASH" | "MOBILE_MONEY" | "CARD" | "PAY_ON_DELIVERY";
 export type PaymentStatus = "PENDING" | "PAID" | "FAILED" | "REFUNDED";

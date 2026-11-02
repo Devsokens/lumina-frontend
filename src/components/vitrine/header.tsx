@@ -17,8 +17,10 @@ export function VitrineHeader() {
   const logo = restaurantInfo(tenant).logoUrl;
   const home = `/${tenant.slug}`;
   const isShop = tenant.sector === "SHOP";
+  // Hébergement : pas de carte ni de panier, on réserve depuis un logement.
+  const isStay = tenant.sector === "ACCOMMODATION";
   const links = [
-    { href: `${home}/menu`, label: isShop ? "Catalogue" : "La carte" },
+    isStay ? { href: `${home}#logements`, label: "Logements" } : { href: `${home}/menu`, label: isShop ? "Catalogue" : "La carte" },
     ...(site.sections.about && site.aboutText ? [{ href: `${home}#maison`, label: "La maison" }] : []),
     { href: `${home}#infos`, label: "Infos" },
   ];
@@ -54,7 +56,7 @@ export function VitrineHeader() {
             ))}
           </nav>
 
-          <div className="flex items-center gap-2">
+          <div className={`flex items-center gap-2 ${isStay ? "hidden" : ""}`}>
             <Link
               href={`${home}/menu`}
               className="rounded-full border border-border px-4 py-2 text-sm font-medium md:hidden"
