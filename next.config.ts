@@ -25,7 +25,7 @@ const wsOrigin = apiOrigin.replace(/^http/, "ws");
 const imageOrigins = `https://images.unsplash.com ${process.env.NEXT_PUBLIC_IMAGE_ORIGINS ?? ""}`;
 const csp = [
   "default-src 'self'",
-  `script-src 'self' 'unsafe-inline'${isDev ? " 'unsafe-eval'" : ""}`,
+  `script-src 'self' 'unsafe-inline' 'wasm-unsafe-eval'${isDev ? " 'unsafe-eval'" : ""}`,
   "style-src 'self' 'unsafe-inline'",
   // Images par URL : tout hôte https (affiches et visuels collés par les
   // organisateurs). Risque faible : une image ne peut pas exécuter de script.
@@ -80,6 +80,8 @@ const withSerwist = withSerwistInit({
     "/brand/giyax-logo-white.png",
     "/brand/giyax-favicon-192.png",
     "/brand/giyax-favicon-512.png",
+    // Lecteur QR : le scan doit marcher hors ligne (mode hors ligne du Scanner).
+    "/zxing/zxing_reader.wasm",
   ].map((url) => ({ url, revision: process.env.VERCEL_GIT_COMMIT_SHA ?? "dev" })),
   reloadOnOnline: false,
   disable: process.env.NODE_ENV === "development",
