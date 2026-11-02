@@ -30,7 +30,11 @@ const csp = [
   // Images par URL : tout hôte https (affiches et visuels collés par les
   // organisateurs). Risque faible : une image ne peut pas exécuter de script.
   `img-src 'self' https: ${apiOrigin} ${imageOrigins} data: blob:`,
-  `connect-src 'self' ${apiOrigin} ${wsOrigin}${isDev ? " ws:" : ""}`,
+  // data: / blob: : moteur PDF des factures (@react-pdf charge son module
+  // wasm depuis une data URL) et images déjà présentes dans la page.
+  `connect-src 'self' ${apiOrigin} ${wsOrigin} data: blob:${isDev ? " ws:" : ""}`,
+  // Worker du moteur PDF, créé depuis un blob local.
+  "worker-src 'self' blob:",
   "font-src 'self'",
   // Carte de localisation du site restaurant (iframe Google Maps, sans clé).
   "frame-src https://www.google.com https://maps.google.com",

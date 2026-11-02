@@ -63,7 +63,9 @@ export function restaurantInfo(tenant: Tenant): OrderDocumentData["restaurant"] 
     slug: tenant.slug,
     phone: text(config, "phone"),
     address: text(config, "address"),
-    logoUrl: logo && /^https:\/\//.test(logo) ? logo : null,
+    // Logo importé (data URL) ou https : un logo https d'un autre domaine est
+    // bloqué par la CSP (connect-src), le PDF sort alors sans logo.
+    logoUrl: logo && /^(https:\/\/|data:image\/(png|jpeg|webp);base64,)/.test(logo) ? logo : null,
   };
 }
 
