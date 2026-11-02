@@ -1,7 +1,8 @@
 "use client";
 
 import { useCallback, useEffect, useRef, useState } from "react";
-import { CloudOff, LogOut, WifiOff } from "lucide-react";
+import Link from "next/link";
+import { ArrowLeft, CloudOff, LogOut, WifiOff } from "lucide-react";
 import { QrScanner } from "@/components/scan/qr-scanner";
 import { ScanResult } from "@/components/scan/scan-result";
 import { ManualEntry } from "@/components/scan/manual-entry";
@@ -98,6 +99,17 @@ export default function ScanPage() {
         )}
 
         <div className="flex gap-2">
+          {/* Retour au back-office (lien direct : /admin/event/scanner
+              redirige ici, un router.back() bouclerait). Le Scanner seul
+              n'a pas de back-office : il garde la déconnexion. */}
+          {!scannerOnly && (
+            <Button asChild variant="secondary" className="h-10" aria-label="Retour au tableau de bord">
+              <Link href="/admin/event">
+                <ArrowLeft className="size-4" />
+                <span className="hidden sm:inline">Retour</span>
+              </Link>
+            </Button>
+          )}
           <select
             aria-label="Événement contrôlé"
             value={eventId ?? ""}
