@@ -14,7 +14,7 @@ import { useCartStore } from "@/stores/useCartStore";
 import { useTenant } from "@/hooks/useTenant";
 import { freeSeats, usePublicTable } from "@/hooks/usePublicTable";
 import { TableStatusCard } from "@/components/vitrine/table-status-card";
-import { OrderDocumentButton } from "@/components/vitrine/order-document-button";
+import { OrderDocumentButton, preloadOrderDocument } from "@/components/vitrine/order-document-button";
 import { api, apiError, type ApiResponse } from "@/lib/api";
 import { formatXAF } from "@/lib/format";
 import { FEATURES } from "@/lib/features";
@@ -93,6 +93,8 @@ export function CheckoutForm() {
       return;
     }
     setSubmitting(true);
+    // Moteur PDF chargé pendant l'appel API : facture / addition prêtes plus vite.
+    void preloadOrderDocument().catch(() => {});
     const key = idempotencyKey ?? crypto.randomUUID();
     setIdempotencyKey(key);
     try {

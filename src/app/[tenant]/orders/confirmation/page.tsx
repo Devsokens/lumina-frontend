@@ -1,13 +1,13 @@
 "use client";
 
-import { Suspense } from "react";
+import { Suspense, useEffect } from "react";
 import Link from "next/link";
 import { useSearchParams } from "next/navigation";
 import { CheckCircle2, Clock, XCircle } from "lucide-react";
 import { useTenant } from "@/hooks/useTenant";
 import { usePaymentStatus } from "@/hooks/usePublicEvents";
 import { formatXaf } from "@/lib/events";
-import { OrderDocumentButton } from "@/components/vitrine/order-document-button";
+import { OrderDocumentButton, preloadOrderDocument } from "@/components/vitrine/order-document-button";
 import { loadOrderSnapshot, restaurantInfo } from "@/lib/order-document";
 
 // Retour de Paystack pour une commande (restaurant / boutique) :
@@ -17,6 +17,10 @@ function OrderConfirmation() {
   const params = useSearchParams();
   const reference = params.get("reference") ?? params.get("trxref");
   const { data, isLoading, isError } = usePaymentStatus(reference);
+  // Retour de Paystack : moteur PDF chargé pendant la vérification du paiement.
+  useEffect(() => {
+    if (reference) void preloadOrderDocument().catch(() => {});
+  }, [reference]);
   const back = (
     <Link href={`/${tenant.slug}/menu`} className="text-sm text-primary underline">
       Retour au menu

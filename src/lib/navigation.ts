@@ -12,6 +12,7 @@ import {
   Globe,
   Contact,
   ScrollText,
+  Palette,
   type LucideIcon,
 } from "lucide-react";
 import type { Role } from "@/lib/constants";
@@ -61,6 +62,7 @@ export function navLinks(sectorParam: string | undefined, role: Role | undefined
             { href: "/kitchen", label: "Écran Cuisine (KDS)", icon: ChefHat, roles: ["OWNER", "MANAGER", "STAFF", "KITCHEN"] as Role[] },
             { href: `${base}/qr`, label: "QR Code", icon: QrCode, roles: OWNER_MANAGER },
           ]),
+      { href: `${base}/site`, label: "Site & apparence", icon: Palette, roles: OWNER_MANAGER },
       { href: `${base}/customers`, label: "Clients", icon: Contact, roles: OWNER_MANAGER },
       { href: `${base}/team`, label: "Équipe", icon: Users, roles: OWNER_MANAGER },
       { href: `${base}/audit`, label: "Journal d'audit", icon: ScrollText, roles: ["OWNER"] },

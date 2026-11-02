@@ -4,6 +4,8 @@ import { getTenantBySlug } from "@/lib/tenant";
 import { TenantProvider } from "@/hooks/useTenant";
 import { VitrineHeader } from "@/components/vitrine/header";
 import { CartBinding } from "@/components/vitrine/cart-binding";
+import { SiteTheme } from "@/components/site/site-theme";
+import { siteFontVariables } from "@/lib/site-fonts";
 
 export default async function TenantLayout({
   children,
@@ -21,11 +23,15 @@ export default async function TenantLayout({
 
   return (
     <TenantProvider tenant={tenant}>
-      <Suspense>
-        <CartBinding tenantSlug={tenant.slug} />
-      </Suspense>
-      {tenant.sector !== "EVENT" && <VitrineHeader />}
-      {children}
+      <div className={`${siteFontVariables} contents`}>
+        <SiteTheme>
+          <Suspense>
+            <CartBinding tenantSlug={tenant.slug} />
+          </Suspense>
+          {tenant.sector !== "EVENT" && <VitrineHeader />}
+          {children}
+        </SiteTheme>
+      </div>
     </TenantProvider>
   );
 }

@@ -1,38 +1,63 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { toast } from "sonner";
 import { Download, FileText, Loader2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import type { OrderDocumentData } from "@/lib/order-document";
 
-// Génère le PDF dans le navigateur, au clic : @react-pdf/renderer est
-// chargé à ce moment-là seulement (lourd, inutile au reste de la vitrine).
+// @react-pdf/renderer est lourd : chargé une seule fois, au clic sur
+// « payer » (preloadOrderDocument) plutôt qu'au téléchargement.
+let modules: Promise<[typeof import("@react-pdf/renderer"), typeof import("@/components/vitrine/order-document-pdf")]> | null =
+  null;
+
+export function preloadOrderDocument() {
+  modules ??= Promise.all([import("@react-pdf/renderer"), import("@/components/vitrine/order-document-pdf")]);
+  modules.catch(() => {
+    modules = null;
+  });
+  return modules;
+}
+
+async function render(data: OrderDocumentData, withLogos: boolean) {
+  const [{ pdf }, { OrderDocumentPdf }] = await preloadOrderDocument();
+  const doc = withLogos ? data : { ...data, restaurant: { ...data.restaurant, logoUrl: null } };
+  const appLogoUrl = withLogos ? `${window.location.origin}/brand/giyax-logo.png` : null;
+  return pdf(<OrderDocumentPdf data={doc} appLogoUrl={appLogoUrl} />).toBlob();
+}
+
+async function build(data: OrderDocumentData) {
+  try {
+    return await render(data, true);
+  } catch {
+    // Logo injoignable (réseau, CSP) : document sans images plutôt que rien.
+    return render(data, false);
+  }
+}
+
+// Le PDF est généré en arrière-plan dès l'affichage du bouton : au clic,
+// le téléchargement part immédiatement.
 export function OrderDocumentButton({ data }: { data: OrderDocumentData }) {
   const [busy, setBusy] = useState(false);
+  const blob = useRef<Promise<Blob> | null>(null);
   const label = data.kind === "INVOICE" ? "Télécharger la facture" : "Télécharger l'addition";
+  // Les pages recréent l'objet `data` à chaque rendu : on ne régénère que si
+  // son contenu change.
+  const key = JSON.stringify(data);
 
-  async function render(withLogos: boolean) {
-    const [{ pdf }, { OrderDocumentPdf }] = await Promise.all([
-      import("@react-pdf/renderer"),
-      import("@/components/vitrine/order-document-pdf"),
-    ]);
-    const doc = withLogos ? data : { ...data, restaurant: { ...data.restaurant, logoUrl: null } };
-    const appLogoUrl = withLogos ? `${window.location.origin}/brand/giyax-logo.png` : null;
-    return pdf(<OrderDocumentPdf data={doc} appLogoUrl={appLogoUrl} />).toBlob();
-  }
+  useEffect(() => {
+    const p = build(JSON.parse(key) as OrderDocumentData);
+    blob.current = p;
+    p.catch(() => {
+      if (blob.current === p) blob.current = null;
+    });
+  }, [key]);
 
   async function download() {
     setBusy(true);
     try {
-      let blob: Blob;
-      try {
-        blob = await render(true);
-      } catch {
-        // Logo injoignable (réseau, CSP) : document sans images plutôt que rien.
-        blob = await render(false);
-      }
-      const url = URL.createObjectURL(blob);
+      const file = await (blob.current ?? (blob.current = build(data)));
+      const url = URL.createObjectURL(file);
       const a = document.createElement("a");
       a.href = url;
       a.download = `${data.kind === "INVOICE" ? "facture" : "addition"}-${data.orderNumber}.pdf`;
@@ -41,6 +66,7 @@ export function OrderDocumentButton({ data }: { data: OrderDocumentData }) {
       a.remove();
       setTimeout(() => URL.revokeObjectURL(url), 10_000);
     } catch {
+      blob.current = null;
       toast.error("Impossible de générer le document. Réessayez.");
     } finally {
       setBusy(false);

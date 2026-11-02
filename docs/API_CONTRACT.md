@@ -418,6 +418,9 @@ URL renvoyées doit être ajoutée à `NEXT_PUBLIC_IMAGE_ORIGINS` (CSP `img-src`
 
 ## Historique
 
+- **2026-11-02** — `PUT /admin/tenant/site` : apparence et contenu du site restaurant / boutique
+  (`config.site`, exposé par `GET /tenants/:slug`). Éditeur : `admin/[sector]/site`.
+
 - **2026-11-02** — Occupation de table publique (§4), `guestCount` sur `POST /orders` (§5),
   facture/addition PDF côté navigateur, `Tenant.config.logoUrl`.
 

@@ -5,6 +5,7 @@ import { api, type ApiResponse } from "@/lib/api";
 import type { Role } from "@/lib/constants";
 import type { Category, Product, Table, Tenant } from "@/types/api";
 import type { ShowcaseContent } from "@/stores/useShowcaseStore";
+import type { SiteConfig } from "@/lib/site";
 
 // Ressources /admin/* génériques (docs/API_CONTRACT.md §2, §3, §4, §11–§13).
 // Toutes les réponses sont enveloppées { success, data, meta? }.
@@ -56,6 +57,15 @@ export function useSaveShowcase() {
   const invalidate = useInvalidate("admin-tenant");
   return useMutation({
     mutationFn: (body: ShowcaseContent) => api.put("/admin/tenant/showcase", body),
+    onSuccess: invalidate,
+  });
+}
+
+// Site restaurant / boutique (tenant.config.site) — PUT /admin/tenant/site.
+export function useSaveSite() {
+  const invalidate = useInvalidate("admin-tenant", "public-tenant");
+  return useMutation({
+    mutationFn: (body: SiteConfig) => api.put("/admin/tenant/site", body),
     onSuccess: invalidate,
   });
 }
