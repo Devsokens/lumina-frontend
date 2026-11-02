@@ -1,33 +1,42 @@
-import { Sun } from "lucide-react";
 import Link from "next/link";
 
 interface LogoProps {
   className?: string;
   size?: "sm" | "md" | "lg";
-  /** Use on dark, non-theme-aware backgrounds (e.g. the footer) where the gradient text wouldn't show. */
+  /** Version blanche, pour les fonds sombres (pied de page, barre latérale). */
   inverted?: boolean;
 }
 
+// Logo officiel GiyaX (docs/Soken's__GiyaX, déclinaisons dans public/brand).
+// Ratio d'origine 720×305.
 export function Logo({ className = "", size = "md", inverted = false }: LogoProps) {
-  const iconSize = size === "sm" ? "size-5" : size === "lg" ? "size-7" : "size-6";
-  const textSize = size === "sm" ? "text-lg" : size === "lg" ? "text-2xl" : "text-xl";
-
+  const height = size === "sm" ? "h-7" : size === "lg" ? "h-11" : "h-9";
   return (
     <Link
       href="/"
-      className={`group flex items-center gap-2.5 font-display font-bold tracking-tight text-foreground transition-opacity hover:opacity-90 ${className}`}
+      aria-label="GiyaX — accueil"
+      className={`group inline-flex shrink-0 items-center transition-opacity hover:opacity-90 ${className}`}
     >
-      <div className="relative flex items-center justify-center rounded-xl bg-gradient-to-br from-primary via-[#047857] to-[#063326] p-2 text-white shadow-md shadow-primary/20 transition-transform group-hover:scale-105">
-        <Sun className={`${iconSize} animate-[spin_16s_linear_infinite] text-secondary`} strokeWidth={2.5} />
-      </div>
-      {inverted ? (
-        <span className={`${textSize} font-extrabold tracking-wider text-white`}>GiyaX</span>
-      ) : (
-        <span className={`${textSize} font-extrabold tracking-wider bg-gradient-to-r from-primary via-[#047857] to-primary bg-clip-text text-transparent dark:from-white dark:to-emerald-300`}>
-          GiyaX
-        </span>
+      {/* eslint-disable-next-line @next/next/no-img-element */}
+      <img
+        src={inverted ? "/brand/giyax-logo-white.png" : "/brand/giyax-logo.png"}
+        alt="GiyaX"
+        width={720}
+        height={305}
+        className={`${height} w-auto select-none ${inverted ? "" : "dark:hidden"}`}
+        draggable={false}
+      />
+      {!inverted && (
+        /* eslint-disable-next-line @next/next/no-img-element */
+        <img
+          src="/brand/giyax-logo-white.png"
+          alt="GiyaX"
+          width={720}
+          height={305}
+          className={`${height} hidden w-auto select-none dark:block`}
+          draggable={false}
+        />
       )}
     </Link>
   );
 }
-

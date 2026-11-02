@@ -144,7 +144,7 @@ export function PwaManager() {
       </button>
       <div className="flex items-start gap-3 pr-5">
         {/* eslint-disable-next-line @next/next/no-img-element */}
-        <img src="/icons/icon-192.png" alt="" className="size-11 shrink-0 rounded-xl" />
+        <img src="/brand/giyax-favicon.png" alt="" className="size-11 shrink-0 rounded-xl" />
         <div className="min-w-0 space-y-1">
           <p className="text-sm font-bold">Installer GiyaX</p>
           {showIosHelp && !deferred ? (

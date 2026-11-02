@@ -36,11 +36,18 @@ export const metadata: Metadata = {
   formatDetection: { telephone: false },
   icons: {
     icon: [
-      { url: "/icons/favicon-32.png", sizes: "32x32", type: "image/png" },
-      { url: "/icons/icon-192.png", sizes: "192x192", type: "image/png" },
+      // Fichiers fournis (docs/Soken's__GiyaX), utilisés tels quels.
+      { url: "/brand/giyax-favicon.png", type: "image/png" },
     ],
-    apple: [{ url: "/icons/apple-touch-icon.png", sizes: "180x180" }],
+    apple: [{ url: "/brand/giyax-variante-1.png" }],
   },
+  // Aperçu lors d'un partage (WhatsApp, Facebook, LinkedIn…).
+  openGraph: {
+    siteName: "GiyaX",
+    title: "GiyaX — La digitalisation qui éclaire",
+    images: [{ url: "/brand/giyax-variante-1.png", width: 5076, height: 5076, alt: "GiyaX" }],
+  },
+  twitter: { card: "summary", images: ["/brand/giyax-variante-1.png"] },
   other: { "mobile-web-app-capable": "yes" },
 };
 
