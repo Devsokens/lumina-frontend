@@ -169,14 +169,31 @@ export function SiteHome() {
               </div>
             )}
             {site.sections.location && (info.address || site.mapsUrl || info.phone) && (
-              <div className="flex flex-col gap-5 rounded-3xl border border-border bg-card p-6 sm:p-8">
+              <div className={`flex flex-col overflow-hidden rounded-3xl border border-border bg-card ${site.sections.hours ? "" : "md:col-span-2"}`}>
+                {info.address && (
+                  // Carte intégrée à partir de l'adresse (pas de clé d'API).
+                  // CSP : frame-src www.google.com (next.config.ts).
+                  <iframe
+                    title={`Plan d'accès — ${tenant.name}`}
+                    src={`https://www.google.com/maps?q=${encodeURIComponent(`${tenant.name}, ${info.address}`)}&output=embed`}
+                    loading="lazy"
+                    referrerPolicy="no-referrer-when-downgrade"
+                    className="pointer-events-auto h-64 w-full border-0 sm:h-80"
+                  />
+                )}
+                <div className="flex flex-1 flex-col gap-4 p-6 sm:p-8">
                 <h3 className="flex items-center gap-2 font-display text-xl font-semibold">
                   <MapPin className="size-5 text-primary" /> Adresse
                 </h3>
                 {info.address && <p className="text-lg">{info.address}</p>}
                 <div className="mt-auto flex flex-wrap gap-3">
-                  {site.mapsUrl && (
-                    <a href={site.mapsUrl} target="_blank" rel="noopener noreferrer" className="inline-flex min-h-11 items-center gap-2 rounded-full bg-primary px-5 font-semibold text-primary-foreground">
+                  {(site.mapsUrl || info.address) && (
+                    <a
+                      href={site.mapsUrl || `https://www.google.com/maps/dir/?api=1&destination=${encodeURIComponent(`${tenant.name}, ${info.address}`)}`}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="inline-flex min-h-11 items-center gap-2 rounded-full bg-primary px-5 font-semibold text-primary-foreground"
+                    >
                       <MapPin className="size-4" /> Itinéraire
                     </a>
                   )}
@@ -185,6 +202,7 @@ export function SiteHome() {
                       <Phone className="size-4" /> {info.phone}
                     </a>
                   )}
+                </div>
                 </div>
               </div>
             )}

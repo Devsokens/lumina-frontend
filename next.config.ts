@@ -32,6 +32,8 @@ const csp = [
   `img-src 'self' https: ${apiOrigin} ${imageOrigins} data: blob:`,
   `connect-src 'self' ${apiOrigin} ${wsOrigin}${isDev ? " ws:" : ""}`,
   "font-src 'self'",
+  // Carte de localisation du site restaurant (iframe Google Maps, sans clé).
+  "frame-src https://www.google.com https://maps.google.com",
   "frame-ancestors 'none'",
   "base-uri 'self'",
   "form-action 'self'",
