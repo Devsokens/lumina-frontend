@@ -1,7 +1,9 @@
 import type { Metadata, Viewport } from "next";
 import { Space_Grotesk, Inter, JetBrains_Mono } from "next/font/google";
 import { Providers } from "@/components/shared/providers";
+import { preconnect, preload } from "react-dom";
 import { PwaManager } from "@/components/pwa/pwa-manager";
+import { API_URL } from "@/lib/constants";
 import "./globals.css";
 
 // Typographie — voir LUMINA_Document_Maitre_v2.md section 3.3.
@@ -36,16 +38,19 @@ export const metadata: Metadata = {
   formatDetection: { telephone: false },
   icons: {
     icon: [
-      // Fichiers fournis (docs/Soken's__GiyaX), utilisés tels quels.
-      { url: "/brand/giyax-favicon.png", type: "image/png" },
+      // Versions allégées (réduites, non retouchées) des fichiers fournis
+      // dans giyax/docs/Soken's__GiyaX.
+      { url: "/brand/giyax-favicon-32.png", sizes: "32x32", type: "image/png" },
+      { url: "/brand/giyax-favicon-192.png", sizes: "192x192", type: "image/png" },
     ],
-    apple: [{ url: "/brand/giyax-variante-1.png" }],
+    apple: [{ url: "/brand/giyax-variante-1-180.png", sizes: "180x180" }],
   },
-  // Aperçu lors d'un partage (WhatsApp, Facebook, LinkedIn…).
+  // Aperçu lors d'un partage (WhatsApp, Facebook, LinkedIn…) : URL absolue.
+  metadataBase: new URL(process.env.NEXT_PUBLIC_APP_URL ?? "https://giyax.vercel.app"),
   openGraph: {
     siteName: "GiyaX",
     title: "GiyaX — La digitalisation qui éclaire",
-    images: [{ url: "/brand/giyax-variante-1.png", width: 5076, height: 5076, alt: "GiyaX" }],
+    images: [{ url: "/brand/giyax-variante-1.png", width: 1080, height: 1080, alt: "GiyaX" }],
   },
   twitter: { card: "summary", images: ["/brand/giyax-variante-1.png"] },
   other: { "mobile-web-app-capable": "yes" },
@@ -63,6 +68,11 @@ export const viewport: Viewport = {
 };
 
 export default function RootLayout({ children }: LayoutProps<"/">) {
+  // Chargement plus rapide : connexion à l'API ouverte d'avance (DNS + TLS,
+  // coûteux vers Render) et logo préchargé (visible en haut de chaque page).
+  preconnect(new URL(API_URL).origin, { crossOrigin: "use-credentials" });
+  preload("/brand/giyax-logo.png", { as: "image", fetchPriority: "high" });
+
   return (
     <html
       lang="fr"

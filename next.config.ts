@@ -54,6 +54,14 @@ const nextConfig: NextConfig = {
           { key: "Content-Security-Policy", value: csp },
         ],
       },
+      // Logo et icônes : 1 semaine en cache navigateur, revalidés ensuite
+      // en arrière-plan (pas de nom versionné, donc pas "immutable").
+      {
+        source: "/brand/:file*",
+        headers: [
+          { key: "Cache-Control", value: "public, max-age=604800, stale-while-revalidate=86400" },
+        ],
+      },
     ];
   },
 };
@@ -64,7 +72,15 @@ const withSerwist = withSerwistInit({
   swSrc: "src/app/sw.ts",
   swDest: "public/sw.js",
   // Page hors ligne précachée (fallback des navigations, voir sw.ts).
-  additionalPrecacheEntries: [{ url: "/~offline", revision: process.env.VERCEL_GIT_COMMIT_SHA ?? "dev" }],
+  // + logo et icônes légers (~170 Ko) : affichés instantanément, même hors ligne.
+  additionalPrecacheEntries: [
+    "/~offline",
+    "/manifest.json",
+    "/brand/giyax-logo.png",
+    "/brand/giyax-logo-white.png",
+    "/brand/giyax-favicon-192.png",
+    "/brand/giyax-favicon-512.png",
+  ].map((url) => ({ url, revision: process.env.VERCEL_GIT_COMMIT_SHA ?? "dev" })),
   reloadOnOnline: false,
   disable: process.env.NODE_ENV === "development",
 });
