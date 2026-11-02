@@ -27,7 +27,7 @@ export function Header() {
         <Logo />
 
         {/* Desktop Navigation */}
-        <nav className="hidden items-center gap-8 rounded-full border border-border/60 bg-card/60 px-6 py-2 shadow-xs backdrop-blur-md md:flex">
+        <nav className="hidden items-center gap-8 rounded-full border border-border/60 bg-card/60 px-6 py-2 shadow-xs backdrop-blur-md lg:flex">
           {NAV_LINKS.map((link) => (
             <a
               key={link.href}
@@ -40,7 +40,7 @@ export function Header() {
         </nav>
 
         {/* Action Buttons */}
-        <div className="hidden items-center gap-3 md:flex">
+        <div className="hidden items-center gap-3 lg:flex">
           {isAuthenticated ? (
             <Button asChild className="rounded-full bg-primary font-medium text-white shadow-md shadow-primary/20 hover:bg-primary/90">
               <Link href="/admin">
@@ -70,7 +70,7 @@ export function Header() {
         <button
           type="button"
           onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
-          className="flex size-10 items-center justify-center rounded-xl border border-border bg-card p-2 text-foreground md:hidden"
+          className="flex size-10 items-center justify-center rounded-xl border border-border bg-card p-2 text-foreground lg:hidden"
           aria-label="Menu"
         >
           {mobileMenuOpen ? <X className="size-5" /> : <Menu className="size-5" />}
@@ -84,7 +84,7 @@ export function Header() {
             initial={{ opacity: 0, height: 0 }}
             animate={{ opacity: 1, height: "auto" }}
             exit={{ opacity: 0, height: 0 }}
-            className="border-b border-border bg-background/95 px-6 py-6 backdrop-blur-2xl md:hidden"
+            className="border-b border-border bg-background/95 px-6 py-6 backdrop-blur-2xl lg:hidden"
           >
             <div className="flex flex-col gap-4">
               {NAV_LINKS.map((link) => (

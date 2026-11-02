@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useRef } from "react";
+import { useEffect, useRef, useState } from "react";
 import {
   Monitor,
   Tablet,
@@ -22,6 +22,7 @@ import {
 import { useSaveShowcase } from "@/hooks/useAdmin";
 import { apiError } from "@/lib/api";
 import { publicSiteLabel, publicSiteUrl } from "@/lib/tenant-url";
+import { toShowcasePayload } from "@/lib/showcase-payload";
 import { toast } from "sonner";
 
 type ToolbarProps = {
@@ -42,25 +43,32 @@ export function ShowcaseEditorToolbar({ slug, tenantName, config }: ToolbarProps
   const siteUrl = publicSiteUrl(slug);
   const { mutateAsync } = save;
 
+  // Contenu envoyé = contenu de l'éditeur rendu conforme au serveur.
+  const payloadOf = () => toShowcasePayload(showcaseContentOf(useShowcaseStore.getState()));
+  const [publishError, setPublishError] = useState<string | null>(null);
+
   // Publication automatique : chaque modification est enregistrée sur le
   // serveur 2 s après la dernière saisie, et le site public la reprend.
-  const published = useRef(JSON.stringify(showcaseContentOf(useShowcaseStore.getState())));
+  const published = useRef(JSON.stringify(payloadOf()));
   useEffect(() => {
     let timer: number | undefined;
     const unsubscribe = useShowcaseStore.subscribe((state) => {
-      const content = showcaseContentOf(state);
-      const json = JSON.stringify(content);
-      if (json === published.current) return;
+      const payload = toShowcasePayload(showcaseContentOf(state));
+      const json = JSON.stringify(payload);
       window.clearTimeout(timer);
+      if (json === published.current) {
+        // Retour à la version en ligne : plus rien à publier.
+        if (state.lastSavedAt) useShowcaseStore.setState({ lastSavedAt: null });
+        return;
+      }
       timer = window.setTimeout(async () => {
         try {
-          await mutateAsync(content);
+          await mutateAsync(payload);
           published.current = json;
+          setPublishError(null);
           useShowcaseStore.setState({ isPublished: true, lastSavedAt: null });
         } catch (err) {
-          toast.error(apiError(err, "Publication automatique impossible (images trop lourdes ?)"), {
-            id: "showcase-autosave",
-          });
+          setPublishError(apiError(err, "Publication impossible (images trop lourdes ?)"));
         }
       }, 2000);
     });
@@ -70,17 +78,19 @@ export function ShowcaseEditorToolbar({ slug, tenantName, config }: ToolbarProps
     };
   }, [mutateAsync]);
 
-  // Publication réelle : la vitrine est enregistrée sur le serveur et le site
-  // public du compte l'affiche immédiatement.
+  // Publication immédiate (bouton) : même contenu que la publication auto.
   async function handlePublish() {
     try {
-      const content = showcaseContentOf(useShowcaseStore.getState());
-      await save.mutateAsync(content);
-      published.current = JSON.stringify(content);
+      const payload = payloadOf();
+      await save.mutateAsync(payload);
+      published.current = JSON.stringify(payload);
+      setPublishError(null);
       useShowcaseStore.setState({ isPublished: true, lastSavedAt: null });
       toast.success(`Vitrine publiée sur ${publicSiteLabel(slug)}`);
     } catch (err) {
-      toast.error(apiError(err, "Échec de la publication (images trop lourdes ?)"));
+      const message = apiError(err, "Échec de la publication (images trop lourdes ?)");
+      setPublishError(message);
+      toast.error(message);
     }
   }
 
@@ -113,10 +123,17 @@ export function ShowcaseEditorToolbar({ slug, tenantName, config }: ToolbarProps
             Portail : <strong className="text-foreground">{publicSiteLabel(slug)}</strong>
             {save.isPending
               ? " • Publication en cours…"
-              : lastSavedAt
+              : publishError
+                ? null
+                : lastSavedAt
                 ? ` • Publication automatique dans 2 s (${lastSavedAt})`
                 : " • Publié automatiquement"}
           </p>
+          {publishError && !save.isPending && (
+            <p role="alert" className="text-[11px] font-semibold text-destructive">
+              Non publié : {publishError}
+            </p>
+          )}
         </div>
       </div>
 
@@ -166,7 +183,7 @@ export function ShowcaseEditorToolbar({ slug, tenantName, config }: ToolbarProps
       </div>
 
       {/* Right: Actions */}
-      <div className="flex items-center gap-2">
+      <div className="flex flex-wrap items-center gap-2">
         {/* Toggle Mode Edition Inline */}
         <Button
           type="button"

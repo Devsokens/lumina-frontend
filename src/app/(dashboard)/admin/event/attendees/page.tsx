@@ -51,7 +51,7 @@ export default function EventAttendeesPage() {
           aria-label="Événement"
           value={eventId ?? ""}
           onChange={(e) => setEventId(e.target.value || null)}
-          className="h-10 rounded-xl border border-border bg-card px-3 text-sm"
+          className="h-10 w-full min-w-0 truncate rounded-xl border border-border bg-card px-3 text-sm sm:w-auto sm:max-w-xs"
         >
           {(events ?? []).map((e) => (
             <option key={e.id} value={e.id}>

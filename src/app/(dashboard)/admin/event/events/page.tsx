@@ -243,8 +243,8 @@ export default function EventsListPage() {
                   <span
                     className={`rounded-full px-2.5 py-0.5 text-[10px] font-semibold backdrop-blur-md ${
                       evt.status === "PUBLISHED" || evt.status === "ONGOING"
-                        ? "bg-emerald-500/20 text-emerald-300 border border-emerald-500/30"
-                        : "bg-black/50 text-zinc-300 border border-white/20"
+                        ? "bg-emerald-600 text-white border border-emerald-400/50 shadow-sm"
+                        : "bg-black/70 text-white border border-white/20 shadow-sm"
                     }`}
                   >
                     {STATUS_LABELS[evt.status]}

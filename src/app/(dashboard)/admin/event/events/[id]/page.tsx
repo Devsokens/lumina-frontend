@@ -200,8 +200,8 @@ export default function EventManagePage({ params }: EventManagePageProps) {
   return (
     <div className="space-y-6 pb-16">
       {/* Top Breadcrumb & Header */}
-      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 border-b border-border pb-4">
-        <div className="space-y-1">
+      <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-4 border-b border-border pb-4">
+        <div className="min-w-0 space-y-1">
           <div className="flex items-center gap-2 text-xs text-muted-foreground">
             <Link
               href="/admin/event/events"
@@ -226,7 +226,7 @@ export default function EventManagePage({ params }: EventManagePageProps) {
           </div>
         </div>
 
-        <div className="flex items-center gap-2">
+        <div className="flex flex-wrap items-center gap-2">
           <Button
             type="button"
             variant="outline"
@@ -605,7 +605,7 @@ export default function EventManagePage({ params }: EventManagePageProps) {
                   className="w-full rounded-xl text-xs justify-start gap-2 h-9"
                 >
                   <Share2 className="size-3.5 text-primary" />
-                  <span>Copier le lien public WhatsApp</span>
+                  <span className="min-w-0 truncate">Copier le lien public WhatsApp</span>
                   <Copy className="size-3 ml-auto opacity-50" />
                 </Button>
               </div>

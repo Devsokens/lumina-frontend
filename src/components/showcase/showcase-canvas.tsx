@@ -684,7 +684,7 @@ export function ShowcaseCanvas({ isEditorMode = false, liveEvents, onReserve }: 
               onClick={() => setIsCatalogOpen(true)}
               variant="outline"
               size="sm"
-              className="rounded-xl border-white/20 text-xs font-bold gap-1.5 self-start sm:self-auto"
+              className="rounded-xl border-white/20 bg-white/5 text-white hover:bg-white/10 hover:text-white text-xs font-bold gap-1.5 self-start sm:self-auto"
             >
               <Search className="size-3.5 text-emerald-400" />
               <span>Ouvrir le Catalogue Complet ({events.length})</span>
@@ -1603,7 +1603,7 @@ export function ShowcaseCanvas({ isEditorMode = false, liveEvents, onReserve }: 
                     <Button
                       variant="outline"
                       onClick={() => setIsCheckoutStep(false)}
-                      className="rounded-xl border-white/20 text-xs"
+                      className="rounded-xl border-white/20 bg-white/5 text-white hover:bg-white/10 hover:text-white text-xs"
                     >
                       Retour
                     </Button>
@@ -1670,7 +1670,7 @@ export function ShowcaseCanvas({ isEditorMode = false, liveEvents, onReserve }: 
                     <Button
                       variant="outline"
                       onClick={() => setActiveEvent(null)}
-                      className="rounded-2xl border-white/20 text-xs"
+                      className="rounded-2xl border-white/20 bg-white/5 text-white hover:bg-white/10 hover:text-white text-xs"
                     >
                       Fermer
                     </Button>

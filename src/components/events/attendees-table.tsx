@@ -87,7 +87,7 @@ export function AttendeesTable({
           </div>
         </div>
 
-        <div className="flex items-center gap-2">
+        <div className="flex flex-wrap items-center gap-2">
           {/* Status Filter Buttons */}
           <div className="inline-flex rounded-xl border border-border p-1 bg-card">
             <button
