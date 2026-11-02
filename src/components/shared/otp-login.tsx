@@ -48,7 +48,9 @@ export function OtpLogin({ onSuccess }: { onSuccess: (user: AuthUser) => void })
     }
     setBusy(true);
     try {
-      onSuccess(await verifyOtp({ phone: normalized, code }));
+      // null : plusieurs comptes pour ce numéro, écran de choix déjà ouvert.
+      const user = await verifyOtp({ phone: normalized, code });
+      if (user) onSuccess(user);
     } catch (err) {
       toast.error(apiError(err, "Code incorrect ou expiré."));
       setBusy(false);

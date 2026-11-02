@@ -56,7 +56,8 @@ function LoginContent() {
           ? { email: values.identifier.trim() }
           : { phone: values.identifier.replace(/[\s.()-]/g, "") }),
       });
-      await goHome(user);
+      // null : plusieurs comptes (un par secteur), écran de choix déjà ouvert.
+      if (user) await goHome(user);
     } catch (err) {
       toast.error(apiError(err, "Identifiants incorrects"));
       setSubmitting(false);

@@ -1,6 +1,7 @@
 "use client";
 
 import { useCallback } from "react";
+import { useRouter } from "next/navigation";
 import { api, refreshAccessToken, type ApiResponse } from "@/lib/api";
 import type { Sector } from "@/lib/constants";
 import { setSessionHint, useAuthStore, type AuthUser } from "@/stores/useAuthStore";
@@ -26,6 +27,14 @@ type GoogleCompletePayload = {
 };
 type OtpVerifyPayload = { phone: string; code: string };
 type SessionResponse = { accessToken: string; user: AuthUser };
+export type AccountOption = { sector: Sector; businessName: string; slug: string };
+// Même identité, un compte par secteur : le backend demande lequel ouvrir
+// (docs/API_CONTRACT.md « Un compte par secteur »).
+type LoginResponse = SessionResponse | { accountChoice: { token: string; accounts: AccountOption[] } };
+
+export function selectAccountPath(token: string) {
+  return `/auth/select-account?token=${encodeURIComponent(token)}`;
+}
 
 // Toute la logique d'auth passe par le backend (JWT access en mémoire +
 // refresh httpOnly côté api). Réponses enveloppées { success, data }
@@ -33,6 +42,7 @@ type SessionResponse = { accessToken: string; user: AuthUser };
 export function useAuth() {
   const { user, accessToken, status, setAccessToken, setUser, setStatus, logout } =
     useAuthStore();
+  const router = useRouter();
 
   const openSession = useCallback(
     (session: SessionResponse | undefined) => {
@@ -46,6 +56,37 @@ export function useAuth() {
     [setAccessToken, setUser, setStatus]
   );
 
+  // Session ouverte → l'utilisateur ; plusieurs comptes → écran de choix, null.
+  const openOrChoose = useCallback(
+    (response: LoginResponse | undefined) => {
+      if (response && "accountChoice" in response) {
+        router.push(selectAccountPath(response.accountChoice.token));
+        return null;
+      }
+      return openSession(response);
+    },
+    [openSession, router]
+  );
+
+  const accountChoices = useCallback(async (token: string) => {
+    const { data } = await api.post<ApiResponse<{ accounts: AccountOption[] }>>(
+      "/auth/account-choice/options",
+      { token }
+    );
+    return data.data?.accounts ?? [];
+  }, []);
+
+  const selectAccount = useCallback(
+    async (token: string, sector: Sector) => {
+      const { data } = await api.post<ApiResponse<SessionResponse>>("/auth/account-choice", {
+        token,
+        sector,
+      });
+      return openSession(data.data);
+    },
+    [openSession]
+  );
+
   const fetchMe = useCallback(async () => {
     const { data } = await api.get<ApiResponse<{ user: AuthUser }>>("/auth/me");
     const me = data.data?.user ?? null;
@@ -55,10 +96,10 @@ export function useAuth() {
 
   const login = useCallback(
     async (payload: LoginPayload) => {
-      const { data } = await api.post<ApiResponse<SessionResponse>>("/auth/login", payload);
-      return openSession(data.data);
+      const { data } = await api.post<ApiResponse<LoginResponse>>("/auth/login", payload);
+      return openOrChoose(data.data);
     },
-    [openSession]
+    [openOrChoose]
   );
 
   const signup = useCallback(
@@ -83,10 +124,10 @@ export function useAuth() {
 
   const verifyOtp = useCallback(
     async (payload: OtpVerifyPayload) => {
-      const { data } = await api.post<ApiResponse<SessionResponse>>("/auth/otp/verify", payload);
-      return openSession(data.data);
+      const { data } = await api.post<ApiResponse<LoginResponse>>("/auth/otp/verify", payload);
+      return openOrChoose(data.data);
     },
-    [openSession]
+    [openOrChoose]
   );
 
   // Cookie httpOnly → nouvel access token (rechargement de page, retour Google).
@@ -133,6 +174,8 @@ export function useAuth() {
     completeGoogleSignup,
     requestOtp,
     verifyOtp,
+    accountChoices,
+    selectAccount,
     restoreSession,
     changePassword,
     fetchMe,
