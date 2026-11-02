@@ -1,5 +1,6 @@
 "use client";
 
+import { KitchenProfile } from "@/components/kitchen/kitchen-profile";
 import { toast } from "sonner";
 import { OrderCard } from "./order-card";
 import { useOrdersList, useOrdersRealtime, useUpdateOrderStatus } from "@/hooks/useOrders";
@@ -29,9 +30,12 @@ export function OrdersGrid({ tenantId }: { tenantId: string }) {
     <div className="flex min-h-screen flex-col">
       <div className="flex items-center justify-between border-b border-border px-4 py-2 text-sm">
         <span className="font-display font-semibold">Cuisine · {active.length} commande(s)</span>
-        <span className={connected ? "text-success" : "text-warning"}>
-          {connected ? "● Temps réel" : "● Reconnexion… (actualisation toutes les 15 s)"}
-        </span>
+        <div className="flex items-center gap-3">
+          <span className={connected ? "text-success" : "text-warning"}>
+            {connected ? "● Temps réel" : "● Reconnexion… (actualisation toutes les 15 s)"}
+          </span>
+          <KitchenProfile />
+        </div>
       </div>
       {active.length === 0 ? (
         <p className="flex flex-1 items-center justify-center text-2xl text-muted-foreground">

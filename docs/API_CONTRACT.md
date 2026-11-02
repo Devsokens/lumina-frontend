@@ -119,6 +119,20 @@ toute requête Bearer → 401.
 Le QR code lui-même est généré **côté frontend** (`qrcode.react`) à partir de l'URL
 `${APP_URL}/{slug}?table={tableId}` — le backend n'a pas besoin de générer d'image.
 
+### Occupation d'une table — **à implémenter**
+
+| Méthode | Route | Auth | Réponse `data` |
+|---|---|---|---|
+| GET | `/tenants/:slug/tables/:tableId` | non (public, rate limit) | `{ id, number, capacity, status, seatedGuests, openOrders }` — **404** table inconnue ou d'un autre tenant |
+
+- `seatedGuests` = somme des `guestCount` des commandes non terminées de la table
+  (`PENDING`→`DELIVERED`, hors `COMPLETED`/`CANCELLED`).
+- `openOrders` = nombre de ces commandes (plusieurs convives d'une même table peuvent commander).
+- Aucune donnée client (nom, téléphone) dans la réponse.
+- Le frontend (`hooks/usePublicTable.ts`) affiche l'occupation et bloque la commande sur place si
+  le nombre de personnes saisi dépasse `capacity - seatedGuests`. Sans la route (404), la commande
+  reste possible sans affichage d'occupation.
+
 ---
 
 ## 5. Commandes (`/orders`, `/admin/orders`)
@@ -137,6 +151,17 @@ Le QR code lui-même est généré **côté frontend** (`qrcode.react`) à parti
 `paymentMethod` ∈ `CASH` (défaut), `PAY_ON_DELIVERY`, `MOBILE_MONEY`, `CARD` — pour les deux
 derniers, enchaîner sur `POST /payments/initialize` ; le moyen réellement utilisé est corrigé au
 paiement. `subtotal`/`tax`/`total` suivent la taxe du tenant (§2).
+
+`guestCount` (entier 1-30, **à implémenter**) : nombre de personnes d'une commande `DINE_IN`,
+envoyé seulement si `NEXT_PUBLIC_FEATURES` contient `table-occupancy` (`lib/features.ts`). Le
+serveur peut refuser (**409**) si `guestCount` dépasse les places libres de la table.
+
+Facture / addition : générées **dans le navigateur** (`components/vitrine/order-document-pdf.tsx`)
+à partir de la commande renvoyée par `POST /orders` (noms des articles : `items[].product.name`
+si fourni, sinon le panier). Logo du restaurant : `Tenant.config.logoUrl` (https), à exposer par
+`GET /tenants/:slug` ; sans logo, monogramme. Au retour de Paystack, la facture reprend les lignes
+gardées avant le paiement (même appareil) ; pour une facture complète sur tout appareil, le backend
+pourrait ajouter `items` à `GET /payments/status/:reference`.
 
 `tableId` doit appartenir au tenant de `tenantSlug` — sinon 404. Chaque commande crée ou met à
 jour la fiche client (§12) identifiée par `customerPhone`.
@@ -392,6 +417,9 @@ Le type réel du fichier doit être vérifié côté serveur (pas seulement l'ex
 URL renvoyées doit être ajoutée à `NEXT_PUBLIC_IMAGE_ORIGINS` (CSP `img-src`, `next.config.ts`).
 
 ## Historique
+
+- **2026-11-02** — Occupation de table publique (§4), `guestCount` sur `POST /orders` (§5),
+  facture/addition PDF côté navigateur, `Tenant.config.logoUrl`.
 
 - **2026-11-01** — IA événementiel (§9), champs `saleEndsAt`/`template` des types de billets
   (§14), upload d'images (§16) : routes appelées par le frontend, à implémenter côté backend.

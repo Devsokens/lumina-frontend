@@ -6,14 +6,24 @@ import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
 import { toast } from "sonner";
-import { CheckCircle2 } from "lucide-react";
+import { CheckCircle2, Minus, Plus } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { useCartStore } from "@/stores/useCartStore";
 import { useTenant } from "@/hooks/useTenant";
+import { freeSeats, usePublicTable } from "@/hooks/usePublicTable";
+import { TableStatusCard } from "@/components/vitrine/table-status-card";
+import { OrderDocumentButton } from "@/components/vitrine/order-document-button";
 import { api, apiError, type ApiResponse } from "@/lib/api";
 import { formatXAF } from "@/lib/format";
+import { FEATURES } from "@/lib/features";
+import {
+  orderLines,
+  restaurantInfo,
+  saveOrderSnapshot,
+  type OrderDocumentData,
+} from "@/lib/order-document";
 import type { Order, OrderType, PaymentMethod } from "@/types/api";
 
 const checkoutSchema = z.object({
@@ -29,19 +39,26 @@ type CheckoutInput = z.input<typeof checkoutSchema>;
 type CheckoutValues = z.output<typeof checkoutSchema>;
 
 const ONLINE: PaymentMethod[] = ["MOBILE_MONEY", "CARD"];
+const MAX_GUESTS = 30;
 
 // Commande vitrine (docs/API_CONTRACT.md §5) : le serveur recalcule le
-// montant ; paiement en ligne → Paystack, sinon paiement sur place.
+// montant ; paiement en ligne → Paystack (facture au retour), sinon
+// paiement sur place (addition téléchargeable tout de suite).
 export function CheckoutForm() {
   const tenant = useTenant();
   const { items, tableId, clear } = useCartStore();
   const [type, setType] = useState<OrderType>(tableId ? "DINE_IN" : "TAKEAWAY");
   const [paymentMethod, setPaymentMethod] = useState<PaymentMethod>("MOBILE_MONEY");
+  const [guests, setGuests] = useState(1);
   const [submitting, setSubmitting] = useState(false);
-  const [placed, setPlaced] = useState<Order | null>(null);
+  const [placed, setPlaced] = useState<OrderDocumentData | null>(null);
   // Même clé tant que la commande n'a pas abouti : un double clic ou un
   // réessai réseau ne crée qu'une commande.
   const [idempotencyKey, setIdempotencyKey] = useState<string | null>(null);
+
+  const dineIn = type === "DINE_IN" && !!tableId;
+  const { data: table } = usePublicTable(tenant.slug, dineIn ? tableId : null);
+  const tooManyGuests = !!table && guests > freeSeats(table);
 
   const {
     register,
@@ -54,11 +71,15 @@ export function CheckoutForm() {
       <div className="space-y-4 text-center">
         <CheckCircle2 className="mx-auto size-12 text-success" />
         <p className="font-display text-xl font-semibold">Commande {placed.orderNumber} envoyée</p>
-        <p className="text-sm text-muted-foreground">
+        <p className="text-muted-foreground">
           Total {formatXAF(placed.total)} à régler{" "}
-          {placed.type === "DINE_IN" ? "sur place" : "au retrait"}. Gardez ce numéro.
+          {placed.orderType === "DINE_IN"
+            ? `sur place${placed.tableNumber ? ` (table ${placed.tableNumber})` : ""}`
+            : "au retrait"}
+          . Gardez ce numéro.
         </p>
-        <Button asChild variant="outline">
+        <OrderDocumentButton data={placed} />
+        <Button asChild variant="outline" className="w-full">
           <Link href={`/${tenant.slug}/menu`}>Retour au menu</Link>
         </Button>
       </div>
@@ -67,6 +88,10 @@ export function CheckoutForm() {
 
   async function onSubmit(values: CheckoutValues) {
     if (items.length === 0) return;
+    if (dineIn && tooManyGuests) {
+      toast.error("Plus assez de places libres à cette table.");
+      return;
+    }
     setSubmitting(true);
     const key = idempotencyKey ?? crypto.randomUUID();
     setIdempotencyKey(key);
@@ -77,7 +102,8 @@ export function CheckoutForm() {
           tenantSlug: tenant.slug,
           type,
           paymentMethod,
-          ...(type === "DINE_IN" && tableId ? { tableId } : {}),
+          ...(dineIn ? { tableId } : {}),
+          ...(dineIn && FEATURES.tableOccupancy ? { guestCount: guests } : {}),
           ...(values.customerName?.trim() ? { customerName: values.customerName.trim() } : {}),
           customerPhone: values.customerPhone,
           ...(values.customerEmail ? { customerEmail: values.customerEmail } : {}),
@@ -90,12 +116,29 @@ export function CheckoutForm() {
         { headers: { "X-Idempotency-Key": key } }
       );
       const order = data.data as Order;
+      const snapshot: Omit<OrderDocumentData, "kind"> = {
+        orderNumber: order.orderNumber,
+        createdAt: order.createdAt,
+        orderType: order.type,
+        paymentMethod,
+        tableNumber: dineIn ? (table?.number ?? null) : null,
+        guests: dineIn ? guests : null,
+        customerName: order.customerName,
+        customerPhone: order.customerPhone,
+        lines: orderLines(order, items),
+        subtotal: order.subtotal,
+        tax: order.tax,
+        total: order.total,
+        restaurant: restaurantInfo(tenant),
+      };
 
       if (!ONLINE.includes(paymentMethod)) {
         clear();
-        setPlaced(order);
+        setPlaced({ ...snapshot, kind: "BILL" });
         return;
       }
+      // Lignes conservées pour la facture affichée au retour de Paystack.
+      saveOrderSnapshot(snapshot);
       // Montant TOUJOURS recalculé côté serveur (LUMINA_Audit_Menaces_Complet.md 10.2).
       const init = await api.post<ApiResponse<{ authorizationUrl: string }>>(
         "/payments/initialize",
@@ -111,14 +154,14 @@ export function CheckoutForm() {
   }
 
   const choice = (active: boolean) =>
-    `rounded-xl border p-3 text-left text-sm transition-colors ${
+    `rounded-xl border p-3 text-left transition-colors ${
       active ? "border-primary bg-primary/5" : "border-border"
     }`;
 
   return (
     <form onSubmit={handleSubmit(onSubmit)} className="space-y-5" noValidate>
       <fieldset className="space-y-2">
-        <legend className="text-sm font-medium">Mode</legend>
+        <legend className="font-medium">Mode</legend>
         <div className="grid grid-cols-2 gap-2">
           <button type="button" className={choice(type === "DINE_IN")} onClick={() => setType("DINE_IN")}>
             Sur place{tableId ? " (table du QR)" : ""}
@@ -129,8 +172,49 @@ export function CheckoutForm() {
         </div>
       </fieldset>
 
+      {dineIn && (
+        <div className="space-y-3">
+          <div className="flex items-center justify-between gap-3">
+            <Label htmlFor="guests" className="text-base">
+              Nombre de personnes
+            </Label>
+            <div className="flex items-center gap-2">
+              <Button
+                type="button"
+                variant="outline"
+                size="icon"
+                aria-label="Une personne de moins"
+                onClick={() => setGuests((g) => Math.max(1, g - 1))}
+              >
+                <Minus className="size-4" />
+              </Button>
+              <Input
+                id="guests"
+                type="number"
+                inputMode="numeric"
+                min={1}
+                max={MAX_GUESTS}
+                value={guests}
+                onChange={(e) => setGuests(Math.min(MAX_GUESTS, Math.max(1, Number(e.target.value) || 1)))}
+                className="w-16 text-center font-mono"
+              />
+              <Button
+                type="button"
+                variant="outline"
+                size="icon"
+                aria-label="Une personne de plus"
+                onClick={() => setGuests((g) => Math.min(MAX_GUESTS, g + 1))}
+              >
+                <Plus className="size-4" />
+              </Button>
+            </div>
+          </div>
+          {table && <TableStatusCard table={table} guests={guests} />}
+        </div>
+      )}
+
       <fieldset className="space-y-2">
-        <legend className="text-sm font-medium">Paiement</legend>
+        <legend className="font-medium">Paiement</legend>
         <div className="grid grid-cols-2 gap-2">
           <button
             type="button"
@@ -138,7 +222,7 @@ export function CheckoutForm() {
             onClick={() => setPaymentMethod("MOBILE_MONEY")}
           >
             En ligne
-            <span className="block text-xs text-muted-foreground">Mobile Money ou carte</span>
+            <span className="block text-sm text-muted-foreground">Mobile Money ou carte · facture PDF</span>
           </button>
           <button
             type="button"
@@ -146,7 +230,7 @@ export function CheckoutForm() {
             onClick={() => setPaymentMethod("CASH")}
           >
             {type === "DINE_IN" ? "Sur place" : "Au retrait"}
-            <span className="block text-xs text-muted-foreground">Espèces / comptoir</span>
+            <span className="block text-sm text-muted-foreground">Espèces · addition PDF</span>
           </button>
         </div>
       </fieldset>
@@ -168,11 +252,16 @@ export function CheckoutForm() {
         {errors.customerEmail && <p className="text-sm text-destructive">{errors.customerEmail.message}</p>}
       </div>
 
-      <p className="text-xs text-muted-foreground">
+      <p className="text-sm text-muted-foreground">
         Le total définitif (taxes comprises) est calculé à la validation.
       </p>
 
-      <Button type="submit" size="lg" className="w-full" disabled={submitting || items.length === 0}>
+      <Button
+        type="submit"
+        size="lg"
+        className="w-full"
+        disabled={submitting || items.length === 0 || (dineIn && tooManyGuests)}
+      >
         {submitting
           ? "Traitement..."
           : ONLINE.includes(paymentMethod)

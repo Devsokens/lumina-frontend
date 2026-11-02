@@ -7,6 +7,8 @@ import { CheckCircle2, Clock, XCircle } from "lucide-react";
 import { useTenant } from "@/hooks/useTenant";
 import { usePaymentStatus } from "@/hooks/usePublicEvents";
 import { formatXaf } from "@/lib/events";
+import { OrderDocumentButton } from "@/components/vitrine/order-document-button";
+import { loadOrderSnapshot, restaurantInfo } from "@/lib/order-document";
 
 // Retour de Paystack pour une commande (restaurant / boutique) :
 // ?reference=… — même statut public que la billetterie (§8).
@@ -52,6 +54,24 @@ function OrderConfirmation() {
         <p className="text-sm text-muted-foreground">
           {formatXaf(data.total)} · votre commande est transmise à l&apos;équipe.
         </p>
+        <OrderDocumentButton
+          data={{
+            // Lignes gardées avant le passage chez Paystack (même appareil) ;
+            // sinon facture résumée au montant payé.
+            ...(loadOrderSnapshot(data.orderNumber) ?? {
+              orderNumber: data.orderNumber,
+              createdAt: new Date().toISOString(),
+              orderType: "DINE_IN" as const,
+              paymentMethod: "MOBILE_MONEY" as const,
+              lines: [],
+              subtotal: data.total,
+              tax: 0,
+              total: data.total,
+              restaurant: restaurantInfo(tenant),
+            }),
+            kind: "INVOICE",
+          }}
+        />
         {back}
       </div>
     );
