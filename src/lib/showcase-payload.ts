@@ -1,4 +1,5 @@
 import type { ShowcaseContent } from "@/stores/useShowcaseStore";
+import { API_URL } from "@/lib/constants";
 
 // Contenu de vitrine rendu conforme à UpdateShowcaseDto (backend) avant
 // envoi. La publication automatique envoie aussi les états intermédiaires de
@@ -33,8 +34,11 @@ const MAX_IMAGE_CHARS = 450_000;
 const text = (v: unknown, max: number) => (typeof v === "string" ? v.slice(0, max) : "");
 
 // Même règle que IsImageRef : https:// (≤ 2048) ou data URL PNG/JPEG/WebP.
+// Plus les URL d'images servies par l'API (réponses publiques, voir
+// inline-images.ts côté backend) — http en local.
 export function isPublishableImage(v: unknown): v is string {
   if (typeof v !== "string") return false;
+  if (v.startsWith(`${API_URL}/tenants/`) && /^[^\s"'<>]+$/.test(v)) return v.length <= 2048;
   if (/^https:\/\/\S+$/.test(v)) return v.length <= 2048;
   return /^data:image\/(png|jpeg|webp);base64,/.test(v) && v.length <= MAX_IMAGE_CHARS;
 }

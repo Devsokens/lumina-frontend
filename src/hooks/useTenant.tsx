@@ -9,9 +9,10 @@ import type { Tenant } from "@/types/api";
 // puis injecté dans l'arbre via <TenantProvider>. Voir app/[tenant]/layout.tsx.
 export const TenantContext = createContext<Tenant | null>(null);
 
-// Relu côté client (retour sur l'onglet, toutes les 60 s) : une modification
-// faite dans le back-office (vitrine publiée, nom…) apparaît sur le site
-// public sans rechargement. Le rendu serveur sert de valeur initiale.
+// Relu côté client au retour sur l'onglet (au plus une fois par minute) : une
+// modification du back-office (vitrine publiée, nom…) apparaît sans
+// rechargement. Pas de relecture périodique : un visiteur immobile ne coûte
+// aucune requête. Le rendu serveur sert de valeur initiale.
 export function TenantProvider({
   tenant,
   children,
@@ -26,8 +27,7 @@ export function TenantProvider({
       return res.data ?? tenant;
     },
     initialData: tenant,
-    staleTime: 15_000,
-    refetchInterval: 60_000,
+    staleTime: 60_000,
     refetchOnWindowFocus: true,
     retry: false,
   });
