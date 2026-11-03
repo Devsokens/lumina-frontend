@@ -1,6 +1,5 @@
 "use client";
 
-import { useMemo, useState } from "react";
 import Link from "next/link";
 import { Wallet, ClipboardList, PackageX, Users, QrCode } from "lucide-react";
 import { OrdersTable } from "@/components/dashboard/orders-table";
@@ -11,9 +10,9 @@ import { useApiQuery } from "@/hooks/useApi";
 import { useOrdersList } from "@/hooks/useOrders";
 import { useParams } from "next/navigation";
 import { useAuthStore } from "@/stores/useAuthStore";
-import { AreaChart, BarList, DonutChart } from "@/components/charts/charts";
 import { StatCard } from "@/components/charts/stat-card";
 import { StaysDashboard } from "@/components/stays/stays-dashboard";
+import { AnalyticsOverview } from "@/components/dashboard/analytics-overview";
 
 type DashboardKpis = {
   salesToday: number; // centimes
@@ -23,13 +22,6 @@ type DashboardKpis = {
 };
 
 const fcfa = (centimes: number) => `${Math.round(centimes / 100).toLocaleString("fr-FR")} FCFA`;
-
-const STATUS_GROUPS: { label: string; statuses: string[]; color: string }[] = [
-  { label: "À confirmer", statuses: ["PENDING"], color: "var(--chart-2)" },
-  { label: "En préparation", statuses: ["CONFIRMED", "PREPARING", "READY"], color: "var(--chart-3)" },
-  { label: "Terminées", statuses: ["COMPLETED", "DELIVERED"], color: "var(--chart-1)" },
-  { label: "Annulées", statuses: ["CANCELLED"], color: "var(--chart-5)" },
-];
 
 export default function DashboardHomePage() {
   const { sector } = useParams<{ sector: string }>();
@@ -42,41 +34,6 @@ export default function DashboardHomePage() {
     canSeeKpis
   );
   const { data: orders, isLoading: ordersLoading } = useOrdersList();
-  const [now] = useState(() => Date.now());
-
-  // Graphiques calculés sur les commandes chargées (affichage uniquement).
-  const charts = useMemo(() => {
-    const list = orders ?? [];
-    const days = Array.from({ length: 7 }, (_, i) => {
-      const d = new Date(now - (6 - i) * 86_400_000);
-      return { key: d.toDateString(), label: d.toLocaleDateString("fr-FR", { weekday: "short", day: "2-digit" }), value: 0 };
-    });
-    const byDay = new Map(days.map((d) => [d.key, d]));
-    const products = new Map<string, number>();
-    for (const o of list) {
-      if (o.status === "CANCELLED") continue;
-      const day = byDay.get(new Date(o.createdAt).toDateString());
-      if (day) day.value += o.total;
-      for (const it of o.items ?? []) {
-        const name = it.product?.name ?? "Article";
-        products.set(name, (products.get(name) ?? 0) + it.quantity);
-      }
-    }
-    return {
-      revenue: days.map(({ label, value }) => ({ label, value })),
-      status: STATUS_GROUPS.map((g) => ({
-        label: g.label,
-        color: g.color,
-        value: list.filter((o) => g.statuses.includes(o.status)).length,
-      })),
-      top: [...products.entries()]
-        .map(([label, value]) => ({ label, value }))
-        .sort((a, b) => b.value - a.value)
-        .slice(0, 5),
-      count: list.length,
-    };
-  }, [orders, now]);
-
   if (sector === "accommodation") return <StaysDashboard />;
 
   return (
@@ -84,7 +41,7 @@ export default function DashboardHomePage() {
       <div className="flex items-center justify-between">
         <div>
           <h1 className="font-display text-xl font-bold sm:text-2xl">Tableau de bord</h1>
-          <p className="text-xs text-muted-foreground sm:text-sm">Activité des 7 derniers jours</p>
+          <p className="text-xs text-muted-foreground sm:text-sm">Activité en temps réel et tendances</p>
         </div>
         {sector === "restaurant" && (
           <Button asChild variant="outline" className="rounded-xl">
@@ -111,37 +68,8 @@ export default function DashboardHomePage() {
         </div>
       )}
 
-      {ordersLoading ? (
-        <Skeleton className="h-48 rounded-2xl" />
-      ) : (
-        <div className="grid gap-3 lg:grid-cols-12">
-          <Card className="rounded-2xl gap-2 py-4 lg:col-span-5">
-            <CardHeader className="pb-0">
-              <CardTitle className="font-display text-sm">Chiffre d&apos;affaires (7 j)</CardTitle>
-            </CardHeader>
-            <CardContent>
-              <AreaChart data={charts.revenue} format={fcfa} />
-            </CardContent>
-          </Card>
-          <Card className="rounded-2xl gap-2 py-4 lg:col-span-4">
-            <CardHeader className="pb-0">
-              <CardTitle className="font-display text-sm">Statut des commandes</CardTitle>
-            </CardHeader>
-            <CardContent>
-              <DonutChart data={charts.status} centerValue={String(charts.count)} centerLabel="commandes" />
-            </CardContent>
-          </Card>
-          <Card className="rounded-2xl gap-2 py-4 lg:col-span-3">
-            <CardHeader className="pb-0">
-              <CardTitle className="font-display text-sm">
-                {sector === "shop" ? "Top produits" : "Top plats"}
-              </CardTitle>
-            </CardHeader>
-            <CardContent>
-              <BarList data={charts.top} />
-            </CardContent>
-          </Card>
-        </div>
+      {canSeeKpis && (
+        <AnalyticsOverview topTitle={sector === "shop" ? "Top produits" : "Top plats"} topUnit="vendus" />
       )}
 
       <Card className="rounded-2xl gap-2 py-4">

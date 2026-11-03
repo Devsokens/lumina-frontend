@@ -41,7 +41,7 @@ const SECTION_LABELS: Record<keyof SiteSections, string> = {
 };
 
 // Champs Panel / Field / Choice / ImageField réutilisés par l'éditeur du
-// site hébergement (components/stays/stay-site-editor.tsx).
+// site Airbnb (components/stays/stay-site-editor.tsx).
 
 // Éditeur du site public (config.site) : réglages à gauche, aperçu réel à
 // droite (mêmes composants que le site, avec le brouillon).

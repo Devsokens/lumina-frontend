@@ -50,7 +50,7 @@ export function Footer() {
           <div className="col-span-2">
             <Logo size="lg" inverted />
             <p className="mt-4 max-w-sm text-sm leading-relaxed text-white/70">
-              La plateforme tout-en-un de gestion et d&apos;encaissement pour les événements, la restauration, le commerce et l&apos;hébergement en Afrique.
+              La plateforme tout-en-un de gestion et d&apos;encaissement pour les événements, la restauration, le commerce et les locations Airbnb en Afrique.
             </p>
             <div className="mt-6 flex items-center gap-2">
               <span className="relative flex size-2.5">
@@ -84,7 +84,7 @@ export function Footer() {
               </li>
               <li>
                 <a href="#secteurs" className="inline-flex items-center gap-2 transition-colors hover:text-secondary">
-                  <Building2 className="size-4" /> Hébergement & RBNB
+                  <Building2 className="size-4" /> Airbnb
                 </a>
               </li>
             </ul>

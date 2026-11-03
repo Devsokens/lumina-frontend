@@ -159,7 +159,7 @@ function LoginContent() {
             className="rounded-xl border-purple-500/30 text-purple-600 hover:bg-purple-500/10 font-semibold text-xs h-9 justify-start px-3"
             onClick={() => handleDemoLogin("accommodation")}
           >
-            Hébergement & RBNB
+            Airbnb
           </Button>
           <Button
             type="button"

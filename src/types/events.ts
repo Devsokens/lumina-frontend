@@ -155,5 +155,7 @@ export type PaymentStatusResult = {
   status: string;
   paymentStatus: PaymentStatus;
   total: number;
+  // Jeton du lien de facture (GET /orders/:id/document), null tant que non payé.
+  documentToken: string | null;
   tickets: PurchasedTicket[];
 };

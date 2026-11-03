@@ -8,7 +8,7 @@ import { ChevronDown } from "lucide-react";
 const FAQS = [
   {
     question: "Comment mes clients ou invités accèdent-ils à mes services ?",
-    answer: "Vos clients n'ont AUCUNE application à télécharger. Ils scannent simplement votre QR code ou cliquent sur votre lien (monresto.giya.ga). Vos billets, menus, catalogues ou fiches d'hébergement s'ouvrent instantanément.",
+    answer: "Vos clients n'ont AUCUNE application à télécharger. Ils scannent simplement votre QR code ou cliquent sur votre lien (monresto.giya.ga). Vos billets, menus, catalogues ou annonces Airbnb s'ouvrent instantanément.",
   },
   {
     question: "Comment s'effectue l'encaissement via Airtel Money et Moov Money ?",
@@ -23,7 +23,7 @@ const FAQS = [
     answer: "Chaque billet émis comporte un QR code cryptographique unique. Au scan avec l'application GiyaX, le billet est validé en moins de 1 seconde et marqué comme utilisé. Les captures d'écran et doublons sont rejetés immédiatement.",
   },
   {
-    question: "Qu'en est-il du secteur Hébergement & RBNB ?",
+    question: "Qu'en est-il du secteur Airbnb ?",
     answer: "GiyaX gère vos appartements meublés et motels avec un calendrier en direct, l'encaissement d'acompte 30% Mobile Money anti-no-show, et l'émission automatique de reçus fiscaux certifiés avec signature électronique.",
   },
 ];

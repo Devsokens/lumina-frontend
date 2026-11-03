@@ -10,7 +10,7 @@ const SECTOR_LABELS: Record<string, string> = {
   RESTAURANT: "Restauration",
   EVENT: "Événementiel",
   SHOP: "Commerce",
-  ACCOMMODATION: "Hébergement",
+  ACCOMMODATION: "Airbnb",
 };
 
 const PLAN_LABELS: Record<string, { label: string; detail: string }> = {

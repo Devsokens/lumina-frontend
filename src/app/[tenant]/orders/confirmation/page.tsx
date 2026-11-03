@@ -1,14 +1,13 @@
 "use client";
 
-import { Suspense, useEffect } from "react";
+import { Suspense } from "react";
 import Link from "next/link";
 import { useSearchParams } from "next/navigation";
 import { CheckCircle2, Clock, XCircle } from "lucide-react";
 import { useTenant } from "@/hooks/useTenant";
 import { usePaymentStatus } from "@/hooks/usePublicEvents";
 import { formatXaf } from "@/lib/events";
-import { OrderDocumentButton, preloadOrderDocument } from "@/components/vitrine/order-document-button";
-import { loadOrderSnapshot, restaurantInfo } from "@/lib/order-document";
+import { OrderDocumentButton } from "@/components/vitrine/order-document-button";
 
 // Retour de Paystack pour une commande (restaurant / boutique) :
 // ?reference=… — même statut public que la billetterie (§8).
@@ -17,10 +16,6 @@ function OrderConfirmation() {
   const params = useSearchParams();
   const reference = params.get("reference") ?? params.get("trxref");
   const { data, isLoading, isError } = usePaymentStatus(reference);
-  // Retour de Paystack : moteur PDF chargé pendant la vérification du paiement.
-  useEffect(() => {
-    if (reference) void preloadOrderDocument().catch(() => {});
-  }, [reference]);
   const back = (
     <Link href={`/${tenant.slug}/menu`} className="text-sm text-primary underline">
       Retour au menu
@@ -58,24 +53,7 @@ function OrderConfirmation() {
         <p className="text-sm text-muted-foreground">
           {formatXaf(data.total)} · votre commande est transmise à l&apos;équipe.
         </p>
-        <OrderDocumentButton
-          data={{
-            // Lignes gardées avant le passage chez Paystack (même appareil) ;
-            // sinon facture résumée au montant payé.
-            ...(loadOrderSnapshot(data.orderNumber) ?? {
-              orderNumber: data.orderNumber,
-              createdAt: new Date().toISOString(),
-              orderType: "DINE_IN" as const,
-              paymentMethod: "MOBILE_MONEY" as const,
-              lines: [],
-              subtotal: data.total,
-              tax: 0,
-              total: data.total,
-              restaurant: restaurantInfo(tenant),
-            }),
-            kind: "INVOICE",
-          }}
-        />
+        {data.documentToken && <OrderDocumentButton orderId={data.orderId} token={data.documentToken} kind="INVOICE" />}
         {back}
       </div>
     );

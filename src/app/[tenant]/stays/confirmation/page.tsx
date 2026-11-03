@@ -5,6 +5,7 @@ import Link from "next/link";
 import { useSearchParams } from "next/navigation";
 import { CheckCircle2, Clock, XCircle } from "lucide-react";
 import { useTenant } from "@/hooks/useTenant";
+import { OrderDocumentButton } from "@/components/vitrine/order-document-button";
 import { usePaymentStatus } from "@/hooks/usePublicEvents";
 import { formatXAF } from "@/lib/format";
 
@@ -52,6 +53,7 @@ function Confirmation() {
             e-mail ; l&apos;hôte vous contactera avant votre arrivée.
           </p>
         </div>
+        {data.documentToken && <OrderDocumentButton orderId={data.orderId} token={data.documentToken} kind="INVOICE" />}
         {back}
       </div>
     );

@@ -10,7 +10,7 @@ import { Reveal } from "@/components/stays/site/reveal";
 import type { ListingType, PublicListing } from "@/types/stays";
 import { cn } from "@/lib/utils";
 
-// Briques du site hébergement, partagées par les 6 dispositions
+// Briques du site Airbnb, partagées par les 6 dispositions
 // (stays-home.tsx). Une disposition choisit l'ordre et la variante.
 
 export type ListingsVariant = "grid" | "duo" | "magazine" | "carousel" | "bento" | "index";

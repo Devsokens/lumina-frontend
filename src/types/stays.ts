@@ -1,4 +1,4 @@
-// Hébergement — formes renvoyées par l'API (docs/API_CONTRACT.md §15).
+// Airbnb — formes renvoyées par l'API (docs/API_CONTRACT.md §15).
 // Dates de séjour "AAAA-MM-JJ", montants en centimes.
 
 export type ListingType = "APARTMENT" | "HOUSE" | "STUDIO" | "ROOM" | "VILLA";

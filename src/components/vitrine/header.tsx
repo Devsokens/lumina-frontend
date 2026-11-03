@@ -18,9 +18,9 @@ export function VitrineHeader() {
   const logo = restaurantInfo(tenant).logoUrl;
   const home = `/${tenant.slug}`;
   const isShop = tenant.sector === "SHOP";
-  // Hébergement : pas de carte ni de panier, on réserve depuis un logement.
+  // Airbnb : pas de carte ni de panier, on réserve depuis un logement.
   const isStay = tenant.sector === "ACCOMMODATION";
-  // Hébergement : bandeau et sections viennent de config.staySite.
+  // Airbnb : bandeau et sections viennent de config.staySite.
   const stay = isStay ? staySiteOf(tenant) : null;
   const announcement = stay ? stay.announcement : site.announcement;
   const hasAbout = stay ? stay.sections.about && !!stay.aboutText : site.sections.about && !!site.aboutText;

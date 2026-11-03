@@ -6,6 +6,7 @@ import { Button } from "@/components/ui/button";
 import { Skeleton } from "@/components/ui/skeleton";
 import { StatCard } from "@/components/charts/stat-card";
 import { BookingList } from "@/components/stays/booking-list";
+import { AnalyticsOverview } from "@/components/dashboard/analytics-overview";
 import { formatXAF } from "@/lib/format";
 import { useBookings, useStayStats } from "@/hooks/useStays";
 import { useAuthStore } from "@/stores/useAuthStore";
@@ -63,6 +64,8 @@ export function StaysDashboard() {
           </section>
         </div>
       )}
+
+      {canSeeStats && <AnalyticsOverview ordersLabel="Réservations" topTitle="Logements les plus rentables" topUnit="nuits" />}
 
       <section className="space-y-3">
         <div className="flex items-center justify-between">

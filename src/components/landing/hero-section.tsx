@@ -59,7 +59,7 @@ export function HeroSection() {
             transition={{ duration: 0.6, delay: 0.2 }}
             className="mt-6 max-w-3xl text-lg leading-relaxed text-muted-foreground sm:text-xl"
           >
-            La plateforme tout-en-un pour les <strong>Événements</strong>, <strong>Restaurants</strong>, <strong>Commerces</strong> et <strong>Hébergements RBNB</strong>. 
+            La plateforme tout-en-un pour les <strong>Événements</strong>, <strong>Restaurants</strong>, <strong>Commerces</strong> et <strong>locations Airbnb</strong>. 
             Billetterie anti-fraude, menus QR & KDS, réservations meublés et paiements directs <strong>Airtel & Moov Money</strong>.
           </motion.p>
 
@@ -204,10 +204,10 @@ export function HeroSection() {
                     <QrCode className="size-4.5" />
                   </div>
                   <span className="rounded-full bg-purple-500/15 px-2 py-0.5 font-mono text-[10px] font-semibold text-purple-400">
-                    RBNB
+                    Airbnb
                   </span>
                 </div>
-                <h4 className="mt-3 font-display font-semibold text-foreground text-sm">Hébergement</h4>
+                <h4 className="mt-3 font-display font-semibold text-foreground text-sm">Airbnb</h4>
                 <p className="mt-1 text-[11px] text-muted-foreground line-clamp-2">Calendrier & reçu fiscal certifié.</p>
                 <div className="mt-3 flex items-center justify-between border-t border-border/40 pt-2 text-[11px] font-mono text-muted-foreground">
                   <span>Acompte 30%</span>

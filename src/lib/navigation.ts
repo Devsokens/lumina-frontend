@@ -14,6 +14,7 @@ import {
   ScrollText,
   Palette,
   BedDouble,
+  Receipt,
   type LucideIcon,
 } from "lucide-react";
 import type { Role } from "@/lib/constants";
@@ -35,6 +36,7 @@ export function navLinks(sectorParam: string | undefined, role: Role | undefined
       { href: base, label: "Tableau de bord", icon: LayoutDashboard, exact: true },
       { href: `${base}/events`, label: "Mes Événements", icon: CalendarDays, roles: OWNER_MANAGER },
       { href: `${base}/reservations`, label: "Réservations", icon: ClipboardList, roles: OWNER_MANAGER },
+      { href: `${base}/invoices`, label: "Factures", icon: Receipt, roles: OWNER_MANAGER },
       { href: `${base}/attendees`, label: "Participants", icon: Users, roles: OWNER_MANAGER },
       { href: "/scan", label: "Contrôle d'Accès", icon: ScanLine, roles: ["OWNER", "MANAGER", "STAFF"] },
       { href: `${base}/showcase`, label: "Site Vitrine & Éditeur", icon: Globe, roles: OWNER_MANAGER },
@@ -48,6 +50,7 @@ export function navLinks(sectorParam: string | undefined, role: Role | undefined
       { href: base, label: "Tableau de bord", icon: LayoutDashboard, exact: true },
       { href: `${base}/listings`, label: "Logements", icon: BedDouble, roles: OWNER_MANAGER },
       { href: `${base}/bookings`, label: "Réservations", icon: CalendarDays },
+      { href: `${base}/invoices`, label: "Factures", icon: Receipt, roles: OWNER_MANAGER },
       { href: `${base}/site`, label: "Site & apparence", icon: Palette, roles: OWNER_MANAGER },
       { href: `${base}/customers`, label: "Clients", icon: Contact, roles: OWNER_MANAGER },
       { href: `${base}/team`, label: "Équipe", icon: Users, roles: OWNER_MANAGER },
@@ -59,6 +62,7 @@ export function navLinks(sectorParam: string | undefined, role: Role | undefined
       { href: base, label: "Tableau de bord", icon: LayoutDashboard, exact: true },
       { href: `${base}/menu`, label: isShop ? "Catalogue" : "Menu", icon: UtensilsCrossed },
       { href: `${base}/orders`, label: "Commandes", icon: ClipboardList },
+      { href: `${base}/invoices`, label: "Factures", icon: Receipt, roles: OWNER_MANAGER },
       { href: `${base}/stock`, label: "Stock", icon: Boxes, roles: ["OWNER", "MANAGER", "STAFF"] },
       ...(isShop
         ? []

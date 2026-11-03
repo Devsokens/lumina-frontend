@@ -107,8 +107,8 @@ const SECTORS_DATA: Record<SectorKey, SectorData> = {
   },
   accommodation: {
     id: "accommodation",
-    label: "Hébergement & RBNB",
-    badge: "Nouveau • RBNB & Motels",
+    label: "Airbnb",
+    badge: "Nouveau • Airbnb & Motels",
     title: "Gérez vos appartements meublés, réservations et reçus fiscaux",
     tagline:
       "Fini le carnet papier et les no-shows. Calendrier de disponibilité temps réel, acompte Mobile Money sécurisé et check-in digital.",
@@ -122,7 +122,7 @@ const SECTORS_DATA: Record<SectorKey, SectorData> = {
     ],
     metrics: [
       { value: "-90%", label: "De réservations perdues" },
-      { value: "3%", label: "Commission vs 15-20% Airbnb" },
+      { value: "3%", label: "Commission vs 15-20 % ailleurs" },
       { value: "100%", label: "Reçus conformes & traçables" },
     ],
     interactiveType: "stay-booking",
@@ -563,7 +563,7 @@ function AccommodationSimulator() {
       <div className="flex items-center justify-between">
         <span className="text-xs font-semibold uppercase tracking-wider text-muted-foreground flex items-center gap-1.5">
           <Calendar className="size-3.5 text-purple-400" />
-          Réservation Hébergement RBNB
+          Réservation Airbnb
         </span>
         <span className="text-xs font-mono px-2 py-0.5 rounded-full bg-purple-500/15 text-purple-400 font-semibold">
           Acompte 30% Sécurisé

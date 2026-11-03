@@ -12,6 +12,7 @@ import { formatXaf } from "@/lib/events";
 import type { AuditEntry } from "@/types/events";
 import { AreaChart, BarList, DonutChart } from "@/components/charts/charts";
 import { StatCard } from "@/components/charts/stat-card";
+import { AnalyticsOverview } from "@/components/dashboard/analytics-overview";
 
 // Tableau de bord événementiel (EF-E10) : données réelles de
 // GET /admin/analytics/events, rafraîchies toutes les 15 s.
@@ -121,6 +122,8 @@ export default function EventDashboardPage() {
           <StatCard key={k.label} index={i} {...k} />
         ))}
       </div>
+
+      {!statsDenied && <AnalyticsOverview ordersLabel="Réservations" topTitle="Billets les plus vendus" topUnit="billets" />}
 
       {!statsDenied && (
         <div className="grid gap-3 lg:grid-cols-12">

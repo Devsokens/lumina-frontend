@@ -14,16 +14,10 @@ import { useCartStore } from "@/stores/useCartStore";
 import { useTenant } from "@/hooks/useTenant";
 import { freeSeats, usePublicTable } from "@/hooks/usePublicTable";
 import { TableStatusCard } from "@/components/vitrine/table-status-card";
-import { OrderDocumentButton, preloadOrderDocument } from "@/components/vitrine/order-document-button";
+import { OrderDocumentButton } from "@/components/vitrine/order-document-button";
 import { api, apiError, type ApiResponse } from "@/lib/api";
 import { formatXAF } from "@/lib/format";
 import { FEATURES } from "@/lib/features";
-import {
-  orderLines,
-  restaurantInfo,
-  saveOrderSnapshot,
-  type OrderDocumentData,
-} from "@/lib/order-document";
 import type { Order, OrderType, PaymentMethod } from "@/types/api";
 
 const checkoutSchema = z.object({
@@ -51,7 +45,7 @@ export function CheckoutForm() {
   const [paymentMethod, setPaymentMethod] = useState<PaymentMethod>("MOBILE_MONEY");
   const [guests, setGuests] = useState(1);
   const [submitting, setSubmitting] = useState(false);
-  const [placed, setPlaced] = useState<OrderDocumentData | null>(null);
+  const [placed, setPlaced] = useState<(Order & { documentToken: string; tableNumber: number | null }) | null>(null);
   // Même clé tant que la commande n'a pas abouti : un double clic ou un
   // réessai réseau ne crée qu'une commande.
   const [idempotencyKey, setIdempotencyKey] = useState<string | null>(null);
@@ -73,12 +67,12 @@ export function CheckoutForm() {
         <p className="font-display text-xl font-semibold">Commande {placed.orderNumber} envoyée</p>
         <p className="text-muted-foreground">
           Total {formatXAF(placed.total)} à régler{" "}
-          {placed.orderType === "DINE_IN"
+          {placed.type === "DINE_IN"
             ? `sur place${placed.tableNumber ? ` (table ${placed.tableNumber})` : ""}`
             : "au retrait"}
           . Gardez ce numéro.
         </p>
-        <OrderDocumentButton data={placed} />
+        <OrderDocumentButton orderId={placed.id} token={placed.documentToken} kind="BILL" />
         <Button asChild variant="outline" className="w-full">
           <Link href={`/${tenant.slug}/menu`}>Retour au menu</Link>
         </Button>
@@ -93,12 +87,10 @@ export function CheckoutForm() {
       return;
     }
     setSubmitting(true);
-    // Moteur PDF chargé pendant l'appel API : facture / addition prêtes plus vite.
-    void preloadOrderDocument().catch(() => {});
     const key = idempotencyKey ?? crypto.randomUUID();
     setIdempotencyKey(key);
     try {
-      const { data } = await api.post<ApiResponse<Order>>(
+      const { data } = await api.post<ApiResponse<Order & { documentToken: string }>>(
         "/orders",
         {
           tenantSlug: tenant.slug,
@@ -117,30 +109,12 @@ export function CheckoutForm() {
         },
         { headers: { "X-Idempotency-Key": key } }
       );
-      const order = data.data as Order;
-      const snapshot: Omit<OrderDocumentData, "kind"> = {
-        orderNumber: order.orderNumber,
-        createdAt: order.createdAt,
-        orderType: order.type,
-        paymentMethod,
-        tableNumber: dineIn ? (table?.number ?? null) : null,
-        guests: dineIn ? guests : null,
-        customerName: order.customerName,
-        customerPhone: order.customerPhone,
-        lines: orderLines(order, items),
-        subtotal: order.subtotal,
-        tax: order.tax,
-        total: order.total,
-        restaurant: restaurantInfo(tenant),
-      };
-
+      const order = data.data as Order & { documentToken: string };
       if (!ONLINE.includes(paymentMethod)) {
         clear();
-        setPlaced({ ...snapshot, kind: "BILL" });
+        setPlaced({ ...order, tableNumber: dineIn ? (table?.number ?? null) : null });
         return;
       }
-      // Lignes conservées pour la facture affichée au retour de Paystack.
-      saveOrderSnapshot(snapshot);
       // Montant TOUJOURS recalculé côté serveur (LUMINA_Audit_Menaces_Complet.md 10.2).
       const init = await api.post<ApiResponse<{ authorizationUrl: string }>>(
         "/payments/initialize",

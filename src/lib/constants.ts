@@ -29,7 +29,7 @@ export const SECTOR_LABELS: Record<Sector, { label: string; icon: string; descri
     description: "Boutique en ligne, gestion de stocks et encaissement Mobile Money",
   },
   ACCOMMODATION: {
-    label: "Hébergement & RBNB",
+    label: "Airbnb",
     icon: "Building2",
     description: "Appartements meublés, calendrier intelligent, reçu fiscal et check-in digital",
   },

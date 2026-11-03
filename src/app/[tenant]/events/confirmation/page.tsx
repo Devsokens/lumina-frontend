@@ -5,6 +5,7 @@ import Link from "next/link";
 import { useSearchParams } from "next/navigation";
 import { CheckCircle2, Clock, XCircle } from "lucide-react";
 import { useTenant } from "@/hooks/useTenant";
+import { OrderDocumentButton } from "@/components/vitrine/order-document-button";
 import { usePaymentStatus } from "@/hooks/usePublicEvents";
 import { TicketDownloads } from "@/components/vitrine/ticket-downloads";
 import { formatXaf } from "@/lib/events";
@@ -61,6 +62,7 @@ function Confirmation() {
             billet à l&apos;entrée.
           </p>
         </div>
+        {data.documentToken && <OrderDocumentButton orderId={data.orderId} token={data.documentToken} kind="INVOICE" />}
         {data.tickets.length > 0 ? (
           <TicketDownloads tickets={data.tickets} />
         ) : (
