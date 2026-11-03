@@ -1,152 +1,108 @@
-import { Logo } from "./logo";
 import Link from "next/link";
-import { ShieldCheck, Smartphone, Zap, PartyPopper, UtensilsCrossed, ShoppingBag, Building2 } from "lucide-react";
+import { ArrowUpRight, Mail, MapPin, Phone } from "lucide-react";
+import { Logo } from "./logo";
+
+const PLATFORM_LINKS = [
+  { href: "/login", label: "Connexion" },
+  { href: "/signup", label: "Créer un compte GiyaX" },
+  { href: "/pricing", label: "Tarifs" },
+];
+
+// Coordonnées de l'assistance (SOKEN'S DIGITAL).
+const CONTACT = {
+  email: "supportsokensdigital@gmail.com",
+  phoneLabel: "060 00 13 33",
+  phoneHref: "tel:060001333",
+  city: "Libreville, Gabon",
+};
+
+const DISCOVER_LINKS = [
+  { href: "/#secteurs", label: "Solutions" },
+  { href: "/#clients", label: "Ils utilisent GiyaX" },
+  { href: "/#faq", label: "Questions fréquentes" },
+];
 
 export function Footer() {
   return (
     <footer className="relative overflow-hidden bg-[#06140f] text-white">
       <div className="pointer-events-none absolute -top-32 -right-24 h-96 w-96 rounded-full bg-primary/25 blur-[120px]" />
-      <div className="pointer-events-none absolute -bottom-24 -left-24 h-80 w-80 rounded-full bg-secondary/10 blur-[120px]" />
 
-      {/* Top Value Banner */}
-      <div className="relative border-b border-white/10">
-        <div className="mx-auto grid max-w-7xl gap-6 px-4 py-8 sm:grid-cols-3 sm:px-6 lg:px-8">
-          <div className="flex items-center gap-3">
-            <div className="flex size-10 items-center justify-center rounded-xl bg-white/10 text-emerald-300">
-              <Smartphone className="size-5" />
-            </div>
-            <div>
-              <p className="text-sm font-semibold text-white">100% Mobile & Offline</p>
-              <p className="text-xs text-white/60">PWA conçue pour la connectivité africaine</p>
-            </div>
-          </div>
-
-          <div className="flex items-center gap-3">
-            <div className="flex size-10 items-center justify-center rounded-xl bg-white/10 text-secondary">
-              <Zap className="size-5" />
-            </div>
-            <div>
-              <p className="text-sm font-semibold text-white">Mobile Money Intégré</p>
-              <p className="text-xs text-white/60">Airtel Money, Moov Money, Carte</p>
-            </div>
-          </div>
-
-          <div className="flex items-center gap-3">
-            <div className="flex size-10 items-center justify-center rounded-xl bg-white/10 text-emerald-300">
-              <ShieldCheck className="size-5" />
-            </div>
-            <div>
-              <p className="text-sm font-semibold text-white">Souveraineté des Données</p>
-              <p className="text-xs text-white/60">Export auto Google Drive / Dropbox</p>
-            </div>
-          </div>
-        </div>
-      </div>
-
-      {/* Main Footer Links */}
-      <div className="relative mx-auto max-w-7xl px-4 py-16 sm:px-6 lg:px-8">
-        <div className="grid grid-cols-2 gap-8 md:grid-cols-5 lg:gap-12">
-          {/* Brand Col */}
-          <div className="col-span-2">
+      <div className="relative mx-auto max-w-7xl px-4 py-14 sm:px-6 lg:px-8 lg:py-16">
+        <div className="grid gap-10 sm:grid-cols-2 lg:grid-cols-[1.6fr_1fr_1fr_1.4fr]">
+          <div>
             <Logo size="lg" inverted />
             <p className="mt-4 max-w-sm text-sm leading-relaxed text-white/70">
-              La plateforme tout-en-un de gestion et d&apos;encaissement pour les événements, la restauration, le commerce et les locations RBNB en Afrique.
+              La digitalisation qui éclaire : vendez, accueillez et encaissez depuis une seule plateforme, pensée pour
+              l&apos;Afrique.
             </p>
-            <div className="mt-6 flex items-center gap-2">
-              <span className="relative flex size-2.5">
-                <span className="absolute inline-flex h-full w-full animate-ping rounded-full bg-emerald-400 opacity-75"></span>
-                <span className="relative inline-flex size-2.5 rounded-full bg-emerald-500"></span>
-              </span>
-              <span className="text-xs font-medium text-emerald-300">
-                Tous les systèmes GiyaX opérationnels (99.9%)
-              </span>
-            </div>
           </div>
 
-          {/* Solutions Col */}
-          <div>
-            <p className="text-sm font-semibold tracking-wider text-white uppercase">4 Secteurs</p>
+          <nav aria-label="Découvrir">
+            <p className="text-sm font-semibold uppercase tracking-wider text-white">Découvrir</p>
             <ul className="mt-4 space-y-2.5 text-sm text-white/65">
-              <li>
-                <a href="#secteurs" className="inline-flex items-center gap-2 transition-colors hover:text-secondary">
-                  <PartyPopper className="size-4" /> Événementiel & Billets
-                </a>
-              </li>
-              <li>
-                <a href="#secteurs" className="inline-flex items-center gap-2 transition-colors hover:text-secondary">
-                  <UtensilsCrossed className="size-4" /> Restauration & KDS
-                </a>
-              </li>
-              <li>
-                <a href="#secteurs" className="inline-flex items-center gap-2 transition-colors hover:text-secondary">
-                  <ShoppingBag className="size-4" /> E-Commerce & Stocks
-                </a>
-              </li>
-              <li>
-                <a href="#secteurs" className="inline-flex items-center gap-2 transition-colors hover:text-secondary">
-                  <Building2 className="size-4" /> RBNB
-                </a>
-              </li>
+              {DISCOVER_LINKS.map((l) => (
+                <li key={l.href}>
+                  <Link href={l.href} className="transition-colors hover:text-secondary">
+                    {l.label}
+                  </Link>
+                </li>
+              ))}
             </ul>
-          </div>
+          </nav>
 
-          {/* Produit Col */}
-          <div>
-            <p className="text-sm font-semibold tracking-wider text-white uppercase">Infrastructure</p>
+          <nav aria-label="Plateforme">
+            <p className="text-sm font-semibold uppercase tracking-wider text-white">Plateforme</p>
             <ul className="mt-4 space-y-2.5 text-sm text-white/65">
-              <li>
-                <a href="#features" className="transition-colors hover:text-secondary">
-                  Paiement Mobile Money
-                </a>
-              </li>
-              <li>
-                <a href="#features" className="transition-colors hover:text-secondary">
-                  Mode PWA Hors-Ligne
-                </a>
-              </li>
-              <li>
-                <a href="#tarifs" className="transition-colors hover:text-secondary">
-                  Formule Free & Pro
-                </a>
-              </li>
-              <li>
-                <a href="#faq" className="transition-colors hover:text-secondary">
-                  FAQ & Assistance
-                </a>
-              </li>
+              {PLATFORM_LINKS.map((l) => (
+                <li key={l.href}>
+                  <Link href={l.href} className="transition-colors hover:text-secondary">
+                    {l.label}
+                  </Link>
+                </li>
+              ))}
             </ul>
-          </div>
+          </nav>
 
-          {/* Légal & Accès */}
           <div>
-            <p className="text-sm font-semibold tracking-wider text-white uppercase">Plateforme</p>
-            <ul className="mt-4 space-y-2.5 text-sm text-white/65">
+            <p className="text-sm font-semibold uppercase tracking-wider text-white">Contact</p>
+            <ul className="mt-4 space-y-3 text-sm text-white/65">
               <li>
-                <Link href="/login" className="transition-colors hover:text-secondary">
-                  Connexion Pro
-                </Link>
+                <a href={`mailto:${CONTACT.email}`} className="inline-flex items-center gap-2.5 break-all transition-colors hover:text-secondary">
+                  <Mail className="size-4 shrink-0 text-secondary" />
+                  {CONTACT.email}
+                </a>
               </li>
               <li>
-                <Link href="/signup" className="transition-colors hover:text-secondary">
-                  Créer un compte GiyaX
-                </Link>
+                <a href={CONTACT.phoneHref} className="inline-flex items-center gap-2.5 transition-colors hover:text-secondary">
+                  <Phone className="size-4 shrink-0 text-secondary" />
+                  {CONTACT.phoneLabel}
+                </a>
               </li>
-              <li>
-                <span className="text-xs text-white/40">Gabon • Afrique Centrale & Ouest</span>
+              <li className="inline-flex items-center gap-2.5">
+                <MapPin className="size-4 shrink-0 text-secondary" />
+                {CONTACT.city}
               </li>
             </ul>
           </div>
         </div>
 
-        {/* Bottom Bar */}
         <div className="mt-12 flex flex-col items-center justify-between gap-4 border-t border-white/10 pt-8 text-xs text-white/50 sm:flex-row">
-          <p className="flex items-center">
-            © {new Date().getFullYear()} GiyaX Technologies. Tous droits réservés.
-          </p>
+          <p>© {new Date().getFullYear()} GiyaX Technologies. Tous droits réservés.</p>
+          <a
+            href="https://www.sokensdigital.com"
+            target="_blank"
+            rel="noopener noreferrer"
+            className="group inline-flex items-center gap-1.5 text-white/60 transition-colors hover:text-secondary"
+          >
+            Une Solution de
+            <strong className="font-semibold tracking-wide text-white transition-colors group-hover:text-secondary">
+              SOKEN&apos;S DIGITAL
+            </strong>
+            <ArrowUpRight className="size-3.5 transition-transform group-hover:-translate-y-0.5 group-hover:translate-x-0.5" />
+          </a>
           <div className="flex items-center gap-6">
-            <span>Confidentialité & RGPD/APDP</span>
-            <span>Conditions d&apos;Utilisation</span>
-            <span>Sécurité ISO/TLS 1.3</span>
+            <span>Confidentialité</span>
+            <span>Conditions d&apos;utilisation</span>
           </div>
         </div>
       </div>

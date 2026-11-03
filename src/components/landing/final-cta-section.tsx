@@ -3,7 +3,7 @@
 import { motion } from "framer-motion";
 import Link from "next/link";
 import { Button } from "@/components/ui/button";
-import { ArrowRight, Sparkles, CheckCircle2, ShieldCheck, Zap } from "lucide-react";
+import { ArrowRight } from "lucide-react";
 
 export function FinalCtaSection() {
   return (
@@ -28,7 +28,7 @@ export function FinalCtaSection() {
 
             {/* Subtitle */}
             <p className="mt-4 text-base leading-relaxed text-white/80 sm:text-xl">
-              Créez votre compte en 2 minutes, configurez vos menus, billets ou articles, et commencez à encaisser par Mobile Money.
+              Créez votre compte en 2 minutes, configurez vos billets, votre menu ou vos logements, et commencez à encaisser.
             </p>
 
             {/* Action Buttons */}
@@ -36,41 +36,13 @@ export function FinalCtaSection() {
               <Button
                 asChild
                 size="lg"
-                className="group h-14 rounded-full bg-secondary px-8 text-base font-bold text-yellow-950 shadow-xl shadow-secondary/30 transition-all hover:bg-yellow-400 hover:scale-105"
+                className="group h-11 rounded-full bg-secondary px-5 text-sm font-bold text-yellow-950 shadow-lg shadow-secondary/30 transition-all hover:scale-105 hover:bg-yellow-400 sm:h-12 sm:px-7 sm:text-base"
               >
                 <Link href="/signup" className="flex items-center gap-2">
                   <span>Créer mon compte gratuit (0 FCFA)</span>
                   <ArrowRight className="size-4 transition-transform group-hover:translate-x-1" />
                 </Link>
               </Button>
-
-              <Button
-                asChild
-                variant="outline"
-                size="lg"
-                className="h-14 rounded-full border-white/30 bg-white/10 px-7 text-base font-medium text-white backdrop-blur-md hover:bg-white/20"
-              >
-                <a href="#demo" className="flex items-center gap-2">
-                  <Zap className="size-4 text-secondary" />
-                  <span>Revoir la démo interactive</span>
-                </a>
-              </Button>
-            </div>
-
-            {/* Micro guarantees */}
-            <div className="mt-10 flex flex-wrap items-center justify-center gap-6 text-xs text-white/70">
-              <div className="flex items-center gap-1.5">
-                <CheckCircle2 className="size-4 text-secondary" />
-                <span>Aucune carte bancaire requise</span>
-              </div>
-              <div className="flex items-center gap-1.5">
-                <ShieldCheck className="size-4 text-secondary" />
-                <span>Sécurité certifiée TLS 1.3</span>
-              </div>
-              <div className="flex items-center gap-1.5">
-                <Sparkles className="size-4 text-secondary" />
-                <span>Sous-domaine offert à vie</span>
-              </div>
             </div>
           </div>
         </motion.div>

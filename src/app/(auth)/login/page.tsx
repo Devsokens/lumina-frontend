@@ -7,15 +7,14 @@ import Link from "next/link";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { toast } from "sonner";
-import { Eye, EyeOff, KeyRound } from "lucide-react";
+import { Eye, EyeOff } from "lucide-react";
 import { loginSchema, type LoginInput } from "@/lib/validations";
 import { homePathFor, useAuth } from "@/hooks/useAuth";
 import { apiError } from "@/lib/api";
 import { OtpLogin } from "@/components/shared/otp-login";
 import { useAuthStore, type AuthUser } from "@/stores/useAuthStore";
 import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
-import { Label } from "@/components/ui/label";
+import { FloatingField } from "@/components/shared/floating-field";
 import { API_URL } from "@/lib/constants";
 
 // Accès démo sans backend : uniquement si NEXT_PUBLIC_DEMO_MODE=true
@@ -88,11 +87,10 @@ function LoginContent() {
   }
 
   // Connexion démo fictive instantanée pour prévisualiser les écrans
-  function handleDemoLogin(sector: "event" | "restaurant" | "shop" | "accommodation") {
+  function handleDemoLogin(sector: "event" | "restaurant" | "accommodation") {
     const sectorNames: Record<string, string> = {
       event: "Festival Urban Libreville",
       restaurant: "Le Palmier d'Or",
-      shop: "Sneakers Store LBV",
       accommodation: "Résidences Mbolo",
     };
 
@@ -113,11 +111,8 @@ function LoginContent() {
 
   return (
     <div>
-      <div className="flex size-14 items-center justify-center rounded-2xl bg-muted text-primary">
-        <KeyRound className="size-6" />
-      </div>
-      <h1 className="mt-6 font-display text-2xl font-bold text-foreground">Content de vous revoir</h1>
-      <p className="mt-1 text-sm text-muted-foreground">
+      <h1 className="font-display text-[28px] font-bold leading-tight text-foreground">Content de vous revoir</h1>
+      <p className="mt-1.5 text-sm text-muted-foreground">
         Connectez-vous pour accéder à votre tableau de bord GiyaX.
       </p>
 
@@ -127,65 +122,29 @@ function LoginContent() {
         </p>
       )}
 
-      {/* Mode Démo Rapide en 1 Clic pour la prévisualisation */}
+      {/* Mode démo (prévisualisation sans backend, jamais en production) */}
       {DEMO_MODE && (
-      <div className="mt-6 rounded-2xl border border-primary/30 bg-primary/5 p-4 space-y-2.5">
-        <div className="flex items-center justify-between">
-          <span className="text-xs font-bold uppercase tracking-wider text-primary flex items-center gap-1.5">
-            Accès Démo Immédiat (Sans backend)
-          </span>
-          <span className="text-[10px] font-mono rounded bg-primary/20 px-1.5 py-0.5 text-primary">
-            Mode Prévisualisation
-          </span>
+        <div className="mt-5 rounded-2xl border border-primary/30 bg-primary/5 p-3">
+          <p className="text-xs font-bold uppercase tracking-wider text-primary">Accès démo (sans backend)</p>
+          <div className="mt-2 grid grid-cols-3 gap-2">
+            <Button type="button" size="sm" variant="outline" className="h-9 rounded-xl text-xs font-semibold" onClick={() => handleDemoLogin("event")}>
+              Événements
+            </Button>
+            <Button type="button" size="sm" variant="outline" className="h-9 rounded-xl text-xs font-semibold" onClick={() => handleDemoLogin("restaurant")}>
+              Restaurant
+            </Button>
+            <Button type="button" size="sm" variant="outline" className="h-9 rounded-xl text-xs font-semibold" onClick={() => handleDemoLogin("accommodation")}>
+              RBNB
+            </Button>
+          </div>
         </div>
-        <p className="text-xs text-muted-foreground">
-          Cliquez sur le secteur de votre choix pour explorer immédiatement tous les écrans :
-        </p>
-        <div className="grid grid-cols-2 gap-2 pt-1">
-          <Button
-            type="button"
-            size="sm"
-            className="rounded-xl bg-amber-600 hover:bg-amber-500 text-white font-semibold text-xs h-9 justify-start px-3"
-            onClick={() => handleDemoLogin("event")}
-          >
-            Événementiel (Pass & Scan)
-          </Button>
-          <Button
-            type="button"
-            size="sm"
-            variant="outline"
-            className="rounded-xl border-emerald-500/30 text-emerald-600 hover:bg-emerald-500/10 font-semibold text-xs h-9 justify-start px-3"
-            onClick={() => handleDemoLogin("restaurant")}
-          >
-            Restauration & KDS
-          </Button>
-          <Button
-            type="button"
-            size="sm"
-            variant="outline"
-            className="rounded-xl border-purple-500/30 text-purple-600 hover:bg-purple-500/10 font-semibold text-xs h-9 justify-start px-3"
-            onClick={() => handleDemoLogin("accommodation")}
-          >
-            RBNB
-          </Button>
-          <Button
-            type="button"
-            size="sm"
-            variant="outline"
-            className="rounded-xl border-blue-500/30 text-blue-600 hover:bg-blue-500/10 font-semibold text-xs h-9 justify-start px-3"
-            onClick={() => handleDemoLogin("shop")}
-          >
-            E-Commerce & Stocks
-          </Button>
-        </div>
-      </div>
       )}
 
       {/* Bouton Google */}
       <Button
         type="button"
         variant="outline"
-        className="mt-4 h-12 w-full rounded-xl border-border bg-card text-base font-medium shadow-xs transition-all hover:bg-muted/50 hover:border-primary/40"
+        className="mt-6 h-12 w-full rounded-xl border-2 border-foreground/15 bg-card text-[15px] font-medium shadow-xs transition-all hover:border-primary/40 hover:bg-muted/50"
         onClick={handleGoogleLogin}
         disabled={googleLoading}
       >
@@ -193,9 +152,9 @@ function LoginContent() {
         {googleLoading ? "Connexion en cours..." : "Continuer avec Google"}
       </Button>
 
-      <div className="my-6 flex items-center gap-3">
+      <div className="my-5 flex items-center gap-3">
         <div className="h-px flex-1 bg-border" />
-        <span className="text-xs font-medium uppercase tracking-wider text-muted-foreground">ou formulaire classique</span>
+        <span className="text-xs font-medium text-muted-foreground">ou avec vos identifiants</span>
         <div className="h-px flex-1 bg-border" />
       </div>
 
@@ -205,72 +164,64 @@ function LoginContent() {
           <button
             type="button"
             onClick={() => setMode("password")}
-            className="text-xs text-primary underline-offset-4 hover:underline"
+            className="text-xs font-medium text-primary underline-offset-4 hover:underline"
           >
             Revenir au mot de passe
           </button>
         </div>
       ) : (
-      <form onSubmit={handleSubmit(onSubmit)} className="space-y-4" noValidate>
-        <div className="space-y-1.5">
-          <Label htmlFor="identifier">
-            Email ou téléphone <span className="text-destructive">*</span>
-          </Label>
-          <Input
+        <form onSubmit={handleSubmit(onSubmit)} className="space-y-4" noValidate>
+          <FloatingField
             id="identifier"
+            label="Email ou téléphone"
             autoComplete="username"
-            className="h-11 rounded-xl"
-            placeholder="vous@exemple.com ou +241..."
+            required
+            error={errors.identifier?.message}
             {...register("identifier")}
           />
-          {errors.identifier && (
-            <p className="text-sm text-destructive">{errors.identifier.message}</p>
-          )}
-        </div>
 
-        <div className="space-y-1.5">
-          <div className="flex items-center justify-between">
-            <Label htmlFor="password">
-              Mot de passe <span className="text-destructive">*</span>
-            </Label>
-            <button
-              type="button"
-              onClick={() => setMode("otp")}
-              className="text-xs text-primary underline-offset-4 hover:underline"
-            >
-              Mot de passe oublié ? Code SMS
-            </button>
-          </div>
-          <div className="relative">
-            <Input
+          <div>
+            <FloatingField
               id="password"
+              label="Mot de passe"
               type={showPassword ? "text" : "password"}
               autoComplete="current-password"
-              className="h-11 rounded-xl pr-10"
-              placeholder="••••••••"
+              required
+              error={errors.password?.message}
+              endAdornment={
+                <button
+                  type="button"
+                  onClick={() => setShowPassword((v) => !v)}
+                  className="flex size-10 items-center justify-center rounded-lg text-muted-foreground transition-colors hover:bg-muted hover:text-foreground"
+                  aria-label={showPassword ? "Masquer le mot de passe" : "Afficher le mot de passe"}
+                >
+                  {showPassword ? <EyeOff className="size-4" /> : <Eye className="size-4" />}
+                </button>
+              }
               {...register("password")}
             />
-            <button
-              type="button"
-              onClick={() => setShowPassword((v) => !v)}
-              className="absolute inset-y-0 right-0 flex w-10 items-center justify-center text-muted-foreground hover:text-foreground"
-              aria-label={showPassword ? "Masquer le mot de passe" : "Afficher le mot de passe"}
-            >
-              {showPassword ? <EyeOff className="size-4" /> : <Eye className="size-4" />}
-            </button>
+            <div className="mt-2 flex justify-end">
+              <button
+                type="button"
+                onClick={() => setMode("otp")}
+                className="text-xs font-medium text-primary underline-offset-4 hover:underline"
+              >
+                Mot de passe oublié ? Recevoir un code SMS
+              </button>
+            </div>
           </div>
-          {errors.password && (
-            <p className="text-sm text-destructive">{errors.password.message}</p>
-          )}
-        </div>
 
-        <Button type="submit" className="h-11 w-full rounded-xl text-base font-semibold shadow-md shadow-primary/20" disabled={submitting}>
-          {submitting ? "Connexion..." : "Se connecter"}
-        </Button>
-      </form>
+          <Button
+            type="submit"
+            className="h-12 w-full rounded-xl text-base font-semibold shadow-md shadow-primary/20"
+            disabled={submitting}
+          >
+            {submitting ? "Connexion..." : "Se connecter"}
+          </Button>
+        </form>
       )}
 
-      <p className="mt-8 text-center text-sm text-muted-foreground">
+      <p className="mt-6 text-center text-sm text-muted-foreground">
         Pas encore de compte ?{" "}
         <Link href="/signup" className="font-semibold text-primary underline-offset-4 hover:underline">
           Créer un compte GiyaX

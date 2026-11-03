@@ -1,0 +1,284 @@
+<template>
+  <style>
+    #root {
+      position: absolute;
+      inset: 0;
+      overflow: hidden;
+      background: #0b0f0e;
+      font-family: "Montserrat", sans-serif;
+    }
+    #a3-world,
+    #a3-cam {
+      position: absolute;
+      inset: 0;
+    }
+    #a3-cam video {
+      width: 100%;
+      height: 100%;
+      object-fit: cover;
+    }
+    #a3-scrim {
+      position: absolute;
+      inset: 0;
+      background: linear-gradient(180deg, rgba(0, 0, 0, 0.6) 0%, rgba(0, 0, 0, 0.3) 45%, rgba(0, 0, 0, 0.6) 100%);
+    }
+    #a3-head {
+      position: absolute;
+      left: 0;
+      right: 0;
+      top: 400px;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 26px;
+      text-align: center;
+    }
+    /* Grande question plein cadre (accroche du métier) */
+    #a3-q {
+      position: absolute;
+      left: 0;
+      right: 0;
+      top: 454px;
+      text-align: center;
+      color: #fff;
+    }
+    #a3-q .pre {
+      margin-bottom: 6px;
+      font-size: 60px;
+      font-weight: 600;
+      color: rgba(255, 255, 255, 0.86);
+    }
+    #a3-q .main {
+      font-size: 98px;
+      font-weight: 800;
+      line-height: 1.02;
+      letter-spacing: -0.025em;
+    }
+    #a3-q .w {
+      display: inline-block;
+    }
+    #a3-q .gold {
+      color: #f4b942;
+    }
+    #a3-qdim {
+      position: absolute;
+      inset: 0;
+      background: rgba(0, 0, 0, 0.42);
+    }
+    .a3-chip {
+      display: inline-flex;
+      align-items: center;
+      gap: 14px;
+      padding: 12px 28px 12px 22px;
+      border-radius: 999px;
+      background: rgba(10, 79, 60, 0.88);
+      border: 2px solid rgba(244, 185, 66, 0.75);
+      color: #fff;
+      font-size: 40px;
+      font-weight: 600;
+    }
+    .a3-chip svg {
+      width: 44px;
+      height: 44px;
+      color: #f4b942;
+    }
+    .a3-title {
+      color: #fff;
+      font-size: 80px;
+      font-weight: 800;
+      line-height: 1.05;
+      letter-spacing: -0.02em;
+    }
+    .a3-title .w {
+      display: inline-block;
+    }
+    .a3-title .gold {
+      color: #f4b942;
+    }
+    /* Calendrier (composant stay-calendar de l'app) */
+    #a3-cal {
+      position: absolute;
+      left: 580px;
+      top: 250px;
+      width: 760px;
+      padding: 34px 40px 36px;
+      border-radius: 34px;
+      background: #fff;
+      color: #1c1c1e;
+      box-shadow: 0 30px 80px rgba(0, 0, 0, 0.5);
+    }
+    #a3-cal .month {
+      text-align: center;
+      font-size: 36px;
+      font-weight: 700;
+    }
+    #a3-grid {
+      margin-top: 18px;
+      display: grid;
+      grid-template-columns: repeat(7, 1fr);
+      row-gap: 8px;
+      justify-items: center;
+    }
+    .a3-wd {
+      padding-bottom: 6px;
+      font-size: 28px;
+      font-weight: 600;
+      color: #6b7280;
+    }
+    .a3-d,
+    .a3-e {
+      width: 80px;
+      height: 80px;
+      border-radius: 50%;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 32px;
+      font-weight: 500;
+    }
+    .a3-booked {
+      background: rgba(10, 79, 60, 0.85);
+      color: #fff;
+    }
+    /* Confirmation (écran stays/confirmation) */
+    #a3-toast {
+      position: absolute;
+      left: 580px;
+      top: 888px;
+      width: 760px;
+      display: flex;
+      align-items: center;
+      gap: 24px;
+      padding: 22px 32px;
+      border-radius: 28px;
+      background: #fff;
+      color: #0b1f1a;
+      box-shadow: 0 24px 70px rgba(0, 0, 0, 0.5);
+    }
+    #a3-toast svg {
+      flex-shrink: 0;
+      width: 64px;
+      height: 64px;
+      color: #10b981;
+    }
+    #a3-toast .t {
+      font-size: 38px;
+      font-weight: 800;
+    }
+    #a3-toast .r {
+      margin-top: 2px;
+      font-size: 28px;
+      font-weight: 500;
+      color: #5b6b66;
+    }
+    #a3-dip {
+      position: absolute;
+      inset: 0;
+      background: #000;
+    }
+  </style>
+  <div id="root" data-composition-id="a3" data-width="1920" data-height="1080">
+    <div id="a3-world">
+      <div id="a3-cam">
+        <video id="a3-vid" class="clip" data-start="0" data-duration="7.75" data-media-start="0.5" muted playsinline src="assets/video/appartement.mp4"></video>
+      </div>
+      <div id="a3-scrim"></div>
+      <div id="a3-qdim"></div>
+
+      <div id="a3-q" data-layout-allow-overlap>
+          <div class="pre"><span class="w">Vous</span> <span class="w">louez</span></div>
+          <div class="main"><span class="w">des</span> <span class="w">meublés</span> <span class="w gold">?</span></div>
+      </div>
+
+      <div id="a3-head" data-layout-allow-overlap>
+        <div class="a3-title">
+          <div><span class="w">Remplissez</span></div>
+          <div><span class="w">votre</span> <span class="w gold">calendrier</span></div>
+        </div>
+      </div>
+
+      <div id="a3-cal">
+        <div class="month">Décembre 2026</div>
+        <div id="a3-grid">
+          <span class="a3-wd">L</span><span class="a3-wd">M</span><span class="a3-wd">M</span><span class="a3-wd">J</span><span class="a3-wd">V</span><span class="a3-wd">S</span><span class="a3-wd">D</span>
+          <span class="a3-e"></span>
+          <span id="a3-d1" class="a3-d">1</span>
+          <span id="a3-d2" class="a3-d">2</span>
+          <span id="a3-d3" class="a3-d">3</span>
+          <span id="a3-d4" class="a3-d a3-booked">4</span>
+          <span id="a3-d5" class="a3-d a3-booked">5</span>
+          <span id="a3-d6" class="a3-d a3-booked">6</span>
+          <span id="a3-d7" class="a3-d">7</span>
+          <span id="a3-d8" class="a3-d">8</span>
+          <span id="a3-d9" class="a3-d">9</span>
+          <span id="a3-d10" class="a3-d">10</span>
+          <span id="a3-d11" class="a3-d a3-booked">11</span>
+          <span id="a3-d12" class="a3-d a3-booked">12</span>
+          <span id="a3-d13" class="a3-d a3-booked">13</span>
+          <span id="a3-d14" class="a3-d">14</span>
+          <span id="a3-d15" class="a3-d">15</span>
+          <span id="a3-d16" class="a3-d">16</span>
+          <span id="a3-d17" class="a3-d">17</span>
+          <span id="a3-d18" class="a3-d">18</span>
+          <span id="a3-d19" class="a3-d">19</span>
+          <span id="a3-d20" class="a3-d">20</span>
+          <span id="a3-d21" class="a3-d">21</span>
+          <span id="a3-d22" class="a3-d">22</span>
+          <span id="a3-d23" class="a3-d">23</span>
+          <span id="a3-d24" class="a3-d">24</span>
+          <span id="a3-d25" class="a3-d">25</span>
+          <span id="a3-d26" class="a3-d">26</span>
+          <span id="a3-d27" class="a3-d">27</span>
+          <span id="a3-d28" class="a3-d">28</span>
+          <span id="a3-d29" class="a3-d">29</span>
+          <span id="a3-d30" class="a3-d">30</span>
+          <span id="a3-d31" class="a3-d">31</span>
+        </div>
+      </div>
+
+      <div id="a3-toast">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"></circle><path d="m9 12 2 2 4-4"></path></svg>
+        <div>
+          <div class="t">Séjour réservé !</div>
+          <div class="r">R-2048 · 3 nuits · 135 000 FCFA</div>
+        </div>
+      </div>
+    </div>
+    <div id="a3-dip"></div>
+  </div>
+  <script>
+    (function () {
+      const tl = gsap.timeline({ paused: true });
+      const fill = (ids, at) =>
+        tl.fromTo(
+          ids.map((d) => "#a3-d" + d),
+          { backgroundColor: "rgba(10, 79, 60, 0)", color: "#1c1c1e", scale: 0.86 },
+          { backgroundColor: "rgba(10, 79, 60, 0.85)", color: "#ffffff", scale: 1, duration: 0.3, ease: "power2.out", stagger: 0.07 },
+          at,
+        );
+      // Entrée : raccord de vitesse avec la poussée de l'acte 2.
+      tl.fromTo("#a3-world", { scale: 1.25, filter: "blur(14px)" }, { scale: 1, filter: "blur(0px)", duration: 0.45, ease: "power3.out" }, 0);
+      tl.fromTo("#a3-cam", { scale: 1.02 }, { scale: 1.1, duration: 7.75, ease: "power1.inOut" }, 0);
+      tl.set("#a3-dip", { opacity: 0 }, 0);
+      // La question, en grand, sous un voile plus sombre.
+      tl.fromTo("#a3-q .w", { opacity: 0, y: 14, filter: "blur(10px)" }, { opacity: 1, y: 0, filter: "blur(0px)", duration: 0.22, ease: "power3.out", stagger: 0.07 }, 0.38);
+      // Elle s'efface et laisse place à la réponse.
+      tl.to("#a3-q .w", { opacity: 0, y: -24, filter: "blur(10px)", duration: 0.2, ease: "power2.in", stagger: 0.03 }, 2);
+      tl.fromTo("#a3-qdim", { opacity: 1 }, { opacity: 0, duration: 0.45, ease: "power2.out" }, 2.05);
+      tl.fromTo(".a3-title .w", { opacity: 0, filter: "blur(8px)" }, { opacity: 1, filter: "blur(0px)", duration: 0.18, ease: "power2.out", stagger: 0.08 }, 2.20);
+      tl.to("#a3-head", { y: -340, scale: 0.72, transformOrigin: "50% 0%", duration: 0.6, ease: "power3.inOut" }, 3.5);
+      // Le calendrier arrive, quelques nuits déjà réservées.
+      tl.fromTo("#a3-cal", { y: 60, opacity: 0, filter: "blur(10px)" }, { y: 0, opacity: 1, filter: "blur(0px)", duration: 0.7, ease: "expo.out" }, 3.75);
+      // Les réservations tombent l'une après l'autre.
+      fill([18, 19, 20], 4.2);
+      fill([24, 25, 26, 27], 4.55);
+      fill([30, 31], 4.9);
+      fill([21, 22, 23], 5.15);
+      // Confirmation du séjour.
+      tl.fromTo("#a3-toast", { y: 40, opacity: 0, filter: "blur(10px)" }, { y: 0, opacity: 1, filter: "blur(0px)", duration: 0.6, ease: "expo.out" }, 5.4);
+      // Coupe franche vers le final : léger assombrissement juste avant.
+      tl.to("#a3-dip", { opacity: 0.4, duration: 0.1 }, 7.45);
+      window.__timelines["a3"] = tl;
+    })();
+  </script>
+</template>

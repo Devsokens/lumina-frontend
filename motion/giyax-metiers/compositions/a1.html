@@ -1,0 +1,376 @@
+<template>
+  <style>
+    #root {
+      position: absolute;
+      inset: 0;
+      overflow: hidden;
+      background: #0b0f0e;
+      font-family: "Montserrat", sans-serif;
+    }
+    #a1-world,
+    #a1-cam {
+      position: absolute;
+      inset: 0;
+    }
+    #a1-cam video {
+      width: 100%;
+      height: 100%;
+      object-fit: cover;
+    }
+    #a1-scrim {
+      position: absolute;
+      inset: 0;
+      background: linear-gradient(180deg, rgba(0, 0, 0, 0.82) 0%, rgba(0, 0, 0, 0.62) 22%, rgba(0, 0, 0, 0.3) 48%, rgba(0, 0, 0, 0.65) 100%);
+    }
+    /* Pastille du métier + grand titre (centrés, puis rangés en haut) */
+    #a1-head {
+      position: absolute;
+      left: 0;
+      right: 0;
+      top: 400px;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 26px;
+      text-align: center;
+    }
+    /* Grande question plein cadre (accroche du métier) */
+    #a1-q {
+      position: absolute;
+      left: 0;
+      right: 0;
+      top: 400px;
+      text-align: center;
+      color: #fff;
+    }
+    #a1-q .pre {
+      margin-bottom: 6px;
+      font-size: 60px;
+      font-weight: 600;
+      color: rgba(255, 255, 255, 0.86);
+    }
+    #a1-q .main {
+      font-size: 98px;
+      font-weight: 800;
+      line-height: 1.02;
+      letter-spacing: -0.025em;
+    }
+    #a1-q .w {
+      display: inline-block;
+    }
+    #a1-q .gold {
+      color: #f4b942;
+    }
+    #a1-qdim {
+      position: absolute;
+      inset: 0;
+      background: rgba(0, 0, 0, 0.42);
+    }
+    .a1-chip {
+      display: inline-flex;
+      align-items: center;
+      gap: 14px;
+      padding: 12px 28px 12px 22px;
+      border-radius: 999px;
+      background: rgba(10, 79, 60, 0.88);
+      border: 2px solid rgba(244, 185, 66, 0.75);
+      color: #fff;
+      font-size: 40px;
+      font-weight: 600;
+    }
+    .a1-chip svg {
+      width: 44px;
+      height: 44px;
+      color: #f4b942;
+    }
+    .a1-title {
+      color: #fff;
+      font-size: 80px;
+      font-weight: 800;
+      line-height: 1.05;
+      letter-spacing: -0.02em;
+    }
+    .a1-title .w {
+      display: inline-block;
+    }
+    .a1-title .gold {
+      color: #f4b942;
+    }
+    /* Téléphone : billet puis scanner GiyaX */
+    #a1-phone {
+      position: absolute;
+      left: 760px;
+      top: 280px;
+      width: 400px;
+      height: 760px;
+      border-radius: 56px;
+      background: #0b0f0e;
+      padding: 13px;
+      box-shadow: 0 30px 80px rgba(0, 0, 0, 0.6);
+    }
+    #a1-screen {
+      position: relative;
+      width: 374px;
+      height: 734px;
+      border-radius: 44px;
+      overflow: hidden;
+      background: #fff;
+    }
+    #a1-ticket {
+      position: absolute;
+      inset: 0;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      gap: 8px;
+      color: #0b1f1a;
+      text-align: center;
+    }
+    #a1-ticket .ev {
+      font-size: 36px;
+      font-weight: 800;
+      letter-spacing: -0.02em;
+    }
+    #a1-ticket .date {
+      font-size: 28px;
+      font-weight: 500;
+      color: #5b6b66;
+    }
+    #a1-qr {
+      position: relative;
+      margin: 22px 0 18px;
+      width: 236px;
+      height: 236px;
+    }
+    #a1-qr img {
+      display: block;
+      width: 236px;
+      height: 236px;
+    }
+    #a1-scanline {
+      position: absolute;
+      left: -12px;
+      right: -12px;
+      top: 0;
+      height: 6px;
+      border-radius: 3px;
+      background: #f4b942;
+    }
+    #a1-ticket .pass {
+      font-size: 38px;
+      font-weight: 800;
+      color: #0a4f3c;
+    }
+    #a1-ticket .holder {
+      font-size: 30px;
+      font-weight: 500;
+      color: #5b6b66;
+    }
+    #a1-scanner {
+      position: absolute;
+      inset: 0;
+      background: #101614;
+    }
+    #a1-viewfinder {
+      position: absolute;
+      left: 82px;
+      top: 150px;
+      width: 210px;
+      height: 210px;
+      border: 5px solid rgba(255, 255, 255, 0.55);
+      border-radius: 32px;
+    }
+    #a1-counter {
+      position: absolute;
+      left: 16px;
+      right: 16px;
+      top: 34px;
+      border-radius: 20px;
+      background: rgba(0, 0, 0, 0.7);
+      color: #fff;
+      padding: 12px 16px 14px;
+    }
+    #a1-counter .row {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 8px;
+    }
+    #a1-counter .lbl {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      font-size: 28px;
+      font-weight: 500;
+    }
+    #a1-counter .lbl svg {
+      width: 28px;
+      height: 28px;
+    }
+    #a1-counter .num {
+      position: relative;
+      white-space: nowrap;
+      font-family: "JetBrains Mono", monospace;
+      font-size: 30px;
+      font-weight: 700;
+    }
+    #a1-counter .tot {
+      font-size: 28px;
+      opacity: 0.7;
+    }
+    #a1-n1,
+    #a1-n2 {
+      display: inline-block;
+    }
+    #a1-n2 {
+      position: absolute;
+      left: 0;
+      top: 0;
+    }
+    #a1-counter .bar {
+      margin-top: 10px;
+      height: 9px;
+      border-radius: 5px;
+      background: rgba(255, 255, 255, 0.2);
+      overflow: hidden;
+    }
+    #a1-bar {
+      display: block;
+      width: 61.75%;
+      height: 100%;
+      border-radius: 5px;
+      background: #10b981;
+    }
+    #a1-verdict {
+      position: absolute;
+      left: 0;
+      right: 0;
+      bottom: 0;
+      height: 380px;
+      border-radius: 36px 36px 0 0;
+      background: #10b981;
+      color: #fff;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      gap: 10px;
+      padding: 26px 26px 34px;
+      text-align: center;
+    }
+    #a1-verdict svg {
+      width: 84px;
+      height: 84px;
+    }
+    #a1-verdict .v {
+      white-space: nowrap;
+      font-size: 42px;
+      font-weight: 800;
+      letter-spacing: -0.02em;
+    }
+    #a1-verdict .d {
+      font-size: 30px;
+      font-weight: 500;
+      opacity: 0.92;
+    }
+    #a1-verdict .btn {
+      margin-top: 8px;
+      width: 100%;
+      height: 72px;
+      border-radius: 18px;
+      background: #eae8e1;
+      color: #1c1c1e;
+      font-size: 30px;
+      font-weight: 600;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    }
+  </style>
+  <div id="root" data-composition-id="a1" data-width="1920" data-height="1080">
+    <div id="a1-world">
+      <div id="a1-cam">
+        <video id="a1-vid" class="clip" data-start="0" data-duration="8.4" data-media-start="0" muted playsinline src="assets/video/concert.mp4"></video>
+      </div>
+      <div id="a1-scrim"></div>
+      <div id="a1-qdim"></div>
+
+      <div id="a1-q" data-layout-allow-overlap>
+          <div class="pre"><span class="w">Vous</span> <span class="w">êtes</span></div>
+          <div class="main"><div><span class="w">organisateur</span></div><div><span class="w">d'événements</span> <span class="w gold">?</span></div></div>
+      </div>
+
+      <div id="a1-head" data-layout-allow-overlap>
+        <div class="a1-title">
+          <div><span class="w">Vendez</span> <span class="w">vos</span></div>
+          <div><span class="w">billets</span> <span class="w gold">en ligne</span></div>
+        </div>
+      </div>
+
+      <div id="a1-phone">
+        <div id="a1-screen">
+          <div id="a1-ticket">
+            <div class="ev">Nuit Afro Live</div>
+            <div class="date">Sam. 14 nov. · 20h00</div>
+            <div id="a1-qr">
+              <img src="assets/svg/qr.svg" alt="" />
+              <div id="a1-scanline"></div>
+            </div>
+            <div class="pass">Pass VIP</div>
+            <div class="holder">Awa N.</div>
+          </div>
+          <div id="a1-scanner">
+            <div id="a1-viewfinder"></div>
+            <div id="a1-counter">
+              <div class="row">
+                <span class="lbl">
+                  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2"></path><path d="M16 3.128a4 4 0 0 1 0 7.744"></path><path d="M22 21v-2a4 4 0 0 0-3-3.87"></path><circle cx="9" cy="7" r="4"></circle></svg>
+                  Entrées
+                </span>
+                <span class="num" data-layout-allow-overlap><span id="a1-n1">247</span><span id="a1-n2">248</span> <span class="tot">/ 400</span></span>
+              </div>
+              <div class="bar"><span id="a1-bar"></span></div>
+            </div>
+            <div id="a1-verdict">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"></circle><path d="m9 12 2 2 4-4"></path></svg>
+              <div class="v">Billet valide</div>
+              <div class="d">Pass VIP · Awa N.</div>
+              <div class="btn">Scanner suivant</div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+  <script>
+    (function () {
+      const tl = gsap.timeline({ paused: true });
+      tl.fromTo("#a1-cam", { scale: 1.0 }, { scale: 1.08, duration: 8.4, ease: "power1.inOut" }, 0);
+      // La question, en grand, sous un voile plus sombre.
+      tl.fromTo("#a1-q .w", { opacity: 0, y: 14, filter: "blur(10px)" }, { opacity: 1, y: 0, filter: "blur(0px)", duration: 0.22, ease: "power3.out", stagger: 0.07 }, 0);
+      // Elle s'efface et laisse place à la réponse.
+      tl.to("#a1-q .w", { opacity: 0, y: -24, filter: "blur(10px)", duration: 0.2, ease: "power2.in", stagger: 0.03 }, 1.75);
+      tl.fromTo("#a1-qdim", { opacity: 1 }, { opacity: 0, duration: 0.45, ease: "power2.out" }, 1.8);
+      tl.fromTo(".a1-title .w", { opacity: 0, filter: "blur(8px)" }, { opacity: 1, filter: "blur(0px)", duration: 0.18, ease: "power2.out", stagger: 0.08 }, 1.95);
+      tl.to("#a1-head", { y: -340, scale: 0.72, transformOrigin: "50% 0%", duration: 0.6, ease: "power3.inOut" }, 3.3);
+      // Téléphone : le billet du participant.
+      tl.fromTo("#a1-phone", { y: 120, opacity: 0, filter: "blur(10px)" }, { y: 0, opacity: 1, filter: "blur(0px)", duration: 0.7, ease: "expo.out" }, 3.6);
+      // Scan du QR.
+      tl.fromTo("#a1-scanline", { y: 0, opacity: 0 }, { opacity: 1, duration: 0.08 }, 4.6);
+      tl.to("#a1-scanline", { y: 230, duration: 0.55, ease: "power1.inOut" }, 4.6);
+      tl.to("#a1-scanline", { opacity: 0, duration: 0.08 }, 5.15);
+      // Bascule sur l'écran du scanner, verdict vert.
+      tl.fromTo("#a1-ticket", { opacity: 1 }, { opacity: 0, duration: 0.15 }, 5.2);
+      tl.fromTo("#a1-scanner", { opacity: 0, filter: "blur(8px)" }, { opacity: 1, filter: "blur(0px)", duration: 0.18, ease: "power2.out" }, 5.22);
+      tl.fromTo("#a1-verdict", { y: 380 }, { y: 0, duration: 0.6, ease: "expo.out" }, 5.35);
+      // Compteur d'entrées : 247 → 248.
+      tl.fromTo("#a1-n2", { opacity: 0, y: 16 }, { opacity: 1, y: 0, duration: 0.2, ease: "power2.out" }, 5.85);
+      tl.fromTo("#a1-n1", { opacity: 1, y: 0 }, { opacity: 0, y: -16, duration: 0.2, ease: "power2.in" }, 5.85);
+      tl.fromTo("#a1-bar", { width: "61.75%" }, { width: "62%", duration: 0.3, ease: "power2.out" }, 5.85);
+      // Sortie : whip vers la gauche.
+      tl.to("#a1-world", { x: -340, filter: "blur(18px)", duration: 0.45, ease: "power3.in" }, 7.95);
+      window.__timelines["a1"] = tl;
+    })();
+  </script>
+</template>

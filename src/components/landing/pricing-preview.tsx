@@ -13,7 +13,7 @@ const PLANS = [
     badge: "0 FCFA pour toujours",
     priceMonthly: 0,
     priceAnnual: 0,
-    desc: "Idéal pour lancer son restaurant, tester son premier événement ou ouvrir sa boutique en ligne.",
+    desc: "Idéal pour lancer son restaurant, tester son premier événement ou mettre en ligne son premier logement.",
     features: [
       "Sous-domaine offert (nom.giya.ga)",
       "Jusqu'à 50 commandes / billets / réservations par mois",
@@ -31,7 +31,7 @@ const PLANS = [
     badge: "Le plus populaire",
     priceMonthly: 15000,
     priceAnnual: 12000,
-    desc: "Pour les restaurants actifs, organisateurs d'événements et commerçants cherchant la performance.",
+    desc: "Pour les restaurants actifs, organisateurs d’événements et loueurs de meublés qui veulent aller plus loin.",
     features: [
       "Tout ce qui est dans le plan Free",
       "Paiement Airtel Money & Moov Money intégré",
@@ -135,7 +135,7 @@ export function PricingPreview() {
                 }`}
               >
                 {plan.highlight && (
-                  <div className="absolute -top-4 left-1/2 -translate-x-1/2 rounded-full bg-primary px-4 py-1 font-mono text-xs font-bold uppercase tracking-wider text-white shadow-md">
+                  <div className="absolute -top-4 left-1/2 -translate-x-1/2 whitespace-nowrap rounded-full bg-primary px-4 py-1 font-mono text-xs font-bold uppercase tracking-wider text-white shadow-md">
                     Recommandé pour les PME
                   </div>
                 )}
