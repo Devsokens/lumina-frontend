@@ -29,9 +29,11 @@ Base URL frontend : `NEXT_PUBLIC_API_URL` (ex: `https://api.giya.com/v1`).
 | Méthode | Route | Auth | Body | Réponse `data` |
 |---|---|---|---|---|
 | POST | `/auth/register` | non | `{ fullName, email?, phone?, password, businessName, slug, sector, acceptedTerms: true }` | `{ accessToken, user }` + Set-Cookie `refresh_token` |
-| POST | `/auth/login` | non | `{ email? \| phone?, password }` | `{ accessToken, user }` + Set-Cookie `refresh_token` |
+| POST | `/auth/login` | non | `{ email? \| phone?, password }` | `{ accessToken, user }` + Set-Cookie `refresh_token` — **ou** `{ accountChoice }` (voir « Un compte par secteur ») |
 | POST | `/auth/otp/request` | non | `{ phone }` | `{}` |
-| POST | `/auth/otp/verify` | non | `{ phone, code }` | `{ accessToken, user }` + Set-Cookie `refresh_token` |
+| POST | `/auth/otp/verify` | non | `{ phone, code }` | `{ accessToken, user }` + Set-Cookie `refresh_token` — **ou** `{ accountChoice }` |
+| POST | `/auth/account-choice/options` | non (jeton) | `{ token }` | `{ accounts: [{ sector, businessName, slug }] }` — **401** jeton expiré |
+| POST | `/auth/account-choice` | non (jeton) | `{ token, sector }` | `{ accessToken, user }` + Set-Cookie `refresh_token` — **401** jeton expiré ou secteur hors choix |
 | POST | `/auth/refresh` | cookie | — | `{ accessToken }` (nouveau refresh_token en cookie, rotation) |
 | POST | `/auth/logout` | Bearer | — | `{}` + suppression cookie `refresh_token` |
 | GET | `/auth/me` | Bearer | — | `{ user: { id, email, phone, fullName, role, tenantId, mustChangePassword } }` |
@@ -46,7 +48,18 @@ Base URL frontend : `NEXT_PUBLIC_API_URL` (ex: `https://api.giya.com/v1`).
 3. Le backend redirige selon le cas :
    - **Compte existant** → pose le cookie `refresh_token`, redirige vers `${FRONTEND_URL}/auth/callback` — le frontend appelle `POST /v1/auth/refresh` immédiatement au chargement pour récupérer un `accessToken` (le cookie déjà posé suffit, pas de token dans l'URL par sécurité)
    - **Email Google sans compte** → redirige vers `${FRONTEND_URL}/auth/complete-signup?token=<token>` — le frontend affiche un formulaire (nom du business, slug, secteur, CGU) **sans redemander l'email** (déjà vérifié par Google, porté par le `token` côté serveur), puis soumet en `POST /auth/google/complete` avec ce `token` + les champs du formulaire. `token` expire après 10 min et est **à usage unique** (une 2ᵉ tentative avec le même token échoue même s'il n'a pas expiré).
+   - **Plusieurs comptes pour cet email** (un par secteur) → redirige vers `${FRONTEND_URL}/auth/select-account?token=<token>` (voir ci-dessous)
    - Aucun email retourné par Google → `${FRONTEND_URL}/login?error=google_no_email`
+
+**Un compte par secteur.** Un même email / téléphone (et le même nom, le même nom de structure)
+peut ouvrir un compte par secteur d'activité (`RESTAURANT`, `EVENT`, `SHOP`), jamais deux dans le
+même secteur : `register`, `google/complete` et la création de membre renvoient **409** sinon. Le
+`slug` reste unique sur toute la plateforme (**409** « adresse de site déjà prise »).
+Quand l'identité prouvée (mot de passe, code SMS ou Google) correspond à plusieurs comptes actifs,
+la réponse est `{ accountChoice: { token, accounts: [{ sector, businessName, slug }] } }` sans
+session ni cookie ; le client affiche le choix puis appelle `POST /auth/account-choice`
+`{ token, sector }`. `token` : 5 min, consommé par le choix. Au login par mot de passe, seuls les
+comptes dont le mot de passe correspond sont proposés (un seul → session directe).
 
 `user` shape : voir `src/stores/useAuthStore.ts` (`AuthUser`).
 
@@ -74,13 +87,24 @@ toute requête Bearer → 401.
 
 | Méthode | Route | Auth | Réponse `data` |
 |---|---|---|---|
-| GET | `/tenants/:slug` | non (public) | `Tenant` — 404 si inexistant OU suspendu (message générique, pas de distinction) |
+| GET | `/tenants/:slug` | non (public) | Tenant public : `id, slug, name, sector, status`, `config` limité à `description, phone, address, logoUrl, showcase`, `settings` limité à `taxRate, taxIncluded` (liste blanche) — 404 si inexistant OU suspendu (message générique, pas de distinction) |
 | GET | `/admin/tenant` | Bearer | `Tenant` du tenant courant (résolu via JWT) |
-| PATCH | `/admin/tenant` | Bearer (OWNER) | `{ name?, description?, phone?, address?, taxRate?, taxIncluded? }` → `Tenant` |
+| PATCH | `/admin/tenant` | Bearer (OWNER) | `{ name?, description?, phone?, address?, logoUrl? (https, "" pour retirer), taxRate?, taxIncluded? }` → `Tenant` |
 
 **Taxe** : `taxRate` en points de base (`1800` = 18 %, max `5000`), stocké dans `Tenant.settings`.
 `taxIncluded` (défaut `true`) = prix affichés TTC : la taxe est extraite, le total ne change pas.
 `false` = prix HT : la taxe s'ajoute au total. Sans configuration : 0 %.
+
+| PUT | `/admin/tenant/showcase` | Bearer (OWNER, MANAGER) | Vitrine complète (`UpdateShowcaseDto`) → `Tenant` |
+| PUT | `/admin/tenant/site` | Bearer (OWNER, MANAGER) | Site restaurant / boutique (`UpdateSiteDto` : palette, mode, police, mise en page du menu, couverture, présentation, galerie ≤ 6, plats vedettes ≤ 6, horaires, sections, contacts, liens https) → `Tenant`. Corps ≤ 4 Mo. Lu publiquement dans `config.site` de `GET /tenants/:slug` |
+| PUT | `/admin/tenant/stay-site` | Bearer (OWNER, MANAGER) | Site RBNB (`UpdateStaySiteDto` : `layout` ∈ `riviera, atelier, horizon, galerie, boutique, nomade`, `palette` ∈ `sable, lagon, foret, corail, ardoise, terre, ivoire, minuit`, `typography` ∈ `editorial, luxe, classique, moderne, geometrique, audacieux, retro, expressif`, `mode` ∈ `clair, sombre`, `motion` ∈ `aucune, douce, vive`, titre, accroche, couverture, présentation, galerie ≤ 8, logements vedettes ≤ 6, points forts ≤ 4, sections, contacts, liens https) → `Tenant`. **400** hors secteur `ACCOMMODATION`. Corps ≤ 5 Mo. Lu publiquement dans `config.staySite` de `GET /tenants/:slug` |
+| GET | `/tenants/:slug/media/:hash` | Public | — | Image importée de `config` (logo, vitrine, site), **binaire** (`image/png|jpeg|webp`), `Cache-Control: public, max-age=31536000, immutable`. 404 si absente |
+
+**Vitrine** : stockée dans `Tenant.config.showcase` (+ `updatedAt`) et donc renvoyée telle quelle par
+`GET /tenants/:slug` : le site public l'affiche dès la publication. Remplacement complet (PUT).
+Images : URL `https://` ou data URL PNG/JPEG/WebP (SVG refusé), 400 000 caractères max chacune ;
+corps limité à 3 Mo sur cette seule route (100 ko ailleurs). Les événements n'en font pas partie
+(la vitrine affiche les événements en vente).
 
 `Tenant` shape : voir `src/types/api.ts`.
 
@@ -119,19 +143,15 @@ toute requête Bearer → 401.
 Le QR code lui-même est généré **côté frontend** (`qrcode.react`) à partir de l'URL
 `${APP_URL}/{slug}?table={tableId}` — le backend n'a pas besoin de générer d'image.
 
-### Occupation d'une table — **à implémenter**
+### Occupation d'une table (public)
 
 | Méthode | Route | Auth | Réponse `data` |
 |---|---|---|---|
-| GET | `/tenants/:slug/tables/:tableId` | non (public, rate limit) | `{ id, number, capacity, status, seatedGuests, openOrders }` — **404** table inconnue ou d'un autre tenant |
+| GET | `/tenants/:slug/tables/:tableId` | non (public) | `{ id, number, capacity, status, seatedGuests, openOrders }` — **404** table inconnue ou d'un autre tenant, **400** `tableId` non UUID |
 
 - `seatedGuests` = somme des `guestCount` des commandes non terminées de la table
-  (`PENDING`→`DELIVERED`, hors `COMPLETED`/`CANCELLED`).
-- `openOrders` = nombre de ces commandes (plusieurs convives d'une même table peuvent commander).
-- Aucune donnée client (nom, téléphone) dans la réponse.
-- Le frontend (`hooks/usePublicTable.ts`) affiche l'occupation et bloque la commande sur place si
-  le nombre de personnes saisi dépasse `capacity - seatedGuests`. Sans la route (404), la commande
-  reste possible sans affichage d'occupation.
+  (`CONFIRMED`→`DELIVERED`, plus les `PENDING` de moins de 30 min : une commande anonyme jamais prise en charge ne bloque pas la table) ; `openOrders` = nombre de ces commandes.
+- Aucune donnée client dans la réponse.
 
 ---
 
@@ -139,7 +159,7 @@ Le QR code lui-même est généré **côté frontend** (`qrcode.react`) à parti
 
 | Méthode | Route | Auth | Headers | Body | Réponse `data` |
 |---|---|---|---|---|---|
-| POST | `/orders` | non (public, vitrine) | `X-Idempotency-Key: <uuid>` | `{ tenantSlug, type, paymentMethod?, tableId?, customerName?, customerPhone, customerEmail?, items: [{productId, quantity, notes}] }` | `Order` |
+| POST | `/orders` | non (public, vitrine) | `X-Idempotency-Key: <uuid>` | `{ tenantSlug, type, paymentMethod?, tableId?, customerName?, customerPhone, customerEmail?, items: [{productId, quantity, notes}] }` | `Order & { documentToken }` — jeton du lien d'addition / facture (§16) |
 | GET | `/admin/orders?status=&page=&limit=` | Bearer | — | — | `Order[]` + `meta: { page, limit, total }` — `limit` par défaut **100** (max 100) |
 | PATCH | `/admin/orders/:id/status` | Bearer (OWNER/MANAGER/STAFF/KITCHEN) | — | `{ status }` | `Order` |
 
@@ -152,16 +172,10 @@ Le QR code lui-même est généré **côté frontend** (`qrcode.react`) à parti
 derniers, enchaîner sur `POST /payments/initialize` ; le moyen réellement utilisé est corrigé au
 paiement. `subtotal`/`tax`/`total` suivent la taxe du tenant (§2).
 
-`guestCount` (entier 1-30, **à implémenter**) : nombre de personnes d'une commande `DINE_IN`,
-envoyé seulement si `NEXT_PUBLIC_FEATURES` contient `table-occupancy` (`lib/features.ts`). Le
-serveur peut refuser (**409**) si `guestCount` dépasse les places libres de la table.
-
-Facture / addition : générées **dans le navigateur** (`components/vitrine/order-document-pdf.tsx`)
-à partir de la commande renvoyée par `POST /orders` (noms des articles : `items[].product.name`
-si fourni, sinon le panier). Logo du restaurant : `Tenant.config.logoUrl` (https), à exposer par
-`GET /tenants/:slug` ; sans logo, monogramme. Au retour de Paystack, la facture reprend les lignes
-gardées avant le paiement (même appareil) ; pour une facture complète sur tout appareil, le backend
-pourrait ajouter `items` à `GET /payments/status/:reference`.
+`guestCount` (entier 1-30, optionnel) : nombre de personnes d'une commande `DINE_IN` avec
+`tableId`. **409** s'il dépasse `capacity - seatedGuests` (ligne `Table` verrouillée pendant le
+contrôle : deux commandes simultanées ne dépassent pas la capacité). Ignoré pour les autres types.
+Côté frontend, envoyé seulement si `NEXT_PUBLIC_FEATURES` contient `table-occupancy`.
 
 `tableId` doit appartenir au tenant de `tenantSlug` — sinon 404. Chaque commande crée ou met à
 jour la fiche client (§12) identifiée par `customerPhone`.
@@ -174,8 +188,7 @@ jour la fiche client (§12) identifiée par `customerPhone`.
 ### Temps réel (KDS)
 
 Le frontend ouvre un WebSocket natif (pas socket.io) :
-`${NEXT_PUBLIC_WS_URL}/orders?tenantId={tenantId}&token={accessToken}` — `NEXT_PUBLIC_WS_URL`
-inclut le préfixe `/v1` (ex. `wss://api.lumina.ga/v1`) ; absent, il est dérivé de `NEXT_PUBLIC_API_URL`.
+`${NEXT_PUBLIC_WS_URL}/orders?tenantId={tenantId}&token={accessToken}`.
 
 Le `token` est l'access token JWT courant (query param — impossible d'envoyer un header
 `Authorization` en WebSocket natif). Le backend doit :
@@ -198,6 +211,14 @@ Chaque message reçu est un objet `Order` JSON (commande créée ou mise à jour
 Billetterie (EF-E10) : `issued` = billets `VALID` + `USED`, `scanned` = `USED`, `pending` = réservés non
 payés, `revenue` = Σ prix unitaires (HT, centimes) des billets émis — remboursés exclus. `capacity` =
 Σ quantités des types de billets. Pas de push temps réel : le back-office rafraîchit par polling.
+
+| GET | `/admin/analytics/overview?days=7\|30\|90` | Bearer (OWNER/MANAGER) | `{ days, from, to, current: Totals, previous: Totals, series: [{ date, revenue, orders, previousRevenue }], heatmap: number[7][24], paymentMethods: [{ key, revenue, orders }], types: [{ key, revenue, orders }], top: [{ label, quantity, revenue }] }` — tous secteurs |
+
+Overview : `Totals = { revenue, orders, avgBasket, customers }` ; `previous` = période précédente de même
+durée ; jours locaux `DISPLAY_TIMEZONE` ; `heatmap[jour][heure]` (0 = lundi) en nombre de commandes ;
+`top` = plats/produits, billets (type · événement) ou logements selon le secteur. Une commande compte si
+réglée : payée en ligne, ou payée sur place puis `COMPLETED`/`DELIVERED` ; annulées exclues, remboursées
+exclues du CA. **400** si `days` hors liste.
 
 ---
 
@@ -227,34 +248,34 @@ champs dans cet ordre exact.
 Usage MVP restauration : validation de table/commande. Réutilisé en V1 pour les billets
 événementiel (`Ticket.qrCode`).
 
-**Écran `/scan` (frontend)** :
-- Verdict backend → plein vert / orange / rouge. Échec réseau ou 5xx → panneau sombre bordé orange
-  « RÉSEAU — vérification impossible, réessayez » (jamais rouge) ; autre 4xx → message d'erreur.
-- Saisie manuelle du code (≥ 32 caractères), même endpoint que la caméra. Le body inclut `eventId`
-  quand un événement est choisi.
-- Hors ligne (EF-E09) : manifeste téléchargé et vérifié (Ed25519), stocké dans IndexedDB
-  (`lumina-scan`). Sans réseau : signature du QR → présence `VALID` dans le manifeste → anti-double
-  local → verdict « HORS LIGNE » (bordure pointillée + badge) et mise en file. Au retour du réseau,
-  la file est rejouée en séquence sur `/admin/scan/validate` ; `used`/`invalid` → liste de conflits.
-
 ---
 
 ## 8. Paiements (`/payments`)
 
 | Méthode | Route | Auth | Body | Réponse `data` |
 |---|---|---|---|---|
-| POST | `/payments/initialize` | non (suit la création de commande) | `{ orderId }` | `{ authorizationUrl: string, reference: string }` — rappelable (nouvelle référence à chaque tentative), **409** si déjà payée ou annulée (réservation de billets expirée) |
+| POST | `/payments/initialize` | non (suit la création de commande) | `{ orderId }` | `{ authorizationUrl: string, reference: string, simulated: boolean }` — rappelable (nouvelle référence à chaque tentative), **409** si déjà payée ou annulée (réservation de billets expirée) |
 
 Au paiement confirmé : reçu par e-mail si `customerEmail` est renseigné ; pour une commande de
 billets (`type: "EVENT"`), les billets passent `VALID` et le PDF est envoyé par e-mail.
 
-| GET | `/payments/status/:reference` | non (rate limit 30/min) | — | `{ orderId, orderNumber, type, status, paymentStatus, total, tickets: [{ id, qrCode, status, ticketTypeId }] }` — `tickets` vide tant que non payé ; **404** référence inconnue |
+| GET | `/payments/status/:reference` | non (rate limit 30/min) | — | `{ orderId, orderNumber, type, status, paymentStatus, total, documentToken, tickets: [{ id, qrCode, status, ticketTypeId }] }` — `tickets` vide et `documentToken: null` tant que non payé ; **404** référence inconnue |
 
 Le frontend redirige `window.location.href` vers `authorizationUrl` (Paystack hosted checkout).
 Paystack renvoie ensuite le client sur `${FRONTEND_URL}/{slug}/events/confirmation?reference=...`
 (billets, `type: "EVENT"`) ou `${FRONTEND_URL}/{slug}/orders/confirmation?reference=...` (autres
 commandes). URL construite serveur, jamais fournie par le client. Cette page appelle `/payments/status/:reference` ; si le webhook n'est pas encore
 arrivé, le backend vérifie la transaction auprès de Paystack avant de répondre.
+
+**Paiement simulé (tests)** — actif si `PAYMENT_SIMULATION=true`, ou par défaut tant que
+`PAYSTACK_SECRET_KEY` est absente ; `PAYMENT_SIMULATION=false` le coupe (sans clé : 503).
+`initialize` renvoie alors
+`simulated: true`, une référence `SIM-…` et un `authorizationUrl` **relatif**
+`/{slug}/pay/simulate?reference=SIM-…` (page de la vitrine). Cette page confirme ou refuse :
+
+| POST | `/payments/simulate/:reference` | non (rate limit 10/min) | `{ outcome: "success" \| "failed" }` | même forme que `/payments/status/:reference` — `success` : commande payée (`MOBILE_MONEY`), billets délivrés et envoyés comme un vrai paiement ; `failed` : `paymentStatus: "FAILED"` ; **404** hors mode simulation ou référence non `SIM-` ; **409** commande annulée |
+
+À couper avant d'encaisser de vrais clients : une commande simulée délivre de vrais billets.
 Le webhook Paystack (`POST /webhooks/paystack`) est **interne au backend**, jamais appelé par le
 frontend — voir `GIYA_BACKEND_CONTEXT.md` 4.6.
 
@@ -281,18 +302,11 @@ audit `REFUND_PARTIAL_REVIEW` pour revue manuelle. `refund.pending` / `refund.pr
 
 ---
 
-## 9. IA — **à implémenter** (déjà appelé par le frontend)
+## 9. IA (à venir — non encore consommé par le frontend)
 
-Clé du fournisseur IA côté serveur uniquement. Bearer (OWNER/MANAGER), rate limit conseillé
-10/min/tenant. **402/403** si la formule du tenant n'inclut pas l'IA (le frontend affiche alors
-l'offre d'abonnement), **404** tant que la route n'existe pas (message « pas encore disponible »).
-
-| Méthode | Route | Body | Réponse |
-|---|---|---|---|
-| POST | `/admin/ai/event-description` | `{ title, eventType?, venueName?, startDate?, tone?: "festif" \| "professionnel" \| "premium", notes? }` | `{ description }` (texte brut, FR) |
-| POST | `/admin/ai/event-visual` | `{ title, eventType?, style, prompt? }` | `{ url }` : image **https** hébergée (mêmes règles que §16) |
-
-Écrans : `components/events/ai-description-button.tsx`, `components/events/poster-upload.tsx`.
+Prévu : `POST /ai/generate` `{ type, prompt }` → `{ text }`, protégé Bearer + rate limit
+10/min/tenant. Sera ajouté ici dès qu'un composant frontend l'utilisera (génération de
+description produit).
 
 ---
 
@@ -314,7 +328,7 @@ Non encore consommés par le frontend, à documenter quand les écrans Commerce 
 
 `Member` = `{ id, email, phone, fullName, role, isActive, mustChangePassword, lastLoginAt, createdAt }`.
 `role` ∈ `MANAGER`, `STAFF`, `KITCHEN`, `CASHIER` (pas d'OWNER). Email ou téléphone requis, unique
-sur toute la plateforme (**409** sinon). Mot de passe : 8+ caractères, une majuscule, un chiffre.
+par secteur d'activité (**409** sinon). Mot de passe : 8+ caractères, une majuscule, un chiffre.
 L'OWNER communique lui-même le mot de passe temporaire au membre (pas d'email pour l'instant) ; le
 membre doit le changer à sa première connexion (voir §1). Le compte OWNER et son propre compte ne
 sont pas modifiables ici (**403**). Désactiver un membre ou réinitialiser son mot de passe ferme
@@ -384,8 +398,11 @@ Achat : prix recalculé serveur, places réservées de façon atomique (**409** 
 |---|---|---|---|---|
 | GET | `/admin/events` | Bearer | — | `Event[]` (+ `ticketTypes`, avec `quantity`/`sold`) |
 | GET | `/admin/events/:id` | Bearer | — | `Event` |
-| POST | `/admin/events` | Bearer (OWNER/MANAGER) | `{ title, startDate, endDate?, description?, imageUrl? (URL http/https), location?, venueName?, eventType? (CONCERT/CONFERENCE/NIGHTLIFE/EXHIBITION/SPORTS/SHOW), lat?, lng?, capacity? }` | `Event` (`status: DRAFT`) |
-| PATCH | `/admin/events/:id` | Bearer (OWNER/MANAGER) | mêmes champs + `status` (`DRAFT`/`PUBLISHED`/`ONGOING`/`COMPLETED`/`CANCELLED`) | `Event` |
+| POST | `/admin/events` | Bearer (OWNER/MANAGER) | `{ title, startDate, endDate?, description?, imageUrl? (https:// ou data URL PNG/JPEG/WebP vérifiée, ≤ 450 000 car.), location?, venueName?, eventType? (CONCERT/CONFERENCE/NIGHTLIFE/EXHIBITION/SPORTS/SHOW), lat?, lng?, capacity?, settings? }` | `Event` (`status: DRAFT`) |
+| PATCH | `/admin/events/:id` | Bearer (OWNER/MANAGER) | mêmes champs + `status` (`DRAFT`/`PUBLISHED`/`ONGOING`/`COMPLETED`/`CANCELLED`) ; `settings` fusionné avec l'existant | `Event` |
+
+`settings` (`Event.settings`, JSON, renvoyé tel quel) : `{ questionnaireEnabled?, questionnaire?: [{ id, title, type (SHORT_TEXT/PARAGRAPH/SINGLE_CHOICE/MULTIPLE_CHOICE/DROPDOWN/RATING_SCALE), options?, isRequired }] (50 max), hasCertificate?, certificateTemplate?, ticketTemplate? }`. Affichage seulement : aucun effet sur la vente ni le contrôle d'accès.
+
 | DELETE | `/admin/events/:id` | Bearer (OWNER/MANAGER) | — | `{}` — **409** si billet émis/réservé/remboursé ou commande payée/remboursée (archiver via `PATCH` `status: CANCELLED`) |
 | GET | `/admin/events/:id/tickets` | Bearer (OWNER/MANAGER/STAFF) | — | `Ticket[]` (+ `ticketType: { name, price }`) |
 | GET | `/admin/events/:id/orders?page=&limit=` | Bearer (OWNER/MANAGER) | — | `[{ id, orderNumber, status, paymentStatus, paymentMethod, total, customerName, customerPhone, customerEmail, createdAt, tickets: [{ id, status, scannedAt, ticketType: { name } }] }]` + `meta` — commandes de billets de l'événement (réservations, remboursements) |
@@ -397,43 +414,127 @@ Un événement n'est visible et achetable qu'en `PUBLISHED`/`ONGOING`. La somme 
 types de billets ne peut pas dépasser `capacity` (**409**). Validation à l'entrée : §7
 (`/admin/scan/validate`, un billet `PENDING` répond `invalid`).
 
-### Champs V1 des types de billets — **à implémenter**
+## 15. RBNB — hébergement (`/tenants/:slug/listings`, `/admin/listings`, `/admin/bookings`)
 
-Envoyés uniquement si `NEXT_PUBLIC_FEATURES` contient `ticket-extras` (`lib/features.ts`) : un
-serveur à validation stricte refuserait sinon la requête.
+Secteur `ACCOMMODATION`. Dates de séjour au format `AAAA-MM-JJ`, séjour `[checkIn, checkOut[`
+(la nuit de `checkOut` n'est pas occupée). Prix en centimes, **toujours recalculés serveur**
+(`nights × nightlyPrice + cleaningFee`, puis taxe du tenant).
 
-| Champ | Routes | Type | Effet attendu |
-|---|---|---|---|
-| `saleEndsAt` | POST/PATCH ticket-types, GET admin et public | ISO 8601 \| `null` | Early bird : après cette date, `POST /events/:id/tickets` refuse la formule (**409**). Renvoyé aussi dans `/tenants/:slug/events*` (le frontend grise la formule et affiche « Tarif valable jusqu'au… »). |
-| `template` | POST/PATCH ticket-types, GET admin | identifiant de modèle (`lib/ticket-templates.ts`, ex. `GOLD_VIP`) | Mise en page du PDF du billet. Le modèle d'événement par défaut n'est pas stocké : une formule sans `template` utilise le modèle choisi dans le formulaire au moment de l'enregistrement. |
+`Listing` = `{ id, title, description, type, status, city, address, maxGuests, bedrooms, beds,
+bathrooms, nightlyPrice, cleaningFee, minNights, checkInTime, checkOutTime, amenities[],
+photos[], houseRules }`. `type` ∈ `APARTMENT, HOUSE, STUDIO, ROOM, VILLA` ; `status` ∈
+`DRAFT, PUBLISHED, ARCHIVED` ; `amenities` ∈ `WIFI, AIR_CONDITIONING, KITCHEN, WASHER, TV,
+PARKING, POOL, HOT_WATER, GENERATOR, SECURITY, WORKSPACE, BREAKFAST` ; `photos` : 10 max,
+`https://` ou image importée (comme `IsImageRef`), la 1re = couverture.
 
-## 16. Upload d'images — **à implémenter**
-
-| Méthode | Route | Auth | Body | Réponse |
+| Méthode | Route | Auth | Body / Query | Réponse `data` |
 |---|---|---|---|---|
-| POST | `/admin/uploads` | Bearer (OWNER/MANAGER) | `multipart/form-data`, champ `file` (PNG, JPEG, WEBP, 5 Mo max) | `{ url }` (https) — **413** trop lourd, **415** type refusé |
+| GET | `/tenants/:slug/listings` | non | — | `Listing[]` publiés, sans `description`/`houseRules`, `photos` = couverture seule |
+| GET | `/tenants/:slug/listings/:id` | non | — | `Listing` + `unavailable: [{ start, end }]` (plages occupées à venir, sans info voyageur) |
+| GET | `/tenants/:slug/listings/:id/quote` | non (60/min) | `?checkIn&checkOut&guests` | `{ nights, nightlyPrice, cleaningFee, subtotal, tax, total, available }` |
+| POST | `/tenants/:slug/listings/:id/bookings` | non (10/min) + `X-Idempotency-Key` | `{ checkIn, checkOut, guests, customerPhone, customerName?, customerEmail?, note? }` | `Order` STAY `{ id, orderNumber, status, paymentStatus, subtotal, tax, total, booking }` — **409** dates prises / capacité dépassée ; puis `POST /payments/initialize { orderId }` |
+| GET | `/admin/listings` | Bearer | — | `Listing[]` (archivés inclus, couverture seule + `photoCount`) — remise en ligne via `PATCH status: PUBLISHED` |
+| GET | `/admin/listings/:id` | Bearer | — | `Listing` complet |
+| POST / PATCH | `/admin/listings[/:id]` | Bearer (OWNER/MANAGER) | champs `Listing` (corps 5 Mo max) | `Listing` |
+| DELETE | `/admin/listings/:id` | Bearer (OWNER/MANAGER) | — | `{}` — **409** s'il a des réservations (archiver via `PATCH status: ARCHIVED`) |
+| GET | `/admin/listings/:id/calendar` | Bearer | `?from&to` (400 j max) | `{ bookings: Booking[], blocks: ListingBlock[] }` |
+| POST | `/admin/listings/:id/blocks` | Bearer (OWNER/MANAGER) | `{ startDate, endDate, reason? }` | `ListingBlock` — **409** si une réservation occupe ces dates |
+| DELETE | `/admin/listing-blocks/:id` | Bearer (OWNER/MANAGER) | — | `{}` |
+| GET | `/admin/bookings` | Bearer | `?scope=upcoming\|past\|all` | `Booking[]` + `listing { id, title, city }` + `order { orderNumber, paymentStatus, total, tax }` |
+| PATCH | `/admin/bookings/:id/status` | Bearer (OWNER/MANAGER/STAFF) | `{ status: CHECKED_IN \| CHECKED_OUT \| CANCELLED }` | `Booking` — **409** hors transitions `PENDING→CANCELLED`, `CONFIRMED→CHECKED_IN\|CANCELLED`, `CHECKED_IN→CHECKED_OUT` |
+| GET | `/admin/stays/stats` | Bearer (OWNER/MANAGER) | — | `{ publishedListings, inHouse, upcomingBookings, revenueThisMonth, occupancyNext30, arrivalsToday[], departuresToday[] }` |
 
-Le type réel du fichier doit être vérifié côté serveur (pas seulement l'extension). L'origine des
-URL renvoyées doit être ajoutée à `NEXT_PUBLIC_IMAGE_ORIGINS` (CSP `img-src`, `next.config.ts`).
+`Booking.status` : `PENDING` (non payée, dates retenues 30 min puis libérées) → `CONFIRMED`
+(paiement reçu, e-mail de confirmation) → `CHECKED_IN` → `CHECKED_OUT`. Retour Paystack :
+`/{slug}/stays/confirmation`. Annuler une réservation payée ne rembourse pas automatiquement.
+
+## 16. Factures & additions (`/admin/invoices`, `/orders/:id/document`)
+
+PDF A5 générés côté serveur, tous secteurs. **Facture** si la commande est réglée (payée en ligne,
+remboursée, ou payée sur place puis servie/livrée) ; **addition** si commande restaurant/boutique encore à
+régler sur place ; sinon **409**.
+
+| Méthode | Route | Auth | Entrée | Réponse |
+|---|---|---|---|---|
+| GET | `/admin/invoices` | Bearer (OWNER/MANAGER) | `?page&limit&type&search` | `{ data: [{ id, orderNumber, type, status, paymentMethod, paymentStatus, total, customerName, customerPhone, createdAt }], meta: { page, limit, total, amount } }` — commandes réglées ; `amount` = CA hors remboursements |
+| GET | `/admin/invoices/:orderId/pdf` | Bearer (OWNER/MANAGER) | — | `application/pdf` (pièce jointe) — **404** autre tenant |
+| GET | `/orders/:orderId/document?token=` | non (rate limit 30/min) | `token` = `documentToken` reçu | `application/pdf` — **404** jeton invalide |
+
+---
+
+## 17. Console plateforme (`/vision`)
+
+Administrateurs du SaaS (table `PlatformAdmin`, distincte de `User`). Jeton Bearer **dédié**
+(`aud: giyax-vision`, secret `VISION_JWT_SECRET`, 30 min) — un jeton tenant est refusé. Console désactivée
+(**404**) sans `VISION_JWT_SECRET`. Toute connexion et action est journalisée (`PlatformAuditLog`).
+
+| Méthode | Route | Auth | Entrée | Réponse `data` |
+|---|---|---|---|---|
+| POST | `/vision/auth/login` | non (rate limit 5 / 15 min / IP) | `{ email, password, code }` (TOTP 6 chiffres) | `{ token, expiresAt, admin: { id, email, name } }` — **401** générique (identifiants, code, compte verrouillé ou inactif) ; code TOTP à usage unique |
+| POST | `/vision/auth/logout` | Vision | — | `{}` (jeton révoqué) |
+| POST | `/vision/auth/password` | Vision (rate limit 5 / 15 min) | `{ currentPassword, newPassword, code }` — nouveau : ≥ 14 caractères, lettres, chiffres, symbole | `{}` — **401** mot de passe actuel ou code invalide ; **400** trop faible ou identique |
+| GET | `/vision/me` | Vision | — | `{ id, email, name, expiresAt }` |
+| GET | `/vision/overview?days=7\|30\|90` | Vision | — | `{ tenants: { total, bySector, byStatus, byPlan[{key,count,mrr}] }, users: { total, active, passive, neverLoggedIn, disabled, activeWindowDays }, gmv: { current, previous, orders, previousOrders, online, bySector }, mrr, ai: { calls, costUsd, tokens }, series: [{ date, revenue, orders, previousRevenue, newTenants, newUsers }] }` |
+| GET | `/vision/traffic?days=1\|7\|30` | Vision | — | `{ granularity: hour\|day, totals: { requests, errors4xx, errors5xx, errorRate, avgMs }, series: [{ at, … }], routes: [{ route, … }] }` |
+| GET | `/vision/costs` | Vision | — | `{ lines: [{ label, amount, kind }], total, mrr, margin, assumptions }` — FCFA, estimation 30 j |
+| GET | `/vision/domains` | Vision | — | `{ rootDomain, customDomains, items: [{ slug, name, sector, status, customDomain, subdomain }] }` |
+| GET | `/vision/tenants` | Vision | `?page&limit&search&sector&status&plan` | `{ data: [{ …tenant, users, revenue30d, orders30d, lastLoginAt }], meta }` |
+| GET | `/vision/tenants/:id` | Vision | — | tenant + `users[]` (sans mot de passe) + `stats` |
+| PATCH | `/vision/tenants/:id` | Vision | `{ status?: ACTIVE\|SUSPENDED, plan?, reason? }` | `{ id, status, plan }` |
+| GET | `/vision/users` | Vision | `?page&limit&search&activity=active\|passive\|disabled` | `{ data, meta }` |
+| PATCH | `/vision/users/:id` | Vision | `{ isActive, reason? }` | `{ id, isActive }` |
+| GET | `/vision/logs` | Vision | `?page&limit` | `{ data, meta }` |
+| GET | `/vision/admins` | Vision | — | `[{ id, email, name, isActive, lastLoginAt, lockedUntil }]` |
+
+Actif = dernière connexion < 30 jours. Trafic : compteurs par heure et motif de route (`TrafficStat`, écrit
+par lot chaque minute, aucune donnée client). Tenant `SUSPENDED` : site public en 404 et connexion /
+refresh / jetons refusés.
+
+---
+
+## 18. Authenticité des documents (`/documents/verify`)
+
+Factures et additions PDF portent un QR « Document signé numériquement par GiyaX » vers
+`<FRONTEND_URL>/verify/<code>` et une empreinte lisible. Code `D1.<orderId>.<I|B>.<signature>` :
+signature Ed25519 (clé `TICKET_SIGNING_PRIVATE_KEY`, domaine séparé « doc. ») sur numéro, montant,
+établissement et date d'émission. Les QR des billets (`v1.<ticketId>.<signature>`) sont acceptés aussi.
+
+| Méthode | Route | Auth | Réponse `data` |
+|---|---|---|---|
+| GET | `/documents/verify/:code` | non (rate limit 30/min) | `{ valid: false }` ; ou `{ valid: true, type: INVOICE\|BILL, number, total, issuedAt, paymentStatus, business, sector }` ; ou `{ valid: true, type: TICKET, event, startDate, ticketType, status, business, sector }` |
+
+La signature est recalculée depuis la base : document retouché ou code inventé → `valid: false`. Aucune
+coordonnée client renvoyée.
+
+---
 
 ## Historique
+
+- **2026-11-04** — Variantes de site : `layout` (10 valeurs) et `motion` facultatifs sur `PUT /admin/tenant/site` ; `layout` facultatif sur `PUT /admin/tenant/showcase` (`scene, affiche, agenda, festival, conference, gala, club, communaute, masterclass, minimal`) ; `PUT /admin/tenant/stay-site` accepte aussi `lodge, carnet, comparatif, panorama`.
+- **2026-11-04** — Signature numérique des factures/additions (QR + empreinte) et `GET /documents/verify/:code` (§18) ; billets vérifiables au même endroit.
+- **2026-11-04** — Google : `GET /auth/google/pending?token=` (identité pré-remplie : `{ email, fullName, avatarUrl }`), `phone` facultatif sur `POST /auth/google/complete`, lien réutilisable jusqu'à création du compte ; échec Google → `/login?error=google_failed`.
+- **2026-11-04** — Console plateforme `/vision` (§17) ; tenant suspendu = plus d'accès au back-office ; slugs réservés (`vision`, `admin`…).
+- **2026-11-03** — Factures/additions PDF serveur tous secteurs (§16), `documentToken` sur `POST /orders` et `/payments/status`, `GET /admin/analytics/overview`. Secteur `ACCOMMODATION` affiché « RBNB ».
+- **2026-11-03** — Images importées (data URL) hors des réponses JSON publiques : `GET /tenants/:slug` (`config.*`),
+  `GET /tenants/:slug/listings[/:id]` (`photos`) et `GET /tenants/:slug/events[/:id]` / `GET /events[/:id]` (`imageUrl`)
+  renvoient à la place une URL https vers l'image binaire en cache permanent :
+  `/tenants/:slug/media/:hash`, `/tenants/:slug/listings/:id/photos/:hash`, `/tenants/:slug/events/:id/image/:hash`
+  (`:hash` = 32 hex, empreinte du contenu). Les routes `/admin/*` renvoient toujours les data URL (édition).
+  Base des URL : `PUBLIC_API_URL` si défini, sinon hôte de la requête.
+- **2026-11-03** — `PUT /admin/tenant/stay-site` (site RBNB, `config.staySite`) ; `GET /admin/listings` inclut les logements archivés.
+- **2026-11-03** — RBNB (§15) : logements, réservations à la nuit (Order `STAY`), dates fermées,
+  statistiques hôte. Secteur `ACCOMMODATION`. Un compte par secteur pour une même identité (§1).
 
 - **2026-11-02** — `PUT /admin/tenant/site` : apparence et contenu du site restaurant / boutique
   (`config.site`, exposé par `GET /tenants/:slug`). Éditeur : `admin/[sector]/site`.
 
 - **2026-11-02** — Occupation de table publique (§4), `guestCount` sur `POST /orders` (§5),
-  facture/addition PDF côté navigateur, `Tenant.config.logoUrl`.
+  `logoUrl` sur `PATCH /admin/tenant` (stocké dans `Tenant.config.logoUrl`, utilisé par les
+  factures / additions PDF générées par le frontend).
 
-- **2026-11-01** — IA événementiel (§9), champs `saleEndsAt`/`template` des types de billets
-  (§14), upload d'images (§16) : routes appelées par le frontend, à implémenter côté backend.
-
-
-- **2026-10-05** — Synchronisé avec le backend : stats billetterie (§6), statut de paiement
-  public + URL de retour (§8), filtre d'audit (§13), commandes d'un événement et champs
-  `venueName`/`eventType`/`description` (§14). Écrans branchés : voir `docs/ETAT_EVENEMENTIEL.md`.
-- **2026-10-05 (audit frontend)** — Retour Paystack des commandes restaurant sur
-  `/{slug}/orders/confirmation` (§8). KDS : `NEXT_PUBLIC_WS_URL` doit inclure `/v1` (défaut : dérivé de
-  `NEXT_PUBLIC_API_URL`). Voir `docs/AUDIT_FRONTEND.md`.
+- **2026-10-05** — Stats billetterie (§6), statut de paiement public + URL de retour billets (§8),
+  filtre d'audit par action (§13), commandes d'un événement, champs `venueName`/`eventType`/
+  `TicketType.description` (§14). Remboursement (§8), QR signés Ed25519 et manifeste de scan (§7).
 
 - **2026-09-29 (lot 2)** — Billetterie (§14), taxe par tenant, `paymentMethod`, reçus et billets
   par e-mail, OTP par SMS réel.

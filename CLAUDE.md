@@ -32,3 +32,13 @@ Next.js 16 App Router + React 19 + Tailwind 4 + shadcn (`src/components/ui`, don
 - `LUMINA_FRONTEND_CONTEXT.md` — project rules (French), source of truth. Its stack table is partly stale: says Next 14 / next-pwa / `middleware.ts` tree; reality is Next 16 / Serwist. Trust `package.json` and code.
 - `docs/API_CONTRACT.md` — every backend route the frontend calls; update it when adding a call to a not-yet-implemented route. `docs/BACKEND_CHANGES_2026-09-29.md` — backend changes to mirror in the frontend. Both still say "GiyaX" (former project name).
 - `LUMINA_Document_Maitre_v2.md`, `LUMINA_Audit_Menaces_Complet.md`, `LUMINA_Secteur_Hebergement_v3.md` — shared reference copies from the backend repo; do not edit here.
+
+## Sites publics, variantes, console
+
+- Sites publics : 10 variantes par secteur, presets dans `lib/site.ts`, `lib/stay-site.ts`,
+  `lib/showcase-layouts.ts`, sections partagées (ne pas créer une page par variante). Toute nouvelle
+  valeur doit aussi être ajoutée au DTO backend. Voir `docs/DESIGN_VARIANTS.md`.
+- Factures / additions : PDF générés par l'API (`OrderDocumentButton` = simple lien, `useInvoices`
+  pour le back-office) ; plus de `@react-pdf` côté navigateur.
+- `/vision` : console plateforme, session séparée (`lib/vision.ts`, sessionStorage), jamais mélangée
+  avec `useAuthStore`.

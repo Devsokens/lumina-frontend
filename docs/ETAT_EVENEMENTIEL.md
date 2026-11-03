@@ -1,8 +1,13 @@
-# Module événementiel — état réel (2026-11-01)
+# Module événementiel — état réel (2026-11-01, complété le 2026-11-04)
+
+> **2026-11-04** : tableau de bord avec synthèse avancée (7/30/90 j, comparaison, heatmap), page
+> **Factures** (`/admin/event/invoices`), billets et factures signés vérifiables sur `/verify/<code>`,
+> vitrine en **10 variantes** (scène, affiche, agenda, festival, conférence, gala, club, communauté,
+> masterclass, minimal — `docs/DESIGN_VARIANTS.md`). Copie de `API_CONTRACT.md` resynchronisée.
 
 Ce que chaque écran du secteur « événementiel » fait réellement. Remplace la version du
 2026-10-05. Vue d'ensemble des deux dépôts : `giyax/ETAT_PROJET.md`. Contrat des routes :
-`giyax/docs/API_CONTRACT.md` (la copie de ce dépôt a divergé, voir « Limites »).
+`giyax/docs/API_CONTRACT.md` (copie de ce dépôt resynchronisée le 2026-11-04).
 
 Vérifié : `tsc`, lint (0 erreur), `next build`. Aucun test automatisé, rien testé sur appareil réel.
 

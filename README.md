@@ -1,36 +1,39 @@
-This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://nextjs.org/docs/app/api-reference/cli/create-next-app).
+# GiyaX — frontend
 
-## Getting Started
+Application Next.js de la plateforme GiyaX : back-office des comptes (restauration, boutique,
+événementiel, RBNB), sites publics des comptes, paiement Mobile Money, console plateforme `/vision`.
+L'API est dans le dépôt `giyax` ; **aucune logique métier ici**, le contrat
+[`docs/API_CONTRACT.md`](docs/API_CONTRACT.md) est une copie de celui du backend (qui fait foi).
 
-First, run the development server:
+## Démarrer
 
 ```bash
-npm run dev
-# or
-yarn dev
-# or
-pnpm dev
-# or
-bun dev
+npm install
+npm run dev        # http://localhost:3000
+npm run build      # next build --webpack (vérifie aussi les types)
+npm run lint
 ```
 
-Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
+Variables : `NEXT_PUBLIC_API_URL` (ex. `https://giya-backend-gpy4.onrender.com/v1`),
+`NEXT_PUBLIC_APP_URL`, `NEXT_PUBLIC_ROOT_DOMAIN`.
 
-You can start editing the page by modifying `app/page.tsx`. The page auto-updates as you edit the file.
+## Ce que fait l'application
 
-This project uses [`next/font`](https://nextjs.org/docs/app/building-your-application/optimizing/fonts) to automatically optimize and load [Geist](https://vercel.com/font), a new font family for Vercel.
+| Zone | Routes | Notes |
+|---|---|---|
+| Inscription / connexion | `/signup`, `/login`, `/auth/*` | Mot de passe, code SMS, Google (profil Google repris, infos manquantes demandées après), un compte par secteur |
+| Back-office | `/admin/[sector]/*`, `/admin/event/*` | Tableaux de bord 7/30/90 j, commandes, menu, logements, réservations, **Factures**, site & apparence, équipe |
+| Sites publics | `/[tenant]/*` | 10 variantes de style par secteur — [`docs/DESIGN_VARIANTS.md`](docs/DESIGN_VARIANTS.md) |
+| Documents | `/verify/[code]` | Vérification d'authenticité des factures, additions et billets signés |
+| Console plateforme | `/vision/*` | Administrateurs du SaaS uniquement (mot de passe + code d'authentification) |
+| Cuisine / scan | `/kitchen`, `/scan` | KDS temps réel, contrôle d'accès billets (hors ligne possible) |
 
-## Learn More
+## Documents
 
-To learn more about Next.js, take a look at the following resources:
+- [`docs/DESIGN_VARIANTS.md`](docs/DESIGN_VARIANTS.md) — variantes de style et sources de recherche.
+- [`docs/ETAT_EVENEMENTIEL.md`](docs/ETAT_EVENEMENTIEL.md) — état du secteur événementiel.
+- [`docs/AUDIT_FRONTEND.md`](docs/AUDIT_FRONTEND.md) — audit.
+- Vue d'ensemble et changements : `giyax/ETAT_PROJET.md`, `giyax/docs/CHANGELOG_2026-11.md`.
+- Briefs motion design : `giyax/doc_descrip/`.
 
-- [Next.js Documentation](https://nextjs.org/docs) - learn about Next.js features and API.
-- [Learn Next.js](https://nextjs.org/learn) - an interactive Next.js tutorial.
-
-You can check out [the Next.js GitHub repository](https://github.com/vercel/next.js) - your feedback and contributions are welcome!
-
-## Deploy on Vercel
-
-The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
-
-Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/building-your-application/deploying) for more details.
+Déploiement : Vercel (`main`).
