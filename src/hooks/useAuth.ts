@@ -23,6 +23,7 @@ type GoogleCompletePayload = {
   businessName: string;
   slug: string;
   sector: Sector;
+  phone?: string;
   acceptedTerms: true;
 };
 type OtpVerifyPayload = { phone: string; code: string };

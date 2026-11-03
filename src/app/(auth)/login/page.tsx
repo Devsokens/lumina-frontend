@@ -22,6 +22,13 @@ import { API_URL } from "@/lib/constants";
 // (prévisualisation des écrans). Jamais en production.
 const DEMO_MODE = process.env.NEXT_PUBLIC_DEMO_MODE === "true";
 
+// Retours d'échec du parcours Google (redirections de l'API).
+const GOOGLE_ERRORS: Record<string, string> = {
+  google_no_email: "Google n'a pas communiqué d'adresse e-mail vérifiée. Utilisez le formulaire ou le code SMS.",
+  google_failed: "La connexion Google a été annulée ou a échoué. Réessayez, ou utilisez votre e-mail.",
+  google_session: "Session Google non ouverte (cookies bloqués ?). Réessayez ou connectez-vous par e-mail.",
+};
+
 export default function LoginPage() {
   return (
     <Suspense>
@@ -114,9 +121,9 @@ function LoginContent() {
         Connectez-vous pour accéder à votre tableau de bord GiyaX.
       </p>
 
-      {searchParams.get("error") === "google_no_email" && (
+      {GOOGLE_ERRORS[searchParams.get("error") ?? ""] && (
         <p className="mt-4 rounded-xl border border-destructive/40 bg-destructive/10 p-3 text-sm text-destructive">
-          Google n&apos;a pas communiqué d&apos;adresse e-mail. Utilisez le formulaire ou le code SMS.
+          {GOOGLE_ERRORS[searchParams.get("error") ?? ""]}
         </p>
       )}
 
