@@ -16,7 +16,7 @@ export type TicketTier = {
 export type EventItem = {
   id: string;
   title: string;
-  category: "Concert & Festival" | "Conférence & Gala" | "Formation & Masterclass" | "Soirée VIP";
+  category: "Concert & Festival" | "Conférence & Gala" | "Mariage & Célébration" | "Formation & Masterclass" | "Soirée VIP";
   date: string;
   time: string;
   location: string;
@@ -45,6 +45,17 @@ export type FAQItem = {
   answer: string;
 };
 
+export type ShowcaseSections = {
+  hero: boolean;
+  stats: boolean;
+  events: boolean;
+  about: boolean;
+  gallery: boolean;
+  testimonials: boolean;
+  faq: boolean;
+  footer: boolean;
+};
+
 export type ShowcaseState = {
   // Appearance & Theme
   theme: ShowcaseTheme;
@@ -52,6 +63,9 @@ export type ShowcaseState = {
   layout: ShowcaseLayout;
   fontFamily: "Outfit" | "Syne" | "Inter" | "Plus Jakarta Sans";
   mode: "dark" | "light";
+
+  // Section Visibilities
+  visibleSections: ShowcaseSections;
 
   // Organization Identity
   orgName: string;
@@ -108,12 +122,15 @@ export type ShowcaseState = {
   setIsEditingInline: (isEditing: boolean) => void;
   setSelectedSectionId: (id: string | null) => void;
   setActiveInspectorTab: (tab: ShowcaseState["activeInspectorTab"]) => void;
+  toggleSectionVisibility: (section: keyof ShowcaseSections) => void;
+  setSectionVisibility: (section: keyof ShowcaseSections, visible: boolean) => void;
   updateField: <K extends keyof ShowcaseState>(key: K, value: ShowcaseState[K]) => void;
   updateEvent: (id: string, updated: Partial<EventItem>) => void;
   updateEventCover: (id: string, coverImageUrl: string) => void;
   updateGalleryImage: (index: number, imageUrl: string) => void;
   addEvent: (newEvent: EventItem) => void;
   deleteEvent: (id: string) => void;
+  applyAIGeneratedShowcase: (data: Partial<ShowcaseState>) => void;
   publishShowcase: () => void;
   resetToDefaults: () => void;
 };
@@ -275,6 +292,46 @@ const DEFAULT_EVENTS: EventItem[] = [
       },
     ],
   },
+  {
+    id: "evt-5",
+    title: "Célébration & Réception Privée — Mariage Royal à la Baie",
+    category: "Mariage & Célébration",
+    date: "12 Décembre 2026",
+    time: "16h00 - 04h00",
+    location: "Domaine de la Sablière, Libreville",
+    description:
+      "Une scénographie féerique, dîner d'exception au coucher du soleil, orchestre live et service VIP sur mesure pour une célébration inoubliable.",
+    coverImageUrl:
+      "https://images.unsplash.com/photo-1519741497674-611481863552?q=80&w=1200&auto=format&fit=crop",
+    badge: "Mariage & Réception",
+    startingPrice: 35000,
+    isFeatured: true,
+    lineup: [
+      { id: "l-12", name: "Cérémonie Laïque & Vin d'Honneur", role: "16h30 au Jardin" },
+      { id: "l-13", name: "Orchestre Philharmonique Live", role: "Ambiance Prestige" },
+      { id: "l-14", name: "Dîner Gastronomique & Pièce Montée", role: "Chef Traiteur Étoilé" },
+    ],
+    tickets: [
+      {
+        id: "t-mar-inv",
+        name: "Pass Invité d'Honneur (RSVP)",
+        price: 35000,
+        badge: "Accès Privilège",
+        description: "Accès complet au vin d'honneur, dîner assis gastronomique et soirée dansante.",
+        benefits: ["Place nominative assignée", "Cocktail de bienvenue & Champagne", "Menu dégustation 4 services", "Cadeau d'accueil souvenir"],
+        stockLeft: 40,
+      },
+      {
+        id: "t-mar-table",
+        name: "Table VIP Famille & Partenaires (6 Pers)",
+        price: 250000,
+        badge: "Table Prestige",
+        description: "Table ronde dédiée avec service sommelier et champagne millésimé.",
+        benefits: ["Table 6 personnes premium", "Service sommelier dédié", "Bouteilles de champagne d'exception", "Accès salon privé"],
+        stockLeft: 6,
+      },
+    ],
+  },
 ];
 
 const DEFAULT_STATE: Omit<
@@ -285,12 +342,15 @@ const DEFAULT_STATE: Omit<
   | "setIsEditingInline"
   | "setSelectedSectionId"
   | "setActiveInspectorTab"
+  | "toggleSectionVisibility"
+  | "setSectionVisibility"
   | "updateField"
   | "updateEvent"
   | "updateEventCover"
   | "updateGalleryImage"
   | "addEvent"
   | "deleteEvent"
+  | "applyAIGeneratedShowcase"
   | "publishShowcase"
   | "resetToDefaults"
 > = {
@@ -298,6 +358,17 @@ const DEFAULT_STATE: Omit<
   layout: "scene",
   fontFamily: "Outfit",
   mode: "dark",
+
+  visibleSections: {
+    hero: true,
+    stats: true,
+    events: true,
+    about: true,
+    gallery: true,
+    testimonials: true,
+    faq: true,
+    footer: true,
+  },
 
   orgName: "SOKENS DIGITAL EVENT",
   orgTagline: "Créateur des plus grandes expériences événementielles et culturelles du Gabon",
@@ -483,6 +554,24 @@ export const useShowcaseStore = create<ShowcaseState>((set) => ({
   setSelectedSectionId: (selectedSectionId) => set({ selectedSectionId }),
   setActiveInspectorTab: (activeInspectorTab) => set({ activeInspectorTab }),
 
+  toggleSectionVisibility: (section) =>
+    set((state) => ({
+      visibleSections: {
+        ...state.visibleSections,
+        [section]: !state.visibleSections[section],
+      },
+      lastSavedAt: new Date().toLocaleTimeString("fr-FR", { hour: "2-digit", minute: "2-digit" }),
+    })),
+
+  setSectionVisibility: (section, visible) =>
+    set((state) => ({
+      visibleSections: {
+        ...state.visibleSections,
+        [section]: visible,
+      },
+      lastSavedAt: new Date().toLocaleTimeString("fr-FR", { hour: "2-digit", minute: "2-digit" }),
+    })),
+
   updateField: (key, value) =>
     set((state) => ({
       ...state,
@@ -521,6 +610,13 @@ export const useShowcaseStore = create<ShowcaseState>((set) => ({
   deleteEvent: (id) =>
     set((state) => ({
       events: state.events.filter((evt) => evt.id !== id),
+      lastSavedAt: new Date().toLocaleTimeString("fr-FR", { hour: "2-digit", minute: "2-digit" }),
+    })),
+
+  applyAIGeneratedShowcase: (data) =>
+    set((state) => ({
+      ...state,
+      ...data,
       lastSavedAt: new Date().toLocaleTimeString("fr-FR", { hour: "2-digit", minute: "2-digit" }),
     })),
 

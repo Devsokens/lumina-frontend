@@ -42,6 +42,7 @@ const STATUS_LABELS: Record<Event["status"], string> = {
 
 const TYPE_LABELS: Record<EventType, { label: string; color: string }> = {
   CONCERT: { label: "Concert / Festival", color: "bg-amber-500/15 text-amber-500 border-amber-500/20" },
+  WEDDING: { label: "Mariage & Célébration", color: "bg-rose-500/15 text-rose-500 border-rose-500/20" },
   CONFERENCE: { label: "Formation / Conférence", color: "bg-blue-500/15 text-blue-500 border-blue-500/20" },
   NIGHTLIFE: { label: "Soirée VIP", color: "bg-purple-500/15 text-purple-500 border-purple-500/20" },
   EXHIBITION: { label: "Salon / Expo", color: "bg-emerald-500/15 text-emerald-500 border-emerald-500/20" },

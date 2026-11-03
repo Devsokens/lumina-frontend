@@ -104,7 +104,8 @@ export type EventType =
   | "NIGHTLIFE"
   | "EXHIBITION"
   | "SPORTS"
-  | "SHOW";
+  | "SHOW"
+  | "WEDDING";
 
 export type CertificateTemplate =
   | "ACADEMIC_GOLD"
