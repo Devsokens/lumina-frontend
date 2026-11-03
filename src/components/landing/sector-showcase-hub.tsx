@@ -1,629 +1,375 @@
 "use client";
 
-import { useState } from "react";
-import { motion, AnimatePresence } from "framer-motion";
+import { useEffect, useRef, useState } from "react";
+import Image from "next/image";
+import Link from "next/link";
+import { AnimatePresence, motion } from "framer-motion";
 import {
-  Ticket,
-  UtensilsCrossed,
-  ShoppingBag,
+  ArrowRight,
   Building2,
   CheckCircle2,
-  ArrowRight,
-  ShieldCheck,
-  Zap,
-  Smartphone,
-  Calendar,
-  Sparkles,
-  QrCode,
-  Flame,
-  Hourglass,
-  Package,
-  Footprints,
+  Pause,
+  Play,
+  Ticket,
+  UtensilsCrossed,
+  type LucideIcon,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
-import Link from "next/link";
+import { cn } from "@/lib/utils";
 
-type SectorKey = "event" | "restaurant" | "shop" | "accommodation";
+// Durée d'affichage de chaque secteur avant de passer au suivant (s).
+const DURATION = 7;
 
-interface SectorData {
-  id: SectorKey;
+interface Sector {
+  id: string;
   label: string;
-  badge: string;
+  short: string;
+  icon: LucideIcon;
+  image: string;
+  imageAlt: string;
+  /** Cadrage de la photo dans le panneau (object-position). */
+  imagePosition?: string;
+  proof: string;
   title: string;
-  tagline: string;
-  accentColor: string;
-  icon: typeof Ticket;
+  description: string;
   benefits: string[];
-  metrics: { value: string; label: string }[];
-  interactiveType: "event-scan" | "kds-order" | "shop-cart" | "stay-booking";
+  cta: string;
+  href: string;
 }
 
-const SECTORS_DATA: Record<SectorKey, SectorData> = {
-  event: {
+// Photographies réelles (Unsplash, licence libre) — public/images/landing.
+const SECTORS: Sector[] = [
+  {
     id: "event",
     label: "Événementiel",
-    badge: "Anti-Fraude & Billetterie",
-    title: "Vendez vos billets et contrôlez les entrées à la seconde",
-    tagline:
-      "Finis les faux billets et les pertes. Billetterie en ligne instantanée, QR codes cryptographiques infalsifiables et scan ultra-rapide hors-ligne.",
-    accentColor: "from-amber-500/20 to-orange-500/20 border-orange-500/30 text-orange-400",
+    short: "Billetterie en ligne et contrôle d'entrée",
     icon: Ticket,
+    image: "/images/landing/secteur-evenements-chanteur.jpg",
+    imageAlt: "Un chanteur en pleine performance sur scène",
+    imagePosition: "50% 28%",
+    proof: "Billet valide · Pass VIP",
+    title: "Contrôlez vos entrées à la seconde",
+    description:
+      "Vendez vos billets en ligne, encaissez en Mobile Money et vérifiez chaque QR code à l'entrée en moins d'une seconde, même hors connexion.",
     benefits: [
-      "QR code dynamique unique par billet avec signature HMAC",
-      "Scanner PWA ultra-rapide utilisable même sans connexion Internet",
-      "Catégories de places sur-mesure (Standard, VIP, Pass 2 Jours)",
-      "Paiement Mobile Money direct et virement automatique",
+      "Un QR code unique et infalsifiable par billet",
+      "Scanner sur téléphone et compteur d'entrées en direct",
+      "Votre propre page de vente, prête à partager",
     ],
-    metrics: [
-      { value: "< 1s", label: "Temps de scan par invité" },
-      { value: "100%", label: "Protection anti-doublon" },
-      { value: "2.5%", label: "Commission la plus basse" },
-    ],
-    interactiveType: "event-scan",
+    cta: "Créer un événement",
+    href: "/signup?sector=EVENT",
   },
-  restaurant: {
+  {
     id: "restaurant",
     label: "Restauration",
-    badge: "Menu QR & KDS Cuisine",
-    title: "Prenez les commandes et synchronisez la cuisine en direct",
-    tagline:
-      "Vos clients scannent et commandent à table. Les bons partent instantanément sur l'écran cuisine sans aucun aller-retour serveur.",
-    accentColor: "from-emerald-500/20 to-teal-500/20 border-emerald-500/30 text-emerald-400",
+    short: "Menu QR, commandes à table et écran cuisine",
     icon: UtensilsCrossed,
+    image: "/images/landing/secteur-restauration.jpg",
+    imageAlt: "Clients attablés dans un restaurant chaleureux",
+    proof: "CMD-0427 · En préparation",
+    title: "Des commandes à table, sans attente",
+    description:
+      "Vos clients scannent le QR de leur table, commandent et paient depuis leur téléphone. Chaque commande arrive aussitôt sur l'écran de la cuisine.",
     benefits: [
-      "Menu digital interactif avec photos HD et modification de prix en 1 clic",
-      "Écran cuisine KDS plein écran avec timer de préparation par plat",
-      "Suivi précis des stocks et alertes automatiques avant rupture",
-      "Encaissement à table via Mobile Money ou au comptoir",
+      "Menu QR toujours à jour, photos et prix compris",
+      "Écran cuisine (KDS) synchronisé en temps réel",
+      "Addition et facture PDF en un instant",
     ],
-    metrics: [
-      { value: "+35%", label: "Rotation des tables" },
-      { value: "-12 min", label: "Temps d'attente client" },
-      { value: "0 papier", label: "Tickets 100% numériques" },
-    ],
-    interactiveType: "kds-order",
+    cta: "Digitaliser mon restaurant",
+    href: "/signup?sector=RESTAURANT",
   },
-  shop: {
-    id: "shop",
-    label: "E-Commerce",
-    badge: "Boutique & Stocks",
-    title: "Vendez en ligne avec paiement Mobile Money direct",
-    tagline:
-      "Transformez vos abonnés WhatsApp et réseaux sociaux en acheteurs réguliers avec une vitrine ultra-rapide et sécurisée.",
-    accentColor: "from-blue-500/20 to-indigo-500/20 border-blue-500/30 text-blue-400",
-    icon: ShoppingBag,
-    benefits: [
-      "Lien de boutique élégant partageable sur WhatsApp et Instagram",
-      "Encaissement instantané Airtel Money & Moov Money sans intermédiaire",
-      "Gestion des stocks en temps réel et alertes de réapprovisionnement",
-      "Génération automatique des bordereaux de livraison",
-    ],
-    metrics: [
-      { value: "3 clics", label: "Tunnel d'achat WhatsApp" },
-      { value: "24/7", label: "Encaissement automatisé" },
-      { value: "+40%", label: "Panier moyen constaté" },
-    ],
-    interactiveType: "shop-cart",
-  },
-  accommodation: {
-    id: "accommodation",
+  {
+    id: "rbnb",
     label: "RBNB",
-    badge: "Nouveau • RBNB & Motels",
-    title: "Gérez vos appartements meublés, réservations et reçus fiscaux",
-    tagline:
-      "Fini le carnet papier et les no-shows. Calendrier de disponibilité temps réel, acompte Mobile Money sécurisé et check-in digital.",
-    accentColor: "from-purple-500/20 to-pink-500/20 border-purple-500/30 text-purple-400",
+    short: "Logements meublés, calendrier et réservations",
     icon: Building2,
+    image: "/images/landing/secteur-rbnb.jpg",
+    imageAlt: "Salon d'un appartement meublé lumineux",
+    proof: "Séjour réservé · 3 nuits",
+    title: "Louez vos meublés sans carnet ni no-show",
+    description:
+      "Un calendrier de disponibilités en direct, la réservation et le paiement en ligne, et une confirmation envoyée automatiquement au voyageur.",
     benefits: [
-      "Calendrier intelligent synchronisé avec tarification dynamique weekend/saison",
-      "Acompte Mobile Money (30%) obligatoire pour bloquer les dates sans no-show",
-      "Génération automatique de reçus fiscaux certifiés avec signature PDF",
-      "Check-in digital avec scan de pièce d'identité et état des lieux photos",
+      "Calendrier et planning de tous vos logements",
+      "Paiement en ligne au moment de la réservation",
+      "Reçus et factures générés automatiquement",
     ],
-    metrics: [
-      { value: "-90%", label: "De réservations perdues" },
-      { value: "3%", label: "Commission vs 15-20 % ailleurs" },
-      { value: "100%", label: "Reçus conformes & traçables" },
-    ],
-    interactiveType: "stay-booking",
+    cta: "Gérer mes logements",
+    href: "/signup?sector=ACCOMMODATION",
   },
-};
+];
 
 export function SectorShowcaseHub() {
-  const [activeTab, setActiveTab] = useState<SectorKey>("event");
-  const sector = SECTORS_DATA[activeTab];
+  const sectionRef = useRef<HTMLElement>(null);
+  const tabRefs = useRef<(HTMLButtonElement | null)[]>([]);
+  const [active, setActive] = useState(0);
+  const [hovered, setHovered] = useState(false);
+  const [inView, setInView] = useState(false);
+  const [userPaused, setUserPaused] = useState(false);
+  const [reduceMotion, setReduceMotion] = useState(false);
+
+  useEffect(() => {
+    const mq = window.matchMedia("(prefers-reduced-motion: reduce)");
+    const update = () => setReduceMotion(mq.matches);
+    update();
+    mq.addEventListener("change", update);
+    return () => mq.removeEventListener("change", update);
+  }, []);
+
+  // Défilement autonome seulement quand la section est à l'écran.
+  useEffect(() => {
+    const el = sectionRef.current;
+    if (!el) return;
+    const observer = new IntersectionObserver(([entry]) => setInView(entry.isIntersecting), {
+      threshold: 0.35,
+    });
+    observer.observe(el);
+    return () => observer.disconnect();
+  }, []);
+
+  const autoplay = !reduceMotion && !userPaused;
+  const running = autoplay && inView && !hovered;
+  const sector = SECTORS[active];
+
+  function select(index: number, focus = false) {
+    const i = (index + SECTORS.length) % SECTORS.length;
+    setActive(i);
+    if (focus) tabRefs.current[i]?.focus();
+  }
+
+  function onKeyDown(e: React.KeyboardEvent) {
+    const keys: Record<string, number> = {
+      ArrowDown: active + 1,
+      ArrowRight: active + 1,
+      ArrowUp: active - 1,
+      ArrowLeft: active - 1,
+      Home: 0,
+      End: SECTORS.length - 1,
+    };
+    if (e.key in keys) {
+      e.preventDefault();
+      select(keys[e.key], true);
+    }
+  }
+
+  const progressStyle = (axis: "x" | "y"): React.CSSProperties => ({
+    animation: `tab-progress-${axis} ${DURATION}s linear forwards`,
+    animationPlayState: running ? "running" : "paused",
+  });
 
   return (
-    <section id="secteurs" className="relative scroll-mt-20 py-16 sm:py-24 overflow-hidden bg-background">
-      {/* Background glow tailored to active sector */}
-      <div className="pointer-events-none absolute inset-0 flex items-center justify-center">
-        <div
-          className={`h-[450px] w-[650px] rounded-full blur-[140px] opacity-15 transition-all duration-700 ${
-            activeTab === "event"
-              ? "bg-amber-500"
-              : activeTab === "restaurant"
-              ? "bg-emerald-500"
-              : activeTab === "shop"
-              ? "bg-blue-500"
-              : "bg-purple-500"
-          }`}
-        />
-      </div>
-
-      <div className="relative mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
-        {/* Section Header */}
-        <div className="text-center max-w-3xl mx-auto mb-10">
-          <div className="inline-flex items-center gap-2 rounded-full border border-primary/20 bg-primary/10 px-4 py-1.5 text-xs font-semibold text-primary">
-            <Sparkles className="size-3.5" />
-            <span>4 Secteurs Clés Réunis sur GiyaX</span>
-          </div>
-          <h2 className="mt-4 font-display text-3xl font-bold tracking-tight text-foreground sm:text-4xl">
-            Une seule plateforme adaptée aux réalités de votre métier
-          </h2>
-          <p className="mt-3 text-base text-muted-foreground">
-            Sélectionnez votre activité pour voir comment GiyaX simplifie vos encaissements et votre gestion quotidienne.
-          </p>
-        </div>
-
-        {/* 4-Sector Pill Navigation Tabs */}
-        <div className="flex justify-center mb-10 overflow-x-auto pb-2 scrollbar-none">
-          <div className="inline-flex items-center gap-2 p-1.5 rounded-2xl border border-border bg-card/80 backdrop-blur-md shadow-sm">
-            {(Object.keys(SECTORS_DATA) as SectorKey[]).map((key) => {
-              const item = SECTORS_DATA[key];
-              const Icon = item.icon;
-              const isActive = activeTab === key;
-
-              return (
-                <button
-                  key={key}
-                  type="button"
-                  onClick={() => setActiveTab(key)}
-                  className={`relative flex items-center gap-2.5 px-4 py-2.5 rounded-xl text-sm font-semibold transition-all whitespace-nowrap ${
-                    isActive
-                      ? "text-white shadow-md"
-                      : "text-muted-foreground hover:text-foreground hover:bg-muted/50"
-                  }`}
-                >
-                  {isActive && (
-                    <motion.div
-                      layoutId="activeSectorTab"
-                      className="absolute inset-0 rounded-xl bg-primary"
-                      transition={{ type: "spring", stiffness: 400, damping: 30 }}
-                    />
-                  )}
-                  <span className="relative z-10 flex items-center gap-2">
-                    <Icon className="size-4" />
-                    {item.label}
-                    {key === "accommodation" && (
-                      <span className="rounded-full bg-secondary/30 px-2 py-0.5 text-[10px] font-bold text-secondary uppercase">
-                        Nouveau
-                      </span>
+    <section
+      id="secteurs"
+      ref={sectionRef}
+      className="relative bg-background py-20 lg:py-24"
+      onMouseEnter={() => setHovered(true)}
+      onMouseLeave={() => setHovered(false)}
+    >
+      <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
+        <div className="grid grid-cols-1 gap-6 lg:grid-cols-[minmax(0,5fr)_minmax(0,8fr)] lg:items-center lg:gap-12">
+          {/* Titre + onglets latéraux */}
+          <div className="flex min-w-0 flex-col">
+            <div className="mx-auto mb-8 max-w-2xl text-center lg:mx-0 lg:mb-8 lg:text-left">
+              <p className="text-xs font-semibold uppercase tracking-widest text-primary">Solutions</p>
+              <h2 className="mt-3 font-display text-3xl font-bold leading-tight tracking-tight text-foreground sm:text-4xl">
+                Une seule plateforme adaptée aux réalités de votre métier
+              </h2>
+              <p className="mt-3 text-base text-muted-foreground">
+                Choisissez votre activité : GiyaX s&apos;adapte à votre façon de vendre, d&apos;accueillir et
+                d&apos;encaisser.
+              </p>
+            </div>
+            <div
+              role="tablist"
+              aria-label="Secteurs d'activité"
+              aria-orientation="vertical"
+              onKeyDown={onKeyDown}
+              // Mobile : trois onglets côte à côte qui tiennent dans la largeur (aucun
+              // défilement). Grand écran : liste verticale.
+              className="grid grid-cols-3 gap-2 lg:flex lg:flex-col lg:gap-3"
+            >
+              {SECTORS.map((s, i) => {
+                const isActive = i === active;
+                const Icon = s.icon;
+                return (
+                  <button
+                    key={s.id}
+                    ref={(el) => {
+                      tabRefs.current[i] = el;
+                    }}
+                    type="button"
+                    role="tab"
+                    id={`tab-${s.id}`}
+                    aria-selected={isActive}
+                    aria-controls={`panel-${s.id}`}
+                    tabIndex={isActive ? 0 : -1}
+                    onClick={() => select(i)}
+                    className={cn(
+                      "group relative flex min-w-0 flex-col items-center gap-1.5 overflow-hidden rounded-2xl border px-1.5 pb-3.5 pt-3 text-center transition-all duration-300 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary lg:flex-row lg:items-start lg:gap-4 lg:px-5 lg:py-5 lg:text-left",
+                      isActive
+                        ? "border-border bg-card shadow-lg shadow-primary/10"
+                        : "border-transparent bg-muted/50 hover:bg-muted lg:bg-transparent lg:hover:bg-muted/60",
                     )}
-                  </span>
-                </button>
-              );
-            })}
+                  >
+                    {/* Barre de progression : verticale sur grand écran, horizontale sur mobile */}
+                    <span aria-hidden="true" className="absolute inset-y-0 left-0 hidden w-1 bg-border/70 lg:block">
+                      {isActive && autoplay && (
+                        <span
+                          key={`y-${active}`}
+                          className="block h-full w-full origin-top bg-primary"
+                          style={progressStyle("y")}
+                          onAnimationEnd={() => select(active + 1)}
+                        />
+                      )}
+                    </span>
+                    <span aria-hidden="true" className="absolute inset-x-0 bottom-0 h-1 lg:hidden">
+                      {isActive && autoplay && (
+                        <span
+                          key={`x-${active}`}
+                          className="block h-full w-full origin-left bg-primary"
+                          style={progressStyle("x")}
+                          onAnimationEnd={() => select(active + 1)}
+                        />
+                      )}
+                    </span>
+
+                    <span
+                      className={cn(
+                        "flex size-10 shrink-0 items-center justify-center rounded-xl transition-colors lg:size-12",
+                        isActive ? "bg-primary text-primary-foreground" : "bg-card text-muted-foreground lg:bg-muted",
+                      )}
+                    >
+                      <Icon className="size-5 lg:size-6" />
+                    </span>
+                    <span className="w-full min-w-0 lg:w-auto">
+                      <span className="flex items-baseline justify-center gap-2 lg:justify-start">
+                        <span className="hidden font-mono text-xs text-muted-foreground lg:inline">
+                          0{i + 1}
+                        </span>
+                        <span
+                          className={cn(
+                            "block truncate font-display text-[13px] font-semibold sm:text-sm lg:text-xl",
+                            isActive ? "text-foreground" : "text-muted-foreground group-hover:text-foreground",
+                          )}
+                        >
+                          {s.label}
+                        </span>
+                      </span>
+                      {/* Résumé dépliant de l'onglet actif (grand écran) */}
+                      <span
+                        className={cn(
+                          "hidden transition-[grid-template-rows,opacity] duration-300 lg:grid",
+                          isActive ? "grid-rows-[1fr] opacity-100" : "grid-rows-[0fr] opacity-0",
+                        )}
+                      >
+                        <span className="overflow-hidden">
+                          <span className="block pt-1.5 text-sm leading-relaxed text-muted-foreground">{s.short}</span>
+                        </span>
+                      </span>
+                    </span>
+                  </button>
+                );
+              })}
+            </div>
+
+            {!reduceMotion && (
+              <button
+                type="button"
+                onClick={() => setUserPaused((p) => !p)}
+                className="mt-4 hidden items-center gap-2 self-start rounded-full px-3 py-1.5 text-xs font-medium text-muted-foreground transition-colors hover:bg-muted hover:text-foreground lg:inline-flex"
+              >
+                {userPaused ? <Play className="size-3.5" /> : <Pause className="size-3.5" />}
+                {userPaused ? "Reprendre le défilement" : "Mettre le défilement en pause"}
+              </button>
+            )}
           </div>
-        </div>
 
-        {/* Dynamic Sector Card & Simulator Display */}
-        <AnimatePresence mode="wait">
-          <motion.div
-            key={activeTab}
-            initial={{ opacity: 0, y: 15 }}
-            animate={{ opacity: 1, y: 0 }}
-            exit={{ opacity: 0, y: -15 }}
-            transition={{ duration: 0.25 }}
-            className="grid gap-8 lg:grid-cols-12 items-stretch"
+          {/* Panneau du secteur actif */}
+          <div
+            role="tabpanel"
+            id={`panel-${sector.id}`}
+            aria-labelledby={`tab-${sector.id}`}
+            className="relative isolate min-h-[560px] overflow-hidden rounded-[1.75rem] bg-[#0a4f3c] shadow-2xl shadow-primary/15 sm:min-h-[520px] lg:h-[min(640px,calc(100svh-8rem))] lg:min-h-[560px]"
           >
-            {/* Left: Value Proposition & Pain Points */}
-            <div className="lg:col-span-6 flex flex-col justify-between rounded-3xl border border-border/80 bg-card p-6 sm:p-8 shadow-sm backdrop-blur-sm">
-              <div>
-                <div className="flex items-center gap-3">
-                  <div className={`p-2.5 rounded-xl border bg-gradient-to-br ${sector.accentColor}`}>
-                    <sector.icon className="size-6 text-foreground" />
-                  </div>
-                  <span className="text-xs font-bold tracking-wide uppercase px-3 py-1 rounded-full bg-muted text-foreground">
-                    {sector.badge}
-                  </span>
-                </div>
+            <AnimatePresence initial={false}>
+              <motion.div
+                key={sector.id}
+                initial={{ opacity: 0, scale: 1.04 }}
+                animate={{ opacity: 1, scale: 1 }}
+                exit={{ opacity: 0 }}
+                transition={{ duration: 0.7, ease: [0.22, 1, 0.36, 1] }}
+                className="absolute inset-0 -z-10"
+              >
+                <Image
+                  src={sector.image}
+                  alt={sector.imageAlt}
+                  fill
+                  sizes="(min-width: 1024px) 60vw, 100vw"
+                  className="object-cover"
+                  style={{ objectPosition: sector.imagePosition ?? "50% 50%" }}
+                />
+                {/* Voile de lecture : très sombre sur toute la zone de texte (photos claires
+                    comprises), puis s'éclaircit vers le haut pour laisser voir la photo. */}
+                <div className="absolute inset-0 bg-[linear-gradient(to_top,rgba(0,0,0,0.92)_0%,rgba(0,0,0,0.8)_45%,rgba(0,0,0,0.45)_70%,rgba(0,0,0,0.12)_100%)]" />
+                {/* Mobile / tablette : le texte occupe presque tout le panneau, voile général en plus. */}
+                <div className="absolute inset-0 bg-black/35 lg:hidden" />
+              </motion.div>
+            </AnimatePresence>
 
-                <h3 className="mt-5 font-display text-2xl font-bold text-foreground sm:text-3xl">
+            {/* Preuve produit, reprise de l'interface GiyaX */}
+            <AnimatePresence mode="wait">
+              <motion.div
+                key={`proof-${sector.id}`}
+                initial={{ opacity: 0, y: -8 }}
+                animate={{ opacity: 1, y: 0 }}
+                exit={{ opacity: 0, y: -8 }}
+                transition={{ duration: 0.35, delay: 0.15 }}
+                className="absolute left-5 top-5 flex items-center gap-2 rounded-full bg-white/95 px-3.5 py-2 text-sm font-semibold text-[#0b1f1a] shadow-lg sm:left-7 sm:top-7"
+              >
+                <CheckCircle2 className="size-4 text-emerald-600" />
+                {sector.proof}
+              </motion.div>
+            </AnimatePresence>
+
+            <AnimatePresence mode="wait">
+              <motion.div
+                key={`copy-${sector.id}`}
+                initial={{ opacity: 0, y: 16 }}
+                animate={{ opacity: 1, y: 0 }}
+                exit={{ opacity: 0, y: 8 }}
+                transition={{ duration: 0.45, ease: [0.22, 1, 0.36, 1] }}
+                className="absolute inset-x-0 bottom-0 p-6 text-white sm:p-8 lg:p-10"
+              >
+                <h3 className="max-w-xl font-display text-2xl font-bold leading-tight [text-shadow:0_2px_14px_rgba(0,0,0,0.55)] sm:text-3xl lg:text-4xl">
                   {sector.title}
                 </h3>
-                <p className="mt-3 text-sm leading-relaxed text-muted-foreground sm:text-base">
-                  {sector.tagline}
-                </p>
-
-                <div className="mt-6 space-y-3">
-                  {sector.benefits.map((benefit, idx) => (
-                    <div key={idx} className="flex items-start gap-3">
-                      <CheckCircle2 className="size-5 shrink-0 text-primary mt-0.5" />
-                      <span className="text-sm font-medium text-foreground/90">{benefit}</span>
-                    </div>
+                <p className="mt-3 max-w-xl text-sm leading-relaxed text-white/90 [text-shadow:0_1px_8px_rgba(0,0,0,0.6)] sm:text-base">{sector.description}</p>
+                <ul className="mt-5 grid gap-2 sm:grid-cols-3 sm:gap-3">
+                  {sector.benefits.map((b) => (
+                    <li
+                      key={b}
+                      className="flex items-start gap-2 rounded-xl border border-white/15 bg-black/40 p-3 text-xs leading-snug text-white backdrop-blur-md sm:text-[13px]"
+                    >
+                      <CheckCircle2 className="mt-0.5 size-4 shrink-0 text-secondary" />
+                      {b}
+                    </li>
                   ))}
-                </div>
-              </div>
-
-              {/* Metrics Footer */}
-              <div className="mt-8 pt-6 border-t border-border">
-                <div className="grid grid-cols-3 gap-4 mb-6">
-                  {sector.metrics.map((m, i) => (
-                    <div key={i} className="text-center sm:text-left">
-                      <p className="font-display text-xl sm:text-2xl font-extrabold text-foreground">
-                        {m.value}
-                      </p>
-                      <p className="text-xs text-muted-foreground mt-0.5">{m.label}</p>
-                    </div>
-                  ))}
-                </div>
-
-                <div className="flex flex-wrap items-center gap-3">
-                  <Button asChild className="rounded-xl bg-primary text-white font-medium shadow-md shadow-primary/20 hover:bg-primary/90">
-                    <Link href={`/signup`}>
-                      Créer un compte {sector.label}
-                      <ArrowRight className="ml-2 size-4" />
-                    </Link>
-                  </Button>
-                  <Button asChild variant="outline" className="rounded-xl border-border">
-                    <Link href="/login">Voir la démo</Link>
-                  </Button>
-                </div>
-              </div>
-            </div>
-
-            {/* Right: Interactive Sector Mini-Simulator */}
-            <div className="lg:col-span-6 rounded-3xl border border-border/80 bg-muted/40 p-6 sm:p-8 flex flex-col justify-center relative overflow-hidden">
-              <div className="pointer-events-none absolute -right-16 -top-16 size-48 rounded-full bg-primary/10 blur-3xl" />
-              
-              {activeTab === "event" && <EventSimulator />}
-              {activeTab === "restaurant" && <RestaurantSimulator />}
-              {activeTab === "shop" && <ShopSimulator />}
-              {activeTab === "accommodation" && <AccommodationSimulator />}
-            </div>
-          </motion.div>
-        </AnimatePresence>
+                </ul>
+                <Button
+                  asChild
+                  size="lg"
+                  className="group mt-6 h-12 rounded-full bg-secondary px-6 font-semibold text-secondary-foreground hover:bg-secondary/90"
+                >
+                  <Link href={sector.href}>
+                    {sector.cta}
+                    <ArrowRight className="size-4 transition-transform group-hover:translate-x-0.5" />
+                  </Link>
+                </Button>
+              </motion.div>
+            </AnimatePresence>
+          </div>
+        </div>
       </div>
     </section>
-  );
-}
-
-/* -------------------------------------------------------------
- * 1. Event Simulator: Ticket Scan Verification & VIP Pass
- * ------------------------------------------------------------- */
-function EventSimulator() {
-  const [scanState, setScanState] = useState<"ready" | "scanned" | "fraud">("ready");
-
-  return (
-    <div className="space-y-4">
-      <div className="flex items-center justify-between">
-        <span className="text-xs font-semibold uppercase tracking-wider text-muted-foreground flex items-center gap-1.5">
-          <QrCode className="size-3.5 text-primary" />
-          Simulateur Contrôle d&apos;Entrée
-        </span>
-        <span className="text-xs font-mono px-2 py-0.5 rounded-full bg-primary/15 text-primary font-semibold">
-          Portail 1 • VIP
-        </span>
-      </div>
-
-      <div className="rounded-2xl border border-border bg-card p-5 shadow-sm space-y-4">
-        <div className="flex items-start justify-between">
-          <div>
-            <span className="text-[11px] font-bold text-amber-500 uppercase tracking-wide">
-              FESTIVAL URBAN AFRO 2026
-            </span>
-            <h4 className="font-display text-lg font-bold text-foreground">Pass VIP All-Access</h4>
-            <p className="text-xs text-muted-foreground">Titulaire : Marc Anthony M.</p>
-          </div>
-          <div className="text-right">
-            <span className="text-xs font-mono font-bold text-foreground">#EVT-88392</span>
-            <p className="text-[11px] text-emerald-500 font-semibold">Payé Airtel Money</p>
-          </div>
-        </div>
-
-        {/* Scanner Simulation Result */}
-        <div
-          className={`rounded-xl p-4 border transition-all ${
-            scanState === "ready"
-              ? "border-dashed border-border bg-muted/50 text-center"
-              : scanState === "scanned"
-              ? "border-emerald-500/50 bg-emerald-500/10 text-emerald-400"
-              : "border-red-500/50 bg-red-500/10 text-red-400"
-          }`}
-        >
-          {scanState === "ready" && (
-            <div className="py-2">
-              <QrCode className="size-8 mx-auto text-muted-foreground animate-pulse mb-2" />
-              <p className="text-xs font-medium text-foreground">Placez le billet sous le scanner</p>
-              <p className="text-[11px] text-muted-foreground">Testez les boutons d&apos;action ci-dessous</p>
-            </div>
-          )}
-          {scanState === "scanned" && (
-            <div className="flex items-center gap-3">
-              <ShieldCheck className="size-8 text-emerald-400 shrink-0" />
-              <div>
-                <p className="font-bold text-sm text-foreground">BILLET VALIDE — ACCÈS AUTORISÉ</p>
-                <p className="text-xs text-muted-foreground">Pass VIP • Emplacement Carré Or • Entrée enregistrée à l&apos;instant</p>
-              </div>
-            </div>
-          )}
-          {scanState === "fraud" && (
-            <div className="flex items-center gap-3">
-              <Zap className="size-8 text-red-400 shrink-0" />
-              <div>
-                <p className="font-bold text-sm text-foreground">ALERTE : BILLET DÉJÀ CONSOMMÉ</p>
-                <p className="text-xs text-muted-foreground">Scanné il y a 4 min au Portail 2 • Tentative de duplication rejetée</p>
-              </div>
-            </div>
-          )}
-        </div>
-
-        <div className="flex gap-2 pt-1">
-          <Button
-            size="sm"
-            className="flex-1 rounded-xl bg-emerald-600 hover:bg-emerald-500 text-white text-xs font-semibold"
-            onClick={() => setScanState("scanned")}
-          >
-            Scanner Billet Valide
-          </Button>
-          <Button
-            size="sm"
-            variant="outline"
-            className="flex-1 rounded-xl text-xs font-semibold text-red-400 border-red-500/30 hover:bg-red-500/10"
-            onClick={() => setScanState("fraud")}
-          >
-            Tester Détection Fraude
-          </Button>
-          <Button
-            size="sm"
-            variant="ghost"
-            className="text-xs text-muted-foreground"
-            onClick={() => setScanState("ready")}
-          >
-            Reset
-          </Button>
-        </div>
-      </div>
-    </div>
-  );
-}
-
-/* -------------------------------------------------------------
- * 2. Restaurant Simulator: Live Kitchen KDS Ticket
- * ------------------------------------------------------------- */
-function RestaurantSimulator() {
-  const [orderStatus, setOrderStatus] = useState<"PREPARING" | "READY" | "SERVED">("PREPARING");
-
-  return (
-    <div className="space-y-4">
-      <div className="flex items-center justify-between">
-        <span className="text-xs font-semibold uppercase tracking-wider text-muted-foreground flex items-center gap-1.5">
-          <Flame className="size-3.5 text-orange-400" />
-          Écran Cuisine KDS en direct
-        </span>
-        <span className="text-xs font-mono px-2 py-0.5 rounded-full bg-emerald-500/15 text-emerald-400 font-semibold">
-          Table 04 • 2 Couverts
-        </span>
-      </div>
-
-      <div className="rounded-2xl border border-border bg-card p-5 shadow-sm space-y-4">
-        <div className="flex items-center justify-between border-b border-border pb-3">
-          <div>
-            <span className="font-display text-base font-bold text-foreground">Commande #CMD-104</span>
-            <p className="text-xs text-muted-foreground">Envoyée par QR Code Client</p>
-          </div>
-          <span
-            className={`px-2.5 py-1 rounded-lg text-xs font-bold ${
-              orderStatus === "PREPARING"
-                ? "bg-amber-500/20 text-amber-400 animate-pulse"
-                : orderStatus === "READY"
-                ? "bg-emerald-500/20 text-emerald-400"
-                : "bg-muted text-muted-foreground"
-            }`}
-          >
-            {orderStatus === "PREPARING" ? (
-              <><Hourglass className="inline size-3.5" /> En Préparation (3 min)</>
-            ) : orderStatus === "READY" ? (
-              <><CheckCircle2 className="inline size-3.5" /> Prêt à Servir</>
-            ) : (
-              <><Package className="inline size-3.5" /> Livré</>
-            )}
-          </span>
-        </div>
-
-        <div className="space-y-2 text-sm">
-          <div className="flex justify-between items-center py-1">
-            <span className="font-medium text-foreground">1× Poulet Nyembwe + Banane Plantain</span>
-            <span className="font-mono text-xs text-muted-foreground">7 500 FCFA</span>
-          </div>
-          <div className="flex justify-between items-center py-1">
-            <span className="font-medium text-foreground">1× Poisson Braisé Bar Entier (Piment doux)</span>
-            <span className="font-mono text-xs text-muted-foreground">10 000 FCFA</span>
-          </div>
-          <div className="flex justify-between items-center py-1">
-            <span className="font-medium text-foreground">2× Jus de Gingembre Ananas frais</span>
-            <span className="font-mono text-xs text-muted-foreground">3 000 FCFA</span>
-          </div>
-        </div>
-
-        <div className="pt-3 border-t border-border flex items-center justify-between">
-          <span className="text-xs text-muted-foreground">Total : <strong className="text-foreground">20 500 FCFA</strong> (Moov Money)</span>
-          <div className="flex gap-2">
-            {orderStatus === "PREPARING" && (
-              <Button
-                size="sm"
-                className="rounded-xl bg-primary text-white text-xs font-semibold"
-                onClick={() => setOrderStatus("READY")}
-              >
-                Sonner Serveur (Prêt)
-              </Button>
-            )}
-            {orderStatus === "READY" && (
-              <Button
-                size="sm"
-                variant="outline"
-                className="rounded-xl text-xs font-semibold"
-                onClick={() => setOrderStatus("SERVED")}
-              >
-                Clôturer Ticket
-              </Button>
-            )}
-            {orderStatus === "SERVED" && (
-              <Button
-                size="sm"
-                variant="ghost"
-                className="text-xs text-muted-foreground"
-                onClick={() => setOrderStatus("PREPARING")}
-              >
-                Relancer simulation
-              </Button>
-            )}
-          </div>
-        </div>
-      </div>
-    </div>
-  );
-}
-
-/* -------------------------------------------------------------
- * 3. Shop Simulator: Express WhatsApp Checkout
- * ------------------------------------------------------------- */
-function ShopSimulator() {
-  const [paid, setPaid] = useState(false);
-
-  return (
-    <div className="space-y-4">
-      <div className="flex items-center justify-between">
-        <span className="text-xs font-semibold uppercase tracking-wider text-muted-foreground flex items-center gap-1.5">
-          <Smartphone className="size-3.5 text-blue-400" />
-          Tunnel d&apos;achat E-Commerce
-        </span>
-        <span className="text-xs font-mono px-2 py-0.5 rounded-full bg-blue-500/15 text-blue-400 font-semibold">
-          Stock Sync en temps réel
-        </span>
-      </div>
-
-      <div className="rounded-2xl border border-border bg-card p-5 shadow-sm space-y-4">
-        <div className="flex items-center gap-4">
-          <div className="size-16 rounded-xl bg-muted flex items-center justify-center font-display font-bold text-xl text-primary border border-border">
-            <Footprints className="size-7" />
-          </div>
-          <div className="flex-1">
-            <span className="text-[11px] font-semibold text-blue-400 uppercase">Sneakers Store LBV</span>
-            <h4 className="font-display text-base font-bold text-foreground">Sneaker Edition Limitée Low</h4>
-            <p className="text-xs text-muted-foreground">Taille 43 • Stock restant : 3 unités</p>
-          </div>
-          <div className="text-right">
-            <p className="font-display font-bold text-lg text-foreground">45 000 F</p>
-            <p className="text-[11px] text-emerald-500 font-medium">Livraison 24h</p>
-          </div>
-        </div>
-
-        {paid ? (
-          <div className="rounded-xl border border-emerald-500/40 bg-emerald-500/10 p-4 text-center space-y-1">
-            <CheckCircle2 className="size-6 text-emerald-400 mx-auto" />
-            <p className="text-xs font-bold text-foreground">PAIEMENT AIRTEL MONEY VALIDÉ</p>
-            <p className="text-[11px] text-muted-foreground">Bordereau #LIV-992 généré et envoyé au client par SMS</p>
-            <Button
-              size="sm"
-              variant="ghost"
-              className="text-[11px] h-7 text-primary mt-2"
-              onClick={() => setPaid(false)}
-            >
-              Recommencer
-            </Button>
-          </div>
-        ) : (
-          <div className="space-y-3 pt-2">
-            <div className="flex items-center justify-between text-xs text-muted-foreground">
-              <span>Moyen de règlement</span>
-              <span className="font-semibold text-foreground">Airtel Money (Push USSD)</span>
-            </div>
-            <Button
-              className="w-full rounded-xl bg-blue-600 hover:bg-blue-500 text-white font-semibold text-xs shadow-md shadow-blue-500/20"
-              onClick={() => setPaid(true)}
-            >
-              Simuler Paiement Direct (45 000 FCFA)
-            </Button>
-          </div>
-        )}
-      </div>
-    </div>
-  );
-}
-
-/* -------------------------------------------------------------
- * 4. Accommodation Simulator: Instant Booking & Fiscal Receipt
- * ------------------------------------------------------------- */
-function AccommodationSimulator() {
-  const [reserved, setReserved] = useState(false);
-
-  return (
-    <div className="space-y-4">
-      <div className="flex items-center justify-between">
-        <span className="text-xs font-semibold uppercase tracking-wider text-muted-foreground flex items-center gap-1.5">
-          <Calendar className="size-3.5 text-purple-400" />
-          Réservation RBNB
-        </span>
-        <span className="text-xs font-mono px-2 py-0.5 rounded-full bg-purple-500/15 text-purple-400 font-semibold">
-          Acompte 30% Sécurisé
-        </span>
-      </div>
-
-      <div className="rounded-2xl border border-border bg-card p-5 shadow-sm space-y-4">
-        <div className="flex items-start justify-between">
-          <div>
-            <span className="text-[11px] font-bold text-purple-400 uppercase tracking-wide">
-              RÉSIDENCES MBOLO • SABLIÈRE
-            </span>
-            <h4 className="font-display text-base font-bold text-foreground">Appartement F3 Vue Mer</h4>
-            <p className="text-xs text-muted-foreground">Wifi fibre • Clim • Parking sécurisé</p>
-          </div>
-          <div className="text-right">
-            <p className="font-display font-bold text-base text-foreground">35 000 F <span className="text-xs font-normal text-muted-foreground">/nuit</span></p>
-            <p className="text-[10px] text-muted-foreground">3 nuits = 105 000 F</p>
-          </div>
-        </div>
-
-        {reserved ? (
-          <div className="rounded-xl border border-purple-500/40 bg-purple-500/10 p-4 space-y-2">
-            <div className="flex items-center gap-2">
-              <ShieldCheck className="size-5 text-purple-400" />
-              <p className="text-xs font-bold text-foreground">RÉSERVATION CONFIRMÉE — REÇU FISCAL #REC-2026-0042</p>
-            </div>
-            <p className="text-[11px] text-muted-foreground leading-relaxed">
-              Acompte de 31 500 FCFA (30%) encaissé. Reçu PDF horodaté conforme transmis au voyageur avec code d&apos;accès WiFi & QR Check-in.
-            </p>
-            <Button
-              size="sm"
-              variant="ghost"
-              className="text-[11px] h-7 text-purple-400"
-              onClick={() => setReserved(false)}
-            >
-              Tester une autre date
-            </Button>
-          </div>
-        ) : (
-          <div className="space-y-3 pt-2">
-            <div className="grid grid-cols-2 gap-2 text-xs">
-              <div className="p-2.5 rounded-xl bg-muted/60 border border-border">
-                <span className="text-muted-foreground text-[10px] block">Arrivée</span>
-                <span className="font-bold text-foreground">Vendredi 14h</span>
-              </div>
-              <div className="p-2.5 rounded-xl bg-muted/60 border border-border">
-                <span className="text-muted-foreground text-[10px] block">Départ</span>
-                <span className="font-bold text-foreground">Lundi 12h (3 nuits)</span>
-              </div>
-            </div>
-            <Button
-              className="w-full rounded-xl bg-purple-600 hover:bg-purple-500 text-white font-semibold text-xs shadow-md shadow-purple-500/20"
-              onClick={() => setReserved(true)}
-            >
-              Simuler Réservation & Acompte 30% (31 500 FCFA)
-            </Button>
-          </div>
-        )}
-      </div>
-    </div>
   );
 }

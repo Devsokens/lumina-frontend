@@ -1,13 +1,13 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import slugify from "slugify";
 import { toast } from "sonner";
-import { Eye, EyeOff, UserPlus, PartyPopper, UtensilsCrossed, ShoppingBag, Building2 } from "lucide-react";
+import { Eye, EyeOff, PartyPopper, UtensilsCrossed, Building2 } from "lucide-react";
 import { signupSchema, type SignupInput } from "@/lib/validations";
 import { homePathFor, useAuth } from "@/hooks/useAuth";
 import { apiError } from "@/lib/api";
@@ -15,8 +15,7 @@ import { API_URL, ROOT_DOMAIN } from "@/lib/constants";
 import { publicSiteLabel, subdomainActive } from "@/lib/tenant-url";
 import { SECTORS } from "@/lib/constants";
 import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
-import { Label } from "@/components/ui/label";
+import { FloatingField } from "@/components/shared/floating-field";
 import {
   Select,
   SelectContent,
@@ -47,6 +46,14 @@ export default function SignupPage() {
     resolver: zodResolver(signupSchema),
     defaultValues: { sector: "EVENT", acceptedTerms: undefined },
   });
+
+  // Secteur choisi depuis la landing (/signup?sector=RESTAURANT…).
+  useEffect(() => {
+    const fromUrl = new URLSearchParams(window.location.search).get("sector");
+    if (fromUrl === "EVENT" || fromUrl === "RESTAURANT" || fromUrl === "ACCOMMODATION") {
+      setValue("sector", fromUrl, { shouldValidate: true });
+    }
+  }, [setValue]);
 
   const businessName = watch("businessName");
   const sector = watch("sector");
@@ -85,21 +92,23 @@ export default function SignupPage() {
     window.location.href = `${API_URL}/auth/google`;
   }
 
+  const hasSubdomain = subdomainActive();
+  // Fond du libellé posé sur la bordure (page au-dessus, champ en dessous),
+  // identique aux champs FloatingField.
+  const raisedLabelBg = "bg-[linear-gradient(to_bottom,var(--background)_50%,var(--card)_50%)]";
+
   return (
     <div>
-      <div className="flex size-14 items-center justify-center rounded-2xl bg-muted text-primary">
-        <UserPlus className="size-6" />
-      </div>
-      <h1 className="mt-6 font-display text-2xl font-bold text-foreground">Créer votre compte GiyaX</h1>
+      <h1 className="font-display text-2xl font-bold leading-tight text-foreground sm:text-[26px]">Créer votre compte GiyaX</h1>
       <p className="mt-1 text-sm text-muted-foreground">
-        Digitalisez votre activité en quelques minutes sans frais d&apos;entrée.
+        Démarrez gratuitement, sans frais d&apos;entrée.
       </p>
 
-      {/* Google Signup Button */}
+      {/* Bouton Google */}
       <Button
         type="button"
         variant="outline"
-        className="mt-6 h-12 w-full rounded-xl border-border bg-card text-base font-medium shadow-xs transition-all hover:bg-muted/50 hover:border-primary/40"
+        className="mt-4 h-11 w-full rounded-xl border-2 border-foreground/15 bg-card text-[15px] font-medium shadow-xs transition-all hover:border-primary/40 hover:bg-muted/50"
         onClick={handleGoogleSignup}
         disabled={googleLoading}
       >
@@ -107,134 +116,150 @@ export default function SignupPage() {
         {googleLoading ? "Inscription en cours..." : "S'inscrire avec Google"}
       </Button>
 
-      <div className="my-6 flex items-center gap-3">
+      <div className="my-3 flex items-center gap-3">
         <div className="h-px flex-1 bg-border" />
-        <span className="text-xs font-medium uppercase tracking-wider text-muted-foreground">ou avec formulaire</span>
+        <span className="text-xs font-medium text-muted-foreground">ou avec vos informations</span>
         <div className="h-px flex-1 bg-border" />
       </div>
 
-      <form onSubmit={handleSubmit(onSubmit)} className="space-y-4" noValidate>
-        <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
-          <div className="space-y-1.5">
-            <Label htmlFor="fullName">
-              Nom complet <span className="text-destructive">*</span>
-            </Label>
-            <Input id="fullName" className="h-11 rounded-xl" placeholder="Votre nom" {...register("fullName")} />
-            {errors.fullName && (
-              <p className="text-sm text-destructive">{errors.fullName.message}</p>
-            )}
-          </div>
-          <div className="space-y-1.5">
-            <Label htmlFor="password">
-              Mot de passe <span className="text-destructive">*</span>
-            </Label>
-            <div className="relative">
-              <Input
-                id="password"
-                type={showPassword ? "text" : "password"}
-                className="h-11 rounded-xl pr-10"
-                placeholder="••••••••"
-                {...register("password")}
-              />
-              <button
-                type="button"
-                onClick={() => setShowPassword((v) => !v)}
-                className="absolute inset-y-0 right-0 flex w-10 items-center justify-center text-muted-foreground hover:text-foreground"
-                aria-label={showPassword ? "Masquer le mot de passe" : "Afficher le mot de passe"}
-              >
-                {showPassword ? <EyeOff className="size-4" /> : <Eye className="size-4" />}
-              </button>
-            </div>
-            {errors.password && (
-              <p className="text-sm text-destructive">{errors.password.message}</p>
-            )}
-          </div>
-        </div>
+      {/* Deux colonnes (mobile compris) et erreurs posées sous les champs :
+          le formulaire tient dans l'écran, sans défilement. */}
+      <form onSubmit={handleSubmit(onSubmit)} className="grid grid-cols-2 gap-x-3 gap-y-5" noValidate>
+        <FloatingField
+          id="fullName"
+          label="Nom complet"
+          required
+          dense
+          errorOverlay
+          autoComplete="name"
+          error={errors.fullName?.message}
+          {...register("fullName")}
+        />
+        <FloatingField
+          id="password"
+          label="Mot de passe"
+          required
+          dense
+          errorOverlay
+          type={showPassword ? "text" : "password"}
+          autoComplete="new-password"
+          error={errors.password?.message}
+          endAdornment={
+            <button
+              type="button"
+              onClick={() => setShowPassword((v) => !v)}
+              className="flex size-9 items-center justify-center rounded-lg text-muted-foreground transition-colors hover:bg-muted hover:text-foreground"
+              aria-label={showPassword ? "Masquer le mot de passe" : "Afficher le mot de passe"}
+            >
+              {showPassword ? <EyeOff className="size-4" /> : <Eye className="size-4" />}
+            </button>
+          }
+          {...register("password")}
+        />
+        <FloatingField
+          id="email"
+          label="Email"
+          type="email"
+          dense
+          errorOverlay
+          autoComplete="email"
+          error={errors.email?.message}
+          {...register("email")}
+        />
+        <FloatingField
+          id="phone"
+          label="Téléphone"
+          type="tel"
+          inputMode="tel"
+          dense
+          errorOverlay
+          autoComplete="tel"
+          error={errors.phone?.message}
+          {...register("phone")}
+        />
+        <FloatingField
+          id="businessName"
+          label="Nom de l'activité"
+          required
+          dense
+          errorOverlay
+          error={errors.businessName?.message}
+          value={businessName ?? ""}
+          onChange={(e) => onBusinessNameChange(e.target.value)}
+        />
 
-        <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
-          <div className="space-y-1.5">
-            <Label htmlFor="email">Email</Label>
-            <Input id="email" type="email" className="h-11 rounded-xl" placeholder="vous@exemple.com" {...register("email")} />
-          </div>
-          <div className="space-y-1.5">
-            <Label htmlFor="phone">Téléphone (Mobile Money)</Label>
-            <Input id="phone" className="h-11 rounded-xl" placeholder="+241 XX XX XX XX" {...register("phone")} />
-          </div>
-        </div>
-
-        <div className="space-y-1.5">
-          <Label htmlFor="businessName">
-            Nom de l&apos;activité <span className="text-destructive">*</span>
-          </Label>
-          <Input
-            id="businessName"
-            className="h-11 rounded-xl"
-            placeholder="Ex: Villa Sunset, Festival Libreville, Le Palmier"
-            value={businessName ?? ""}
-            onChange={(e) => onBusinessNameChange(e.target.value)}
-          />
-          {errors.businessName && (
-            <p className="text-sm text-destructive">{errors.businessName.message}</p>
-          )}
-        </div>
-
-        <div className="space-y-1.5">
-          <Label htmlFor="slug">
-            Sous-domaine personnalisé <span className="text-destructive">*</span>
-          </Label>
-          <div className="flex h-11 items-center gap-1 rounded-xl border border-input pr-3 focus-within:border-ring focus-within:ring-3 focus-within:ring-ring/50">
-            <Input
-              id="slug"
-              {...register("slug")}
-              className="h-full flex-1 rounded-xl border-0 focus-visible:ring-0"
-            />
-            {subdomainActive() && (
-              <span className="shrink-0 text-sm font-semibold text-primary">.{ROOT_DOMAIN}</span>
-            )}
-          </div>
-          <p className="text-xs text-muted-foreground">
-            Adresse de votre site : <strong>{publicSiteLabel(watch("slug") || "votre-activite")}</strong>
-          </p>
-          {errors.slug && <p className="text-sm text-destructive">{errors.slug.message}</p>}
-        </div>
-
-        <div className="space-y-1.5">
-          <Label>
-            Secteur d&apos;activité <span className="text-destructive">*</span>
-          </Label>
-          {/* Contrôlé par le formulaire : la valeur affichée est celle envoyée. */}
+        {/* Secteur : même habillage que les champs, libellé toujours remonté. */}
+        <div className="relative">
           <Select
             value={sector}
             onValueChange={(v) => setValue("sector", v as SignupInput["sector"], { shouldValidate: true })}
           >
-            <SelectTrigger className="h-11 w-full rounded-xl">
+            <SelectTrigger
+              id="sector"
+              className="h-12! w-full rounded-xl border-2 border-foreground/15 bg-card px-4 text-sm shadow-xs hover:border-foreground/30 focus-visible:border-primary focus-visible:ring-4 focus-visible:ring-primary/15 dark:border-white/15 dark:bg-card"
+            >
               <SelectValue />
             </SelectTrigger>
             <SelectContent>
-              <SelectItem value="EVENT"><PartyPopper className="size-4" /> Événementiel (Billetterie & Scan QR)</SelectItem>
-              <SelectItem value="RESTAURANT"><UtensilsCrossed className="size-4" /> Restauration (Menu QR & KDS Cuisine)</SelectItem>
-              <SelectItem value="SHOP"><ShoppingBag className="size-4" /> E-Commerce (Boutique & Stocks)</SelectItem>
-              <SelectItem value="ACCOMMODATION"><Building2 className="size-4" /> RBNB (Logements & Réservations)</SelectItem>
+              <SelectItem value="EVENT"><PartyPopper className="size-4" /> Événementiel</SelectItem>
+              <SelectItem value="RESTAURANT"><UtensilsCrossed className="size-4" /> Restauration</SelectItem>
+              <SelectItem value="ACCOMMODATION"><Building2 className="size-4" /> RBNB</SelectItem>
             </SelectContent>
           </Select>
+          <label
+            htmlFor="sector"
+            className={`pointer-events-none absolute left-3 top-0 -translate-y-1/2 rounded px-1.5 text-xs font-semibold text-muted-foreground ${raisedLabelBg}`}
+          >
+            Secteur <span className="text-destructive">*</span>
+          </label>
         </div>
 
-        <label className="flex items-start gap-2 text-sm">
-          <input type="checkbox" className="mt-1 size-4 rounded border-input" {...register("acceptedTerms")} />
-          <span className="text-muted-foreground">
+        <div className="relative col-span-2">
+          <FloatingField
+            id="slug"
+            label="Adresse de votre site"
+            required
+            dense
+            errorOverlay
+            error={errors.slug?.message}
+            className={hasSubdomain ? "pr-28" : undefined}
+            endAdornment={
+              hasSubdomain ? (
+                <span className="pr-2.5 text-sm font-semibold text-primary">.{ROOT_DOMAIN}</span>
+              ) : undefined
+            }
+            {...register("slug")}
+          />
+          {/* Aperçu de l'adresse, à l'emplacement de l'erreur (aucune hauteur ajoutée). */}
+          {!hasSubdomain && !errors.slug && (
+            <p className="absolute left-0 top-full mt-0.5 w-full truncate px-1 text-[11px] leading-tight text-muted-foreground">
+              Votre site : <strong>{publicSiteLabel(watch("slug") || "votre-activite")}</strong>
+            </p>
+          )}
+        </div>
+
+        <label className="col-span-2 -mt-1 flex items-start gap-2 text-sm">
+          <input
+            type="checkbox"
+            className="mt-0.5 size-4 shrink-0 rounded border-input accent-[var(--primary)]"
+            aria-invalid={errors.acceptedTerms ? true : undefined}
+            {...register("acceptedTerms")}
+          />
+          <span className={errors.acceptedTerms ? "text-destructive" : "text-muted-foreground"}>
             J&apos;accepte les CGU et la politique de confidentialité de GiyaX.
           </span>
         </label>
-        {errors.acceptedTerms && (
-          <p className="text-sm text-destructive">{errors.acceptedTerms.message}</p>
-        )}
 
-        <Button type="submit" className="h-11 w-full rounded-xl text-base font-semibold shadow-md shadow-primary/20" disabled={submitting}>
+        <Button
+          type="submit"
+          className="col-span-2 h-12 w-full rounded-xl text-base font-semibold shadow-md shadow-primary/20"
+          disabled={submitting}
+        >
           {submitting ? "Création..." : "Démarrer gratuitement"}
         </Button>
       </form>
 
-      <p className="mt-8 text-center text-sm text-muted-foreground">
+      <p className="mt-5 text-center text-sm text-muted-foreground">
         Déjà un compte ?{" "}
         <Link href="/login" className="font-semibold text-primary underline-offset-4 hover:underline">
           Se connecter

@@ -1,7 +1,7 @@
 import { NextResponse, type NextRequest } from "next/server";
 
-// Domaine racine de la plateforme (ex: lumina.ga).
-const ROOT_DOMAIN = process.env.NEXT_PUBLIC_ROOT_DOMAIN ?? "lumina.ga";
+// Domaine racine de la plateforme (ex: giya.ga ou giya.com).
+const ROOT_DOMAIN = process.env.NEXT_PUBLIC_ROOT_DOMAIN ?? "giya.ga";
 const RESERVED_SUBDOMAINS = new Set(["www", "app", "admin", "api"]);
 
 // L'auth ne peut PAS être vérifiée ici : l'access token vit en mémoire

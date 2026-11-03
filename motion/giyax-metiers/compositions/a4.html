@@ -1,0 +1,156 @@
+<template>
+  <style>
+    #root {
+      position: absolute;
+      inset: 0;
+      overflow: hidden;
+      background: #0b0f0e;
+      font-family: "Montserrat", sans-serif;
+    }
+    #a4-cam {
+      position: absolute;
+      inset: 0;
+    }
+    #a4-cam video {
+      position: absolute;
+      inset: 0;
+      width: 100%;
+      height: 100%;
+      object-fit: cover;
+    }
+    #a4-scrim {
+      position: absolute;
+      inset: 0;
+      background: radial-gradient(ellipse 55% 60% at 50% 50%, rgba(0, 0, 0, 0.62), rgba(0, 0, 0, 0.35) 80%);
+    }
+    .a4-title {
+      position: absolute;
+      left: 0;
+      right: 0;
+      text-align: center;
+      color: #fff;
+      font-size: 96px;
+      font-weight: 800;
+      line-height: 1.04;
+      letter-spacing: -0.02em;
+    }
+    .a4-title .w {
+      display: inline-block;
+    }
+    .a4-title .gold {
+      color: #f4b942;
+    }
+    #a4-t1 {
+      top: 420px;
+    }
+    #a4-t2 {
+      top: 300px;
+      font-size: 84px;
+    }
+    #a4-pays {
+      position: absolute;
+      left: 0;
+      right: 0;
+      top: 560px;
+      display: flex;
+      justify-content: center;
+      gap: 24px;
+    }
+    .a4-pay {
+      display: flex;
+      align-items: center;
+      gap: 18px;
+      height: 104px;
+      padding: 0 34px 0 22px;
+      border-radius: 999px;
+      background: #fff;
+      color: #0b1f1a;
+      font-size: 36px;
+      font-weight: 700;
+      white-space: nowrap;
+      box-shadow: 0 20px 60px rgba(0, 0, 0, 0.45);
+    }
+    .a4-pay img {
+      width: 72px;
+      height: 72px;
+      object-fit: contain;
+    }
+    #a4-flood {
+      position: absolute;
+      inset: 0;
+      background: #0a4f3c;
+    }
+    #a4-logo {
+      position: absolute;
+      left: 640px;
+      top: 330px;
+      width: 640px;
+      height: auto;
+    }
+    #a4-tag {
+      position: absolute;
+      left: 0;
+      right: 0;
+      top: 660px;
+      text-align: center;
+      color: #fff;
+      font-size: 50px;
+      font-weight: 600;
+      letter-spacing: -0.01em;
+    }
+    #a4-tag .w {
+      display: inline-block;
+    }
+    #a4-tag .gold {
+      color: #f4b942;
+    }
+  </style>
+  <div id="root" data-composition-id="a4" data-width="1920" data-height="1080">
+    <!-- Montage des trois métiers, coupes nettes -->
+    <div id="a4-cam">
+      <video id="a4-v1" class="clip" data-start="0" data-duration="0.86" data-media-start="6" muted playsinline src="assets/video/concert.mp4"></video>
+      <video id="a4-v2" class="clip" data-start="0.86" data-duration="0.86" data-media-start="10.5" muted playsinline src="assets/video/restaurant.mp4"></video>
+      <video id="a4-v3" class="clip" data-start="1.72" data-duration="2.6" data-media-start="7.6" muted playsinline src="assets/video/appartement.mp4"></video>
+    </div>
+    <div id="a4-scrim"></div>
+
+    <div id="a4-t1" class="a4-title" data-layout-allow-overlap>
+      <div><span class="w">Une</span> <span class="w">seule</span></div>
+      <div><span class="w gold">plateforme</span></div>
+    </div>
+
+    <div id="a4-t2" class="a4-title" data-layout-allow-overlap>
+      <div><span class="w">Encaissez en</span></div>
+      <div><span class="w gold">Mobile Money</span></div>
+    </div>
+    <div id="a4-pays">
+      <div class="a4-pay"><img src="assets/svg/airtel.svg" alt="" />Airtel Money</div>
+      <div class="a4-pay"><img src="assets/img/moov-money.png" alt="" />Moov Money</div>
+    </div>
+
+    <div id="a4-flood"></div>
+    <img id="a4-logo" src="assets/img/logo-white.png" alt="GiyaX" />
+    <div id="a4-tag">
+      <span class="w">La</span> <span class="w">digitalisation</span> <span class="w">qui</span> <span class="w gold">éclaire</span>
+    </div>
+  </div>
+  <script>
+    (function () {
+      const tl = gsap.timeline({ paused: true });
+      tl.fromTo("#a4-cam", { scale: 1.04 }, { scale: 1.12, duration: 4.3, ease: "power1.inOut" }, 0);
+      tl.set(["#a4-t2 .w", "#a4-pays .a4-pay", "#a4-logo", "#a4-tag .w"], { opacity: 0 }, 0);
+      // « Une seule plateforme » sur le montage.
+      tl.fromTo("#a4-t1 .w", { opacity: 0, filter: "blur(8px)" }, { opacity: 1, filter: "blur(0px)", duration: 0.18, ease: "power2.out", stagger: 0.08 }, 0.05);
+      tl.to("#a4-t1 .w", { opacity: 0, filter: "blur(8px)", duration: 0.16, ease: "power2.in", stagger: 0.04 }, 2.55);
+      // « Encaissez en Mobile Money » + logos des opérateurs.
+      tl.fromTo("#a4-t2 .w", { opacity: 0, filter: "blur(8px)" }, { opacity: 1, filter: "blur(0px)", duration: 0.2, ease: "power2.out", stagger: 0.1 }, 2.72);
+      tl.fromTo("#a4-pays .a4-pay", { opacity: 0, y: 30, filter: "blur(8px)" }, { opacity: 1, y: 0, filter: "blur(0px)", duration: 0.55, ease: "expo.out", stagger: 0.12 }, 2.95);
+      // Le vert GiyaX monte et recouvre tout.
+      tl.fromTo("#a4-flood", { clipPath: "inset(100% 0% 0% 0%)" }, { clipPath: "inset(0% 0% 0% 0%)", duration: 0.55, ease: "power2.inOut" }, 3.75);
+      // Logo puis signature mot à mot.
+      tl.fromTo("#a4-logo", { opacity: 0, scale: 0.94, filter: "blur(10px)" }, { opacity: 1, scale: 1, filter: "blur(0px)", duration: 0.6, ease: "expo.out" }, 4.1);
+      tl.fromTo("#a4-tag .w", { opacity: 0, filter: "blur(6px)" }, { opacity: 1, filter: "blur(0px)", duration: 0.2, ease: "power2.out", stagger: 0.09 }, 4.45);
+      window.__timelines["a4"] = tl;
+    })();
+  </script>
+</template>

@@ -1,108 +1,130 @@
 "use client";
 
 import { useState } from "react";
-import { motion, AnimatePresence } from "framer-motion";
+import Image from "next/image";
+import { AnimatePresence, motion } from "framer-motion";
 import { ChevronDown } from "lucide-react";
-
+import { cn } from "@/lib/utils";
 
 const FAQS = [
   {
-    question: "Comment mes clients ou invités accèdent-ils à mes services ?",
-    answer: "Vos clients n'ont AUCUNE application à télécharger. Ils scannent simplement votre QR code ou cliquent sur votre lien (monresto.giya.ga). Vos billets, menus, catalogues ou annonces RBNB s'ouvrent instantanément.",
+    question: "Comment mes clients accèdent-ils à mes services ?",
+    answer:
+      "Vos clients n'ont aucune application à télécharger. Ils scannent votre QR code ou ouvrent votre lien (monactivite.giya.ga) : vos billets, votre menu ou vos logements s'affichent aussitôt sur leur téléphone.",
   },
   {
     question: "Comment s'effectue l'encaissement via Airtel Money et Moov Money ?",
-    answer: "Le client sélectionne son opérateur et valide via le prompt USSD sur son téléphone. Les fonds sont sécurisés instantanément et votre tableau de bord GiyaX met à jour les ventes en temps réel.",
+    answer:
+      "Le client choisit son opérateur et valide le paiement sur son téléphone. Le paiement est confirmé automatiquement et votre tableau de bord GiyaX se met à jour en temps réel.",
   },
   {
     question: "Est-ce que GiyaX fonctionne en cas de coupure Internet ?",
-    answer: "Oui ! GiyaX intègre la technologie PWA Offline-First. Si la connexion coupe, vous pouvez continuer à saisir les commandes et scanner les billets d'entrée. Dès que le réseau revient, tout est synchronisé sans aucune perte de données.",
+    answer:
+      "Le contrôle d'entrée continue de fonctionner hors connexion : les billets scannés sont vérifiés sur place puis synchronisés dès que le réseau revient, sans perte de données.",
   },
   {
-    question: "Comment fonctionne l'anti-fraude billetterie ?",
-    answer: "Chaque billet émis comporte un QR code cryptographique unique. Au scan avec l'application GiyaX, le billet est validé en moins de 1 seconde et marqué comme utilisé. Les captures d'écran et doublons sont rejetés immédiatement.",
+    question: "Comment fonctionne l'anti-fraude de la billetterie ?",
+    answer:
+      "Chaque billet comporte un QR code unique. Au scan, il est validé en moins d'une seconde et marqué comme utilisé : une capture d'écran ou un doublon est refusé immédiatement.",
   },
   {
-    question: "Qu'en est-il du secteur RBNB ?",
-    answer: "GiyaX gère vos appartements meublés et motels avec un calendrier en direct, l'encaissement d'acompte 30% Mobile Money anti-no-show, et l'émission automatique de reçus fiscaux certifiés avec signature électronique.",
+    question: "Que propose GiyaX pour les logements RBNB ?",
+    answer:
+      "Un calendrier de disponibilités en direct pour tous vos meublés, la réservation et le paiement en ligne par vos voyageurs, et des reçus et factures générés automatiquement.",
   },
 ];
 
 export function FaqSection() {
   const [openIndex, setOpenIndex] = useState<number | null>(0);
 
-  const toggle = (idx: number) => {
-    setOpenIndex(openIndex === idx ? null : idx);
-  };
-
   return (
-    <section id="faq" className="relative py-16 lg:py-24 bg-muted/20 border-t border-border/70">
-      <div className="mx-auto max-w-4xl px-4 sm:px-6 lg:px-8">
-        {/* Heading */}
-        <div className="text-center">
-          <motion.h2
-            initial={{ opacity: 0, y: 20 }}
-            whileInView={{ opacity: 1, y: 0 }}
-            viewport={{ once: true }}
-            transition={{ delay: 0.1 }}
-            className="mt-2 font-display text-3xl font-extrabold tracking-tight text-foreground sm:text-4xl"
-          >
+    <section id="faq" className="relative border-t border-border/70 bg-muted/25 py-20 lg:py-28">
+      <div className="mx-auto grid max-w-7xl items-start gap-10 px-4 sm:px-6 lg:grid-cols-[minmax(0,5fr)_minmax(0,7fr)] lg:gap-16 lg:px-8">
+        {/* Photo (gauche) */}
+        <motion.div
+          initial={{ opacity: 0, y: 20 }}
+          whileInView={{ opacity: 1, y: 0 }}
+          viewport={{ once: true }}
+          transition={{ duration: 0.6 }}
+          className="relative order-2 lg:sticky lg:top-28 lg:order-1"
+        >
+          <div className="relative aspect-[4/3] overflow-hidden rounded-[1.75rem] shadow-2xl shadow-primary/15 sm:aspect-[16/10] lg:aspect-[4/5]">
+            <Image
+              src="/images/landing/faq.jpg"
+              alt="Une cliente sourit en consultant son téléphone"
+              fill
+              sizes="(min-width: 1024px) 40vw, 100vw"
+              className="object-cover object-[50%_30%]"
+            />
+          </div>
+          {/* Liseré or, rappel du X du logo */}
+          <div aria-hidden="true" className="absolute -bottom-3 -right-3 -z-10 hidden size-40 rounded-[1.75rem] bg-secondary/70 lg:block" />
+        </motion.div>
+
+        {/* Questions (droite) */}
+        <div className="order-1 lg:order-2">
+          <p className="text-xs font-semibold uppercase tracking-widest text-primary">FAQ</p>
+          <h2 className="mt-3 font-display text-3xl font-bold tracking-tight text-foreground sm:text-4xl">
             Questions fréquentes
-          </motion.h2>
-          <motion.p
-            initial={{ opacity: 0, y: 20 }}
-            whileInView={{ opacity: 1, y: 0 }}
-            viewport={{ once: true }}
-            transition={{ delay: 0.2 }}
-            className="mt-2 text-sm text-muted-foreground"
-          >
+          </h2>
+          <p className="mt-3 text-base text-muted-foreground">
             Tout ce que vous devez savoir pour démarrer sereinement avec GiyaX.
-          </motion.p>
-        </div>
+          </p>
 
-        {/* Accordion List */}
-        <div className="mt-12 space-y-4">
-          {FAQS.map((faq, idx) => {
-            const isOpen = openIndex === idx;
-            return (
-              <motion.div
-                key={faq.question}
-                initial={{ opacity: 0, y: 15 }}
-                whileInView={{ opacity: 1, y: 0 }}
-                viewport={{ once: true }}
-                transition={{ duration: 0.4, delay: idx * 0.08 }}
-                className="overflow-hidden rounded-2xl border border-border/80 bg-card shadow-xs transition-colors hover:border-primary/40"
-              >
-                <button
-                  type="button"
-                  onClick={() => toggle(idx)}
-                  className="flex w-full items-center justify-between p-6 text-left"
-                >
-                  <span className="font-display text-base font-bold text-foreground sm:text-lg">
-                    {faq.question}
-                  </span>
-                  <div className={`flex size-8 shrink-0 items-center justify-center rounded-full bg-muted transition-transform duration-300 ${isOpen ? "rotate-180 bg-primary/10 text-primary" : "text-muted-foreground"}`}>
-                    <ChevronDown className="size-4" />
-                  </div>
-                </button>
-
-                <AnimatePresence initial={false}>
-                  {isOpen && (
-                    <motion.div
-                      initial={{ height: 0, opacity: 0 }}
-                      animate={{ height: "auto", opacity: 1 }}
-                      exit={{ height: 0, opacity: 0 }}
-                      transition={{ duration: 0.3 }}
-                    >
-                      <div className="px-6 pb-6 text-sm leading-relaxed text-muted-foreground border-t border-border/40 pt-4">
-                        {faq.answer}
-                      </div>
-                    </motion.div>
+          <div className="mt-8 space-y-3">
+            {FAQS.map((faq, idx) => {
+              const isOpen = openIndex === idx;
+              return (
+                <div
+                  key={faq.question}
+                  className={cn(
+                    "overflow-hidden rounded-2xl border bg-card transition-colors",
+                    isOpen ? "border-primary/40 shadow-md shadow-primary/5" : "border-border/80 hover:border-primary/30",
                   )}
-                </AnimatePresence>
-              </motion.div>
-            );
-          })}
+                >
+                  <h3>
+                    <button
+                      type="button"
+                      id={`faq-q-${idx}`}
+                      aria-expanded={isOpen}
+                      aria-controls={`faq-a-${idx}`}
+                      onClick={() => setOpenIndex(isOpen ? null : idx)}
+                      className="flex w-full items-center justify-between gap-4 p-5 text-left sm:p-6"
+                    >
+                      <span className="font-display text-base font-semibold text-foreground sm:text-lg">
+                        {faq.question}
+                      </span>
+                      <span
+                        className={cn(
+                          "flex size-8 shrink-0 items-center justify-center rounded-full transition-all duration-300",
+                          isOpen ? "rotate-180 bg-primary text-primary-foreground" : "bg-muted text-muted-foreground",
+                        )}
+                      >
+                        <ChevronDown className="size-4" />
+                      </span>
+                    </button>
+                  </h3>
+                  <AnimatePresence initial={false}>
+                    {isOpen && (
+                      <motion.div
+                        id={`faq-a-${idx}`}
+                        role="region"
+                        aria-labelledby={`faq-q-${idx}`}
+                        initial={{ height: 0, opacity: 0 }}
+                        animate={{ height: "auto", opacity: 1 }}
+                        exit={{ height: 0, opacity: 0 }}
+                        transition={{ duration: 0.28 }}
+                      >
+                        <p className="px-5 pb-5 text-sm leading-relaxed text-muted-foreground sm:px-6 sm:pb-6">
+                          {faq.answer}
+                        </p>
+                      </motion.div>
+                    )}
+                  </AnimatePresence>
+                </div>
+              );
+            })}
+          </div>
         </div>
       </div>
     </section>

@@ -33,6 +33,7 @@ import {
   X,
   Palette,
   Check,
+  Sparkles,
 } from "lucide-react";
 import {
   useShowcaseStore,
@@ -40,7 +41,7 @@ import {
   type TicketTier,
   type ShowcaseTheme,
 } from "@/stores/useShowcaseStore";
-import { SHOWCASE_LAYOUTS, SHOWCASE_PRESETS, type ShowcaseSection } from "@/lib/showcase-layouts";
+import { SHOWCASE_PRESETS, type ShowcaseSection } from "@/lib/showcase-layouts";
 import { Button } from "@/components/ui/button";
 import {
   Dialog,
@@ -51,6 +52,7 @@ import {
 } from "@/components/ui/dialog";
 import { toast } from "sonner";
 import { prepareImage } from "@/lib/image";
+import { ShowcaseAIGeneratorModal } from "./showcase-ai-generator-modal";
 
 interface ShowcaseCanvasProps {
   isEditorMode?: boolean;
@@ -71,12 +73,14 @@ const THEMES: { id: ShowcaseTheme; name: string; gradient: string }[] = [
 ];
 
 export function ShowcaseCanvas({ isEditorMode = false, liveEvents, onReserve }: ShowcaseCanvasProps) {
+  const [isAIGeneratorOpen, setIsAIGeneratorOpen] = useState(false);
   const {
     theme,
     layout,
     setTheme,
     fontFamily,
     deviceView,
+    visibleSections,
     orgName,
     orgTagline,
     orgLogoUrl,
@@ -112,10 +116,6 @@ export function ShowcaseCanvas({ isEditorMode = false, liveEvents, onReserve }: 
   const sectionOrder = (id: ShowcaseSection) => ({ order: preset.order.indexOf(id) + 1 });
   const heroLeft = preset.hero === "left" || preset.hero === "poster";
   const shownCount = preset.events === "posters" ? 7 : preset.events === "carousel" || preset.events === "agenda" ? 6 : 3;
-
-  // In-Page Event Search & Category Filter (Visible on main page)
-  const [homeEventSearch, setHomeEventSearch] = useState("");
-  const [homeCategoryFilter, setHomeCategoryFilter] = useState("Tous");
 
   // Full Catalog Modal State (Opened by 4th card or button)
   const [isCatalogOpen, setIsCatalogOpen] = useState(false);
@@ -238,16 +238,62 @@ export function ShowcaseCanvas({ isEditorMode = false, liveEvents, onReserve }: 
 
   const themeStyle = getThemeStyles();
 
+  // Device simulation state helpers
+  const isMobile = deviceView === "mobile";
+  const isTablet = deviceView === "tablet";
+  const isDesktop = deviceView === "desktop";
+
+  // Dynamic layout helper classes tied directly to deviceView simulator
+  const eventsContainerClass = isMobile
+    ? "flex overflow-x-auto snap-x snap-mandatory gap-4 pb-4 pt-1 -mx-2 px-2 [scrollbar-width:none] [&::-webkit-scrollbar]:hidden scroll-smooth"
+    : isTablet
+    ? "grid grid-cols-2 gap-4"
+    : "grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4";
+
+  const eventCardClass = isMobile
+    ? "w-[280px] shrink-0 snap-center"
+    : "w-full";
+
+  const statsGridClass = isMobile
+    ? "grid grid-cols-2 gap-2.5 pt-6 max-w-4xl mx-auto"
+    : isTablet
+    ? "grid grid-cols-2 sm:grid-cols-4 gap-3 pt-6 max-w-4xl mx-auto"
+    : "grid grid-cols-2 sm:grid-cols-4 gap-3 pt-8 max-w-4xl mx-auto";
+
+  const aboutGridClass = isMobile
+    ? "grid grid-cols-1 gap-6 items-center"
+    : isTablet
+    ? "grid grid-cols-1 gap-8 items-center"
+    : "grid grid-cols-1 md:grid-cols-2 gap-10 items-center";
+
+  const galleryGridClass = isMobile
+    ? "grid grid-cols-2 gap-2.5"
+    : isTablet
+    ? "grid grid-cols-2 sm:grid-cols-3 gap-3"
+    : "grid grid-cols-2 sm:grid-cols-3 gap-4";
+
+  const testimonialsGridClass = isMobile
+    ? "grid grid-cols-1 gap-3.5"
+    : isTablet
+    ? "grid grid-cols-2 gap-4"
+    : "grid grid-cols-1 md:grid-cols-3 gap-5";
+
+  const footerGridClass = isMobile
+    ? "grid grid-cols-1 gap-6"
+    : isTablet
+    ? "grid grid-cols-2 gap-6"
+    : "grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-8";
+
   // Container width simulator based on deviceView
   const getDeviceClass = () => {
     switch (deviceView) {
       case "mobile":
-        return "max-w-[400px] shadow-2xl rounded-3xl border border-zinc-800 overflow-hidden my-4";
+        return "max-w-[420px] w-full mx-auto shadow-2xl rounded-[2.5rem] border-[6px] border-zinc-800 bg-[#090b0e] overflow-hidden my-6 ring-1 ring-white/10";
       case "tablet":
-        return "max-w-[768px] shadow-2xl rounded-3xl border border-zinc-800 overflow-hidden my-4";
+        return "max-w-[780px] w-full mx-auto shadow-2xl rounded-3xl border-[6px] border-zinc-800 bg-[#090b0e] overflow-hidden my-6 ring-1 ring-white/10";
       case "desktop":
       default:
-        return "w-full rounded-3xl border border-white/10 overflow-hidden shadow-2xl";
+        return "w-full max-w-full rounded-2xl sm:rounded-3xl border border-white/10 bg-[#090b0e] overflow-hidden shadow-2xl";
     }
   };
 
@@ -285,18 +331,6 @@ export function ShowcaseCanvas({ isEditorMode = false, liveEvents, onReserve }: 
     }
   }
 
-  // Home filtered events based on visible search input & filter pills
-  const homeFilteredEvents = events.filter((evt) => {
-    const matchesCategory =
-      homeCategoryFilter === "Tous" || evt.category === homeCategoryFilter;
-    const matchesSearch =
-      homeEventSearch.trim() === "" ||
-      evt.title.toLowerCase().includes(homeEventSearch.toLowerCase()) ||
-      evt.location.toLowerCase().includes(homeEventSearch.toLowerCase()) ||
-      evt.description.toLowerCase().includes(homeEventSearch.toLowerCase());
-    return matchesCategory && matchesSearch;
-  });
-
   // Filtered Events in the Full Catalog Modal
   const catalogFilteredEvents = events.filter((evt) => {
     const matchesCategory =
@@ -319,6 +353,16 @@ export function ShowcaseCanvas({ isEditorMode = false, liveEvents, onReserve }: 
       style={{ fontFamily }}
       data-motion={preset.motion}
     >
+      {/* Mobile Device Notch Simulation */}
+      {isMobile && (
+        <div className="w-full bg-zinc-950 py-2 flex items-center justify-center border-b border-zinc-800">
+          <div className="h-4 w-28 rounded-full bg-black flex items-center justify-center gap-2 border border-zinc-800">
+            <span className="size-1.5 rounded-full bg-zinc-800" />
+            <span className="size-2 rounded-full bg-zinc-900 border border-zinc-700" />
+          </div>
+        </div>
+      )}
+
       {/* HIDDEN FILE INPUTS FOR DIRECT UPLOADS */}
       <input
         ref={logoInputRef}
@@ -390,57 +434,11 @@ export function ShowcaseCanvas({ isEditorMode = false, liveEvents, onReserve }: 
         className="hidden"
       />
 
-      {/* QUICK FLOATING PALETTE BAR IN EDITOR MODE */}
-      {isEditorMode && (
-        <div className="bg-zinc-950/95 border-b border-white/10 px-4 py-2 flex flex-wrap items-center justify-between gap-3 text-xs z-30">
-          <div className="flex items-center gap-2">
-            <span className="flex items-center gap-1 font-bold text-amber-400 bg-amber-400/10 px-2 py-0.5 rounded-full border border-amber-400/20 text-[11px]">
-              <Edit3 className="size-3" />
-              Mode Édition Directe
-            </span>
-            <span className="text-[11px] text-zinc-400 hidden sm:inline">
-              Cliquez directement sur n&apos;importe quel texte ou survolez une image pour la modifier.
-            </span>
-          </div>
-
-          {/* Variante de mise en page */}
-          <label className="flex items-center gap-1.5">
-            <span className="text-[11px] text-zinc-400 font-semibold">Disposition :</span>
-            <select
-              value={layout}
-              onChange={(e) => updateField("layout", e.target.value as typeof layout)}
-              className="rounded-lg bg-zinc-900 border border-white/20 px-2 py-1 text-[11px] text-white"
-              title={preset.hint}
-            >
-              {SHOWCASE_LAYOUTS.map((l) => (
-                <option key={l} value={l}>
-                  {SHOWCASE_PRESETS[l].label}
-                </option>
-              ))}
-            </select>
-          </label>
-
-          {/* Quick Theme Swatches */}
-          <div className="flex items-center gap-1.5">
-            <span className="text-[11px] text-zinc-400 font-semibold mr-1">Thème :</span>
-            {THEMES.map((t) => (
-              <button
-                key={t.id}
-                type="button"
-                onClick={() => setTheme(t.id)}
-                title={t.name}
-                className={`size-6 rounded-lg bg-gradient-to-br ${t.gradient} border transition-all flex items-center justify-center text-white ${
-                  theme === t.id
-                    ? "border-white ring-2 ring-white scale-110 shadow-md"
-                    : "border-white/20 opacity-75 hover:opacity-100"
-                }`}
-              >
-                {theme === t.id && <Check className="size-3 stroke-[3]" />}
-              </button>
-            ))}
-          </div>
-        </div>
-      )}
+      {/* MODAL GENERATEUR GiyaX AI */}
+      <ShowcaseAIGeneratorModal
+        open={isAIGeneratorOpen}
+        onOpenChange={setIsAIGeneratorOpen}
+      />
 
       {/* 1. STICKY TOP NAVIGATION OF THE ORGANIZATION */}
       <header className="sticky top-0 z-40 border-b border-white/10 bg-[#090b0e]/90 backdrop-blur-md px-4 py-3.5 sm:px-8">
@@ -465,8 +463,8 @@ export function ShowcaseCanvas({ isEditorMode = false, liveEvents, onReserve }: 
                 <span className="font-extrabold text-sm text-white">{orgName.charAt(0)}</span>
               )}
               {isEditorMode && (
-                <div className="absolute inset-0 bg-black/60 opacity-0 group-hover:opacity-100 flex items-center justify-center transition-opacity text-amber-400">
-                  <Camera className="size-4" />
+                <div className="absolute inset-0 bg-black/80 backdrop-blur-xs opacity-0 group-hover:opacity-100 flex items-center justify-center transition-opacity text-amber-400">
+                  <Camera className="size-5 text-amber-400 drop-shadow-md" />
                 </div>
               )}
             </div>
@@ -501,44 +499,46 @@ export function ShowcaseCanvas({ isEditorMode = false, liveEvents, onReserve }: 
             </div>
           </div>
 
-          {/* Nav Links */}
-          <nav className="hidden md:flex items-center gap-6 text-xs font-semibold text-white/80">
-            <button
-              type="button"
-              onClick={() => scrollToSection("events-section")}
-              className="hover:text-white transition-colors"
-            >
-              Événements
-            </button>
-            <button
-              type="button"
-              onClick={() => scrollToSection("about-section")}
-              className="hover:text-white transition-colors"
-            >
-              À Propos
-            </button>
-            <button
-              type="button"
-              onClick={() => scrollToSection("gallery-section")}
-              className="hover:text-white transition-colors"
-            >
-              Galerie
-            </button>
-            <button
-              type="button"
-              onClick={() => scrollToSection("testimonials-section")}
-              className="hover:text-white transition-colors"
-            >
-              Avis
-            </button>
-            <button
-              type="button"
-              onClick={() => scrollToSection("faq-section")}
-              className="hover:text-white transition-colors"
-            >
-              FAQ
-            </button>
-          </nav>
+          {/* Nav Links (Visible uniquement sur Bureau) */}
+          {isDesktop && (
+            <nav className="hidden md:flex items-center gap-6 text-xs font-semibold text-white/80">
+              <button
+                type="button"
+                onClick={() => scrollToSection("events-section")}
+                className="hover:text-white transition-colors"
+              >
+                Événements
+              </button>
+              <button
+                type="button"
+                onClick={() => scrollToSection("about-section")}
+                className="hover:text-white transition-colors"
+              >
+                À Propos
+              </button>
+              <button
+                type="button"
+                onClick={() => scrollToSection("gallery-section")}
+                className="hover:text-white transition-colors"
+              >
+                Galerie
+              </button>
+              <button
+                type="button"
+                onClick={() => scrollToSection("testimonials-section")}
+                className="hover:text-white transition-colors"
+              >
+                Avis
+              </button>
+              <button
+                type="button"
+                onClick={() => scrollToSection("faq-section")}
+                className="hover:text-white transition-colors"
+              >
+                FAQ
+              </button>
+            </nav>
+          )}
 
           {/* Top Action */}
           <div className="flex items-center gap-2">
@@ -555,704 +555,682 @@ export function ShowcaseCanvas({ isEditorMode = false, liveEvents, onReserve }: 
       </header>
 
       {/* 2. HERO SECTION OF THE ORGANIZATION (NO ETIQUETTES / BADGES) */}
-      <section
-        className={`relative overflow-hidden px-4 sm:px-8 group ${preset.hero === "compact" ? "pt-8 pb-8" : "pt-12 pb-16"} ${preset.hero === "fullbleed" ? "min-h-[78svh] flex items-center" : ""}`}
-      >
-        {/* Ambient Glows */}
-        <div
-          className={`absolute -top-24 left-1/2 -translate-x-1/2 size-[600px] rounded-full bg-gradient-to-b ${themeStyle.glow} blur-[120px] pointer-events-none opacity-60`}
-        />
-        <div
-          className={`absolute inset-0 bg-cover bg-center pointer-events-none transition-all ${preset.hero === "fullbleed" ? "opacity-55 stay-kenburns" : "opacity-15 mix-blend-luminosity"}`}
-          style={{ backgroundImage: `url(${orgCoverUrl})` }}
-        />
-        {preset.hero === "fullbleed" && <div className="absolute inset-0 bg-gradient-to-t from-[#090b0e] via-black/30 to-black/40 pointer-events-none" />}
+      {visibleSections.hero && (
+        <section
+          className={`relative overflow-hidden px-4 sm:px-8 group ${preset.hero === "compact" ? "pt-8 pb-8" : "pt-12 pb-16"} ${preset.hero === "fullbleed" ? "min-h-[78svh] flex items-center" : ""}`}
+        >
+          {/* Ambient Glows */}
+          <div
+            className={`absolute -top-24 left-1/2 -translate-x-1/2 size-[600px] rounded-full bg-gradient-to-b ${themeStyle.glow} blur-[120px] pointer-events-none opacity-60`}
+          />
+          <div
+            className={`absolute inset-0 bg-cover bg-center pointer-events-none transition-all ${preset.hero === "fullbleed" ? "opacity-55 stay-kenburns" : "opacity-15 mix-blend-luminosity"}`}
+            style={{ backgroundImage: `url(${orgCoverUrl})` }}
+          />
+          {preset.hero === "fullbleed" && <div className="absolute inset-0 bg-gradient-to-t from-[#090b0e] via-black/30 to-black/40 pointer-events-none" />}
 
-        {/* Hero Cover Upload Trigger (Visible in Editor Mode) */}
-        {isEditorMode && (
-          <div className="absolute top-4 right-4 z-20">
-            <Button
-              type="button"
-              size="sm"
-              variant="secondary"
-              onClick={() => heroCoverInputRef.current?.click()}
-              className="rounded-xl text-xs font-bold bg-black/70 hover:bg-black text-white border border-white/20 gap-1.5 backdrop-blur-md shadow-lg"
-            >
-              <Camera className="size-3.5 text-amber-400" />
-              <span>Changer la Couverture Hero</span>
-            </Button>
-          </div>
-        )}
-
-        <div className={`relative mx-auto w-full ${preset.hero === "poster" ? "max-w-6xl grid gap-8 md:grid-cols-[1.1fr_0.9fr] items-center" : ""}`}>
-        <div className={`relative space-y-6 ${heroLeft ? "max-w-3xl text-left [&_h1]:mx-0 [&_p]:mx-0" : "mx-auto max-w-5xl text-center"}`}>
-          {/* Main Headline */}
-          {isEditorMode ? (
-            <textarea
-              value={heroHeadline}
-              onChange={(e) => updateField("heroHeadline", e.target.value)}
-              rows={2}
-              className="w-full font-display text-3xl sm:text-5xl md:text-6xl font-extrabold tracking-tight text-white leading-[1.1] max-w-4xl mx-auto bg-transparent border border-dashed border-white/20 hover:border-amber-400 focus:outline-none focus:border-amber-400 text-center rounded-2xl p-2 resize-none"
-            />
-          ) : (
-            <h1 className={`stay-intro font-display font-extrabold tracking-tight text-white leading-[1.1] max-w-4xl mx-auto ${preset.hero === "compact" ? "text-3xl sm:text-4xl" : "text-3xl sm:text-5xl md:text-6xl"}`}>
-              {heroHeadline}
-            </h1>
+          {/* Hero Cover Upload Trigger (Visible in Editor Mode) */}
+          {isEditorMode && (
+            <div className="absolute top-4 right-4 z-20">
+              <Button
+                type="button"
+                size="sm"
+                variant="secondary"
+                onClick={() => heroCoverInputRef.current?.click()}
+                className="rounded-xl text-xs font-bold bg-black/70 hover:bg-black text-white border border-white/20 gap-1.5 backdrop-blur-md shadow-lg"
+              >
+                <Camera className="size-3.5 text-amber-400" />
+                <span>Changer la Couverture Hero</span>
+              </Button>
+            </div>
           )}
 
-          {/* Subheadline */}
-          {isEditorMode ? (
-            <textarea
-              value={heroSubheadline}
-              onChange={(e) => updateField("heroSubheadline", e.target.value)}
-              rows={2}
-              className="w-full mx-auto max-w-2xl text-xs sm:text-base text-zinc-300 leading-relaxed bg-transparent border border-dashed border-white/20 hover:border-amber-400 focus:outline-none focus:border-amber-400 text-center rounded-xl p-2 resize-none"
-            />
-          ) : (
-            <p className="mx-auto max-w-2xl text-xs sm:text-base text-zinc-300 leading-relaxed">
-              {heroSubheadline}
-            </p>
-          )}
-
-          {/* Action CTAs (Clean without emojis) */}
-          <div className={`stay-intro flex flex-wrap items-center gap-3 pt-2 ${heroLeft ? "justify-start" : "justify-center"}`} style={{ "--i": 2 } as React.CSSProperties}>
-            <Button
-              size="lg"
-              onClick={() => setIsCatalogOpen(true)}
-              className={`rounded-2xl text-sm font-bold px-7 py-6 gap-2 shadow-xl ${themeStyle.primary}`}
-            >
-              <span>{heroCtaText.replace(/[\u{1F300}-\u{1F9FF}]/gu, "").trim() || "Explorer la Programmation"}</span>
-              <ArrowRight className="size-4" />
-            </Button>
-          </div>
-
-          {/* Key Stats Strip (Directly Editable in Editor Mode) */}
-          <div className={`grid grid-cols-2 sm:grid-cols-4 gap-3 pt-8 max-w-4xl mx-auto ${preset.stats ? "" : "hidden"}`}>
-            <div className="rounded-2xl border border-white/10 bg-white/5 p-4 backdrop-blur-md text-center space-y-1">
-              {isEditorMode ? (
-                <input
-                  type="text"
-                  value={statParticipants}
-                  onChange={(e) => updateField("statParticipants", e.target.value)}
-                  className={`w-full font-display text-2xl font-black ${themeStyle.primaryText} bg-transparent text-center focus:outline-none border-b border-dashed border-white/20`}
-                />
-              ) : (
-                <p className={`font-display text-2xl font-black ${themeStyle.primaryText}`}>
-                  {statParticipants}
-                </p>
-              )}
-              <p className="text-[11px] text-zinc-400 font-medium">Participants Accueillis</p>
-            </div>
-
-            <div className="rounded-2xl border border-white/10 bg-white/5 p-4 backdrop-blur-md text-center space-y-1">
-              {isEditorMode ? (
-                <input
-                  type="text"
-                  value={statEvents}
-                  onChange={(e) => updateField("statEvents", e.target.value)}
-                  className={`w-full font-display text-2xl font-black ${themeStyle.primaryText} bg-transparent text-center focus:outline-none border-b border-dashed border-white/20`}
-                />
-              ) : (
-                <p className={`font-display text-2xl font-black ${themeStyle.primaryText}`}>
-                  {statEvents}
-                </p>
-              )}
-              <p className="text-[11px] text-zinc-400 font-medium">Éditions & Événements</p>
-            </div>
-
-            <div className="rounded-2xl border border-white/10 bg-white/5 p-4 backdrop-blur-md text-center space-y-1">
-              {isEditorMode ? (
-                <input
-                  type="text"
-                  value={statSatisfaction}
-                  onChange={(e) => updateField("statSatisfaction", e.target.value)}
-                  className={`w-full font-display text-2xl font-black ${themeStyle.primaryText} bg-transparent text-center focus:outline-none border-b border-dashed border-white/20`}
-                />
-              ) : (
-                <p className={`font-display text-2xl font-black ${themeStyle.primaryText}`}>
-                  {statSatisfaction}
-                </p>
-              )}
-              <p className="text-[11px] text-zinc-400 font-medium">Avis & Satisfaction</p>
-            </div>
-
-            <div className="rounded-2xl border border-white/10 bg-white/5 p-4 backdrop-blur-md text-center space-y-1">
-              {isEditorMode ? (
-                <input
-                  type="text"
-                  value={statSecurity}
-                  onChange={(e) => updateField("statSecurity", e.target.value)}
-                  className={`w-full font-display text-2xl font-black ${themeStyle.primaryText} bg-transparent text-center focus:outline-none border-b border-dashed border-white/20`}
-                />
-              ) : (
-                <p className={`font-display text-2xl font-black ${themeStyle.primaryText}`}>
-                  {statSecurity}
-                </p>
-              )}
-              <p className="text-[11px] text-zinc-400 font-medium">Billets QR Anti-Fraude</p>
-            </div>
-          </div>
-        </div>
-        {preset.hero === "poster" && events[0] && (
-          <button
-            type="button"
-            onClick={() => handleOpenEventDetails(events[0])}
-            className="stay-intro relative aspect-[3/4] w-full overflow-hidden rounded-[2rem] border border-white/15 shadow-2xl text-left"
-            style={{ "--i": 2 } as React.CSSProperties}
-          >
-            {/* eslint-disable-next-line @next/next/no-img-element */}
-            <img src={events[0].coverImageUrl} alt={events[0].title} className="size-full object-cover" />
-            <span className="absolute inset-x-0 bottom-0 bg-gradient-to-t from-black via-black/60 to-transparent p-5">
-              <span className="block text-[11px] font-bold uppercase tracking-wider text-white/70">Prochain événement</span>
-              <span className="mt-1 block font-display text-xl font-extrabold text-white">{events[0].title}</span>
-              <span className="mt-1 block text-xs text-white/80">{events[0].date} · {events[0].location}</span>
-            </span>
-          </button>
-        )}
-        </div>
-      </section>
-
-      {/* 3. SECTION ÉVÉNEMENTS (AVEC BARRE DE RECHERCHE VISIBLE DIRECTEMENT SUR LA PAGE) */}
-      <section id="events-section" style={sectionOrder("events")} className="py-16 px-4 sm:px-8 border-t border-white/10 bg-[#06080a]">
-        <div className="mx-auto max-w-6xl space-y-7">
-          {/* Section Header */}
-          <div className="flex flex-col sm:flex-row sm:items-end justify-between gap-4">
-            <div>
-              <div className="inline-flex items-center gap-1.5 text-xs font-bold uppercase tracking-wider text-emerald-400 mb-1">
-                <Ticket className="size-3.5" />
-                <span>Programmation en Vedette</span>
-              </div>
-              <h2 className="font-display text-2xl sm:text-4xl font-extrabold text-white tracking-tight">
-                Nos Grands Événements à la Une
-              </h2>
-            </div>
-
-            <Button
-              onClick={() => setIsCatalogOpen(true)}
-              variant="outline"
-              size="sm"
-              className="rounded-xl border-white/20 bg-white/5 text-white hover:bg-white/10 hover:text-white text-xs font-bold gap-1.5 self-start sm:self-auto"
-            >
-              <Search className="size-3.5 text-emerald-400" />
-              <span>Ouvrir le Catalogue Complet ({events.length})</span>
-            </Button>
-          </div>
-
-          {/* Direct Search Bar & Category Filter directly visible on this section */}
-          <div className="flex flex-col md:flex-row gap-3 items-center">
-            <div className="relative flex-1 w-full">
-              <Search className="absolute left-3.5 top-1/2 -translate-y-1/2 size-4 text-zinc-400" />
-              <input
-                type="text"
-                value={homeEventSearch}
-                onChange={(e) => setHomeEventSearch(e.target.value)}
-                placeholder="Rechercher un événement (ex: Festival, Gala, Masterclass, Libreville)..."
-                className="w-full h-11 rounded-2xl bg-white/5 border border-white/15 pl-10 pr-4 text-xs sm:text-sm text-white focus:outline-none focus:border-emerald-500 transition-colors"
+          <div className={`relative mx-auto w-full ${preset.hero === "poster" ? "max-w-6xl grid gap-8 md:grid-cols-[1.1fr_0.9fr] items-center" : ""}`}>
+          <div className={`relative space-y-6 ${heroLeft ? "max-w-3xl text-left [&_h1]:mx-0 [&_p]:mx-0" : "mx-auto max-w-5xl text-center"}`}>
+            {/* Main Headline */}
+            {isEditorMode ? (
+              <textarea
+                value={heroHeadline}
+                onChange={(e) => updateField("heroHeadline", e.target.value)}
+                rows={2}
+                className="w-full font-display text-2xl sm:text-4xl md:text-5xl lg:text-6xl font-extrabold tracking-tight text-white leading-tight max-w-4xl mx-auto bg-transparent border border-dashed border-white/20 hover:border-amber-400 focus:outline-none focus:border-amber-400 text-center rounded-2xl p-2 resize-none"
               />
-              {homeEventSearch && (
+            ) : (
+              <h1 className={`stay-intro font-display font-extrabold tracking-tight text-white leading-tight max-w-4xl mx-auto break-words ${preset.hero === "compact" ? "text-2xl sm:text-4xl" : "text-2xl sm:text-4xl md:text-5xl lg:text-6xl"}`}>
+                {heroHeadline}
+              </h1>
+            )}
+
+            {/* Subheadline */}
+            {isEditorMode ? (
+              <textarea
+                value={heroSubheadline}
+                onChange={(e) => updateField("heroSubheadline", e.target.value)}
+                rows={2}
+                className="w-full mx-auto max-w-2xl text-xs sm:text-sm md:text-base text-zinc-300 leading-relaxed bg-transparent border border-dashed border-white/20 hover:border-amber-400 focus:outline-none focus:border-amber-400 text-center rounded-xl p-2 resize-none"
+              />
+            ) : (
+              <p className="mx-auto max-w-2xl text-xs sm:text-sm md:text-base text-zinc-300 leading-relaxed">
+                {heroSubheadline}
+              </p>
+            )}
+
+            {/* Action CTAs (Clean without emojis) */}
+            <div className={`stay-intro flex flex-wrap items-center gap-3 pt-2 ${heroLeft ? "justify-start" : "justify-center"}`} style={{ "--i": 2 } as React.CSSProperties}>
+              <Button
+                size="lg"
+                onClick={() => setIsCatalogOpen(true)}
+                className={`rounded-2xl text-sm font-bold px-7 py-6 gap-2 shadow-xl ${themeStyle.primary}`}
+              >
+                <span>{heroCtaText.replace(/[\u{1F300}-\u{1F9FF}]/gu, "").trim() || "Explorer la Programmation"}</span>
+                <ArrowRight className="size-4" />
+              </Button>
+            </div>
+
+            {/* Key Stats Strip (Directly Editable in Editor Mode) */}
+            {visibleSections.stats && preset.stats && (
+              <div className={statsGridClass}>
+                <div className="rounded-2xl border border-white/10 bg-white/5 p-4 backdrop-blur-md text-center space-y-1">
+                  {isEditorMode ? (
+                    <input
+                      type="text"
+                      value={statParticipants}
+                      onChange={(e) => updateField("statParticipants", e.target.value)}
+                      className={`w-full font-display text-2xl font-black ${themeStyle.primaryText} bg-transparent text-center focus:outline-none border-b border-dashed border-white/20`}
+                    />
+                  ) : (
+                    <p className={`font-display text-2xl font-black ${themeStyle.primaryText}`}>
+                      {statParticipants}
+                    </p>
+                  )}
+                  <p className="text-[11px] text-zinc-400 font-medium">Participants Accueillis</p>
+                </div>
+
+                <div className="rounded-2xl border border-white/10 bg-white/5 p-4 backdrop-blur-md text-center space-y-1">
+                  {isEditorMode ? (
+                    <input
+                      type="text"
+                      value={statEvents}
+                      onChange={(e) => updateField("statEvents", e.target.value)}
+                      className={`w-full font-display text-2xl font-black ${themeStyle.primaryText} bg-transparent text-center focus:outline-none border-b border-dashed border-white/20`}
+                    />
+                  ) : (
+                    <p className={`font-display text-2xl font-black ${themeStyle.primaryText}`}>
+                      {statEvents}
+                    </p>
+                  )}
+                  <p className="text-[11px] text-zinc-400 font-medium">Éditions & Événements</p>
+                </div>
+
+                <div className="rounded-2xl border border-white/10 bg-white/5 p-4 backdrop-blur-md text-center space-y-1">
+                  {isEditorMode ? (
+                    <input
+                      type="text"
+                      value={statSatisfaction}
+                      onChange={(e) => updateField("statSatisfaction", e.target.value)}
+                      className={`w-full font-display text-2xl font-black ${themeStyle.primaryText} bg-transparent text-center focus:outline-none border-b border-dashed border-white/20`}
+                    />
+                  ) : (
+                    <p className={`font-display text-2xl font-black ${themeStyle.primaryText}`}>
+                      {statSatisfaction}
+                    </p>
+                  )}
+                  <p className="text-[11px] text-zinc-400 font-medium">Avis & Satisfaction</p>
+                </div>
+
+                <div className="rounded-2xl border border-white/10 bg-white/5 p-4 backdrop-blur-md text-center space-y-1">
+                  {isEditorMode ? (
+                    <input
+                      type="text"
+                      value={statSecurity}
+                      onChange={(e) => updateField("statSecurity", e.target.value)}
+                      className={`w-full font-display text-2xl font-black ${themeStyle.primaryText} bg-transparent text-center focus:outline-none border-b border-dashed border-white/20`}
+                    />
+                  ) : (
+                    <p className={`font-display text-2xl font-black ${themeStyle.primaryText}`}>
+                      {statSecurity}
+                    </p>
+                  )}
+                  <p className="text-[11px] text-zinc-400 font-medium">Billets QR Anti-Fraude</p>
+                </div>
+              </div>
+            )}
+          </div>
+          {preset.hero === "poster" && events[0] && (
+            <button
+              type="button"
+              onClick={() => handleOpenEventDetails(events[0])}
+              className="stay-intro relative aspect-[3/4] w-full overflow-hidden rounded-[2rem] border border-white/15 shadow-2xl text-left"
+              style={{ "--i": 2 } as React.CSSProperties}
+            >
+              {/* eslint-disable-next-line @next/next/no-img-element */}
+              <img src={events[0].coverImageUrl} alt={events[0].title} className="size-full object-cover" />
+              <span className="absolute inset-x-0 bottom-0 bg-gradient-to-t from-black via-black/60 to-transparent p-5">
+                <span className="block text-[11px] font-bold uppercase tracking-wider text-white/70">Prochain événement</span>
+                <span className="mt-1 block font-display text-xl font-extrabold text-white">{events[0].title}</span>
+                <span className="mt-1 block text-xs text-white/80">{events[0].date} · {events[0].location}</span>
+              </span>
+            </button>
+          )}
+          </div>
+        </section>
+      )}
+
+      {/* 3. SECTION ÉVÉNEMENTS */}
+      {visibleSections.events && (
+        <section id="events-section" style={sectionOrder("events")} className="py-16 px-4 sm:px-8 border-t border-white/10 bg-[#06080a]">
+          <div className="mx-auto max-w-6xl space-y-7">
+            {/* Section Header */}
+            <div className="flex flex-col sm:flex-row sm:items-end justify-between gap-4">
+              <div>
+                <div className="inline-flex items-center gap-1.5 text-xs font-bold uppercase tracking-wider text-emerald-400 mb-1">
+                  <Ticket className="size-3.5" />
+                  <span>Programmation en Vedette</span>
+                </div>
+                <h2 className="font-display text-2xl sm:text-4xl font-extrabold text-white tracking-tight">
+                  Nos Grands Événements à la Une
+                </h2>
+              </div>
+
+              {/* Indicateur de défilement horizontal sur mobile */}
+              {isMobile && (
+                <div className="flex items-center gap-1 text-[11px] font-semibold text-emerald-400">
+                  <span>Glisser horizontalement</span>
+                  <ArrowRight className="size-3 animate-pulse" />
+                </div>
+              )}
+            </div>
+
+            {/* Variante « agenda » : liste chronologique compacte */}
+            {preset.events === "agenda" && (
+              <ol className="divide-y divide-white/10 rounded-3xl border border-white/10 bg-white/[0.03]">
+                {events.slice(0, shownCount).map((evt, i) => (
+                  <li key={evt.id} className="stay-reveal flex flex-wrap items-center gap-4 p-4 sm:flex-nowrap" data-shown="true" style={{ "--i": i } as React.CSSProperties}>
+                    <div className={`flex size-16 shrink-0 flex-col items-center justify-center rounded-2xl border border-white/15 ${themeStyle.primaryText}`}>
+                      <Calendar className="size-4" />
+                      <span className="mt-1 text-[10px] font-bold text-white/80">{evt.date.split(" ").slice(0, 2).join(" ")}</span>
+                    </div>
+                    <div className="min-w-0 flex-1">
+                      <p className="text-[11px] font-bold uppercase tracking-wider text-white/60">{evt.category}</p>
+                      <h3 className="truncate font-display text-lg font-extrabold text-white">{evt.title}</h3>
+                      <p className="truncate text-xs text-zinc-400">{evt.date} · {evt.location}</p>
+                    </div>
+                    <span className={`font-mono text-xs font-black ${themeStyle.primaryText}`}>Dès {evt.startingPrice.toLocaleString("fr-FR")} FCFA</span>
+                    <Button onClick={() => handleOpenEventDetails(evt)} className={`rounded-xl text-xs font-bold gap-1.5 ${themeStyle.primary}`}>
+                      <Ticket className="size-3.5" /> Billets
+                    </Button>
+                  </li>
+                ))}
+                {events.length === 0 && <li className="p-6 text-center text-sm text-zinc-400">Aucun événement pour le moment.</li>}
+              </ol>
+            )}
+
+            {/* Cards Row/Grid: Linear Horizontal Scroll on Mobile, 2 cols on Tablet, 4 cols on Desktop
+                (ou carrousel / mise en avant selon la variante de mise en page) */}
+            <div
+              className={
+                preset.events === "agenda"
+                  ? "hidden"
+                  : preset.events === "carousel" && !isMobile
+                    ? "-mx-4 flex snap-x snap-mandatory gap-4 overflow-x-auto px-4 pb-3 [&>*]:w-[280px] [&>*]:shrink-0 [&>*]:snap-start"
+                    : preset.events === "featured" && isDesktop
+                      ? "grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 [&>*:first-child]:sm:col-span-2 [&>*:first-child]:lg:row-span-2"
+                      : eventsContainerClass
+              }
+            >
+              {/* PREMIERS ÉVÉNEMENTS */}
+              {events.slice(0, shownCount).map((evt, i) => (
+                <div
+                  key={evt.id}
+                  className={`group rounded-3xl border border-white/10 bg-white/[0.03] hover:bg-white/[0.06] hover:border-white/20 transition-all duration-300 overflow-hidden flex flex-col justify-between shadow-xl relative stay-lift ${eventCardClass}`}
+                >
+                  {/* Event Image Banner */}
+                  <div
+                    className={`relative w-full overflow-hidden bg-zinc-900 ${
+                      preset.events === "posters" ? "h-72" : preset.events === "featured" && i === 0 ? "h-44 lg:h-80" : "h-44"
+                    }`}
+                  >
+                    {/* eslint-disable-next-line @next/next/no-img-element */}
+                    <img
+                      src={evt.coverImageUrl}
+                      alt={evt.title}
+                      className="h-full w-full object-cover group-hover:scale-105 transition-transform duration-500"
+                    />
+                    <div className="absolute inset-0 bg-gradient-to-t from-black via-black/40 to-transparent" />
+
+                    {/* Direct Poster Upload Button in Editor Mode */}
+                    {isEditorMode && (
+                      <button
+                        type="button"
+                        onClick={() => {
+                          setTargetEventCoverId(evt.id);
+                          eventCoverInputRef.current?.click();
+                        }}
+                        className="absolute top-2.5 right-2.5 z-10 px-2.5 py-1.5 rounded-xl bg-black/90 hover:bg-black text-amber-300 hover:text-amber-200 border border-amber-500/40 text-xs font-bold flex items-center gap-1.5 backdrop-blur-md opacity-0 group-hover:opacity-100 transition-opacity shadow-lg shadow-black/60"
+                        title="Changer l'affiche"
+                      >
+                        <Camera className="size-3.5 text-amber-400" />
+                        <span>Modifier</span>
+                      </button>
+                    )}
+
+                    {/* Badges on Banner */}
+                    <div className="absolute top-2.5 left-2.5 flex flex-wrap gap-1.5">
+                      <span className="rounded-full bg-black/70 backdrop-blur-md border border-white/20 px-2 py-0.5 text-[10px] font-bold text-white">
+                        {evt.category}
+                      </span>
+                    </div>
+
+                    {/* Starting Price Tag */}
+                    <div className="absolute bottom-2.5 right-2.5 rounded-lg bg-black/80 backdrop-blur-md border border-white/20 px-2 py-0.5">
+                      <span className={`font-mono font-black text-xs ${themeStyle.primaryText}`}>
+                        Dès {evt.startingPrice.toLocaleString("fr-FR")} FCFA
+                      </span>
+                    </div>
+                  </div>
+
+                  {/* Event Body Info */}
+                  <div className="p-4 space-y-3 flex-1 flex flex-col justify-between">
+                    <div className="space-y-2">
+                      {isEditorMode ? (
+                        <input
+                          type="text"
+                          value={evt.title}
+                          onChange={(e) => updateEvent(evt.id, { title: e.target.value })}
+                          className="w-full font-display font-extrabold text-sm text-white bg-transparent border-b border-dashed border-white/20 hover:border-amber-400 focus:outline-none focus:border-amber-400"
+                          title="Modifier le titre"
+                        />
+                      ) : (
+                        <h3 className="font-display font-extrabold text-sm text-white group-hover:text-amber-400 transition-colors line-clamp-1" title={evt.title}>
+                          {evt.title}
+                        </h3>
+                      )}
+
+                      <p className="text-[11px] text-zinc-400 line-clamp-2 leading-relaxed">
+                        {evt.description}
+                      </p>
+
+                      <div className="space-y-1 pt-1 text-[11px] text-zinc-300">
+                        <div className="flex items-center gap-1.5">
+                          <Calendar className="size-3 text-emerald-400 shrink-0" />
+                          <span className="truncate">{evt.date}</span>
+                        </div>
+                        <div className="flex items-center gap-1.5">
+                          <MapPin className="size-3 text-rose-400 shrink-0" />
+                          <span className="truncate">{evt.location}</span>
+                        </div>
+                      </div>
+                    </div>
+
+                    {/* Action Button */}
+                    <div className="pt-2 border-t border-white/10">
+                      <Button
+                        onClick={() => handleOpenEventDetails(evt)}
+                        className={`w-full rounded-xl text-xs font-bold py-2 gap-1.5 shadow-md ${themeStyle.primary}`}
+                      >
+                        <Ticket className="size-3.5" />
+                        <span>Réserver</span>
+                        <ChevronRight className="size-3.5" />
+                      </Button>
+                    </div>
+                  </div>
+                </div>
+              ))}
+
+              {/* 4TH CARD: INTERACTIVE "VOIR TOUT LE CATALOGUE" PORTAL CARD */}
+              <div
+                onClick={() => setIsCatalogOpen(true)}
+                className={`group rounded-3xl border-2 border-dashed border-white/20 hover:border-emerald-500 bg-gradient-to-br from-emerald-950/30 via-white/[0.02] to-teal-950/30 p-5 flex flex-col justify-between cursor-pointer transition-all duration-300 hover:scale-[1.01] shadow-2xl relative overflow-hidden min-h-[340px] ${eventCardClass}`}
+              >
+                <div className="space-y-3">
+                  <div className="flex items-center justify-between">
+                    <div className="flex size-10 items-center justify-center rounded-xl bg-emerald-500/20 text-emerald-400 border border-emerald-500/30 group-hover:scale-110 transition-transform">
+                      <Search className="size-5" />
+                    </div>
+                    <span className="rounded-full bg-emerald-500/15 border border-emerald-500/30 px-2.5 py-0.5 text-[10px] font-bold text-emerald-400">
+                      +{events.length - shownCount > 0 ? events.length - shownCount : "Tous"} Événements
+                    </span>
+                  </div>
+
+                  <div className="space-y-1.5">
+                    <h3 className="font-display font-extrabold text-lg text-white group-hover:text-emerald-400 transition-colors leading-tight">
+                      Voir Tout le Catalogue
+                    </h3>
+                    <p className="text-[11px] text-zinc-400 leading-relaxed">
+                      Accédez à la programmation complète, utilisez la recherche par mot-clé et réservez vos billets en ligne.
+                    </p>
+                  </div>
+
+                  <div className="space-y-1 pt-1 text-[10px] text-zinc-300">
+                    <div className="flex items-center gap-1.5">
+                      <CheckCircle2 className="size-3 text-emerald-400" />
+                      <span>Moteur de recherche direct</span>
+                    </div>
+                    <div className="flex items-center gap-1.5">
+                      <CheckCircle2 className="size-3 text-emerald-400" />
+                      <span>Filtres par catégorie & date</span>
+                    </div>
+                    <div className="flex items-center gap-1.5">
+                      <CheckCircle2 className="size-3 text-emerald-400" />
+                      <span>Paiement Airtel & Moov Money</span>
+                    </div>
+                  </div>
+                </div>
+
+                <div className="pt-4 border-t border-white/10 flex items-center justify-between">
+                  <span className="font-bold text-xs text-emerald-400 group-hover:underline">
+                    Ouvrir le catalogue
+                  </span>
+                  <div className="flex size-8 items-center justify-center rounded-xl bg-emerald-500 text-black group-hover:translate-x-1 transition-transform">
+                    <ArrowRight className="size-4" />
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </section>
+      )}
+
+      {/* 4. SECTION À PROPOS DE L'ORGANISATION & NOTRE VISION */}
+      {visibleSections.about && (
+        <section id="about-section" style={sectionOrder("about")} className="py-16 px-4 sm:px-8 border-t border-white/10 bg-[#090b0e]">
+          <div className={`mx-auto max-w-5xl ${aboutGridClass}`}>
+            <div className="space-y-5">
+              <div className="inline-flex items-center gap-1.5 text-xs font-bold uppercase tracking-wider text-amber-400">
+                <Award className="size-3.5" />
+                <span>Savoir-Faire & Vision</span>
+              </div>
+
+              {isEditorMode ? (
+                <input
+                  type="text"
+                  value={aboutTitle}
+                  onChange={(e) => updateField("aboutTitle", e.target.value)}
+                  className="w-full font-display text-2xl sm:text-4xl font-extrabold text-white tracking-tight leading-tight bg-transparent border-b border-dashed border-white/20 hover:border-amber-400 focus:outline-none"
+                />
+              ) : (
+                <h2 className="font-display text-2xl sm:text-4xl font-extrabold text-white tracking-tight leading-tight">
+                  {aboutTitle}
+                </h2>
+              )}
+
+              {isEditorMode ? (
+                <textarea
+                  value={aboutText}
+                  onChange={(e) => updateField("aboutText", e.target.value)}
+                  rows={5}
+                  className="w-full text-xs sm:text-sm text-zinc-300 leading-relaxed bg-transparent border border-dashed border-white/20 hover:border-amber-400 focus:outline-none rounded-xl p-2 resize-none"
+                />
+              ) : (
+                <p className="text-xs sm:text-sm text-zinc-300 leading-relaxed">
+                  {aboutText}
+                </p>
+              )}
+
+              <div className="space-y-3 pt-2">
+                <div className="flex items-start gap-3">
+                  <div className="flex size-6 shrink-0 items-center justify-center rounded-lg bg-emerald-500/20 text-emerald-400 mt-0.5">
+                    <CheckCircle2 className="size-4" />
+                  </div>
+                  <div>
+                    <h4 className="text-xs font-bold text-white">Scénographie & Régie Haute Définition</h4>
+                    <p className="text-[11px] text-zinc-400">Équipements son et lumière de niveau festival international.</p>
+                  </div>
+                </div>
+
+                <div className="flex items-start gap-3">
+                  <div className="flex size-6 shrink-0 items-center justify-center rounded-lg bg-emerald-500/20 text-emerald-400 mt-0.5">
+                    <CheckCircle2 className="size-4" />
+                  </div>
+                  <div>
+                    <h4 className="text-xs font-bold text-white">Billetterie & Paiement Mobile Money Instantané</h4>
+                    <p className="text-[11px] text-zinc-400">Achat direct par Airtel Money et Moov Money sans intermédiaire.</p>
+                  </div>
+                </div>
+
+                <div className="flex items-start gap-3">
+                  <div className="flex size-6 shrink-0 items-center justify-center rounded-lg bg-emerald-500/20 text-emerald-400 mt-0.5">
+                    <CheckCircle2 className="size-4" />
+                  </div>
+                  <div>
+                    <h4 className="text-xs font-bold text-white">Contrôle d&apos;Accès & Attestations Certifiées</h4>
+                    <p className="text-[11px] text-zinc-400">QR codes infalsifiables et diplômes numériques délivrés après présence.</p>
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            <div className="group relative rounded-3xl border border-white/10 bg-white/5 p-2 shadow-2xl overflow-hidden">
+              {/* eslint-disable-next-line @next/next/no-img-element */}
+              <img
+                src={orgCoverUrl}
+                alt={orgName}
+                className="rounded-2xl w-full h-80 object-cover"
+              />
+              {isEditorMode && (
                 <button
                   type="button"
-                  onClick={() => setHomeEventSearch("")}
-                  className="absolute right-3.5 top-1/2 -translate-y-1/2 text-zinc-400 hover:text-white"
+                  onClick={() => aboutImageInputRef.current?.click()}
+                  className="absolute inset-0 bg-black/70 backdrop-blur-xs opacity-0 group-hover:opacity-100 flex items-center justify-center gap-2 text-white font-extrabold text-xs transition-opacity"
                 >
-                  <X className="size-4" />
+                  <div className="flex items-center gap-2 rounded-xl bg-black/90 border border-amber-500/50 px-4 py-2 text-amber-300 shadow-xl">
+                    <Camera className="size-4.5 text-amber-400" />
+                    <span>Remplacer la Photo À Propos</span>
+                  </div>
                 </button>
               )}
             </div>
-
-            {/* Category Filter Pills */}
-            <div className="flex flex-wrap gap-1.5 p-1 rounded-2xl bg-white/5 border border-white/10 w-full md:w-auto overflow-x-auto">
-              {["Tous", "Concert & Festival", "Conférence & Gala", "Formation & Masterclass", "Soirée VIP"].map(
-                (cat) => (
-                  <button
-                    key={cat}
-                    type="button"
-                    onClick={() => setHomeCategoryFilter(cat)}
-                    className={`rounded-xl px-3 py-1.5 text-xs font-bold transition-all whitespace-nowrap ${
-                      homeCategoryFilter === cat
-                        ? `${themeStyle.primary} shadow-md`
-                        : "text-zinc-400 hover:text-white hover:bg-white/5"
-                    }`}
-                  >
-                    {cat}
-                  </button>
-                )
-              )}
-            </div>
           </div>
+        </section>
+      )}
 
-          {/* 4 Cards Linear Row: 3 Events + 1 "Voir Tout le Catalogue" Card */}
-          {preset.events === "agenda" && (
-            <ol className="divide-y divide-white/10 rounded-3xl border border-white/10 bg-white/[0.03]">
-              {homeFilteredEvents.slice(0, shownCount).map((evt, i) => (
-                <li key={evt.id} className="stay-reveal flex flex-wrap items-center gap-4 p-4 sm:flex-nowrap" data-shown="true" style={{ "--i": i } as React.CSSProperties}>
-                  <div className={`flex size-16 shrink-0 flex-col items-center justify-center rounded-2xl border border-white/15 ${themeStyle.primaryText}`}>
-                    <Calendar className="size-4" />
-                    <span className="mt-1 text-[10px] font-bold text-white/80">{evt.date.split(" ").slice(0, 2).join(" ")}</span>
-                  </div>
-                  <div className="min-w-0 flex-1">
-                    <p className="text-[11px] font-bold uppercase tracking-wider text-white/60">{evt.category}</p>
-                    <h3 className="truncate font-display text-lg font-extrabold text-white">{evt.title}</h3>
-                    <p className="truncate text-xs text-zinc-400">{evt.date} · {evt.location}</p>
-                  </div>
-                  <span className={`font-mono text-xs font-black ${themeStyle.primaryText}`}>Dès {evt.startingPrice.toLocaleString("fr-FR")} FCFA</span>
-                  <Button onClick={() => handleOpenEventDetails(evt)} className={`rounded-xl text-xs font-bold gap-1.5 ${themeStyle.primary}`}>
-                    <Ticket className="size-3.5" /> Billets
-                  </Button>
-                </li>
-              ))}
-              {homeFilteredEvents.length === 0 && <li className="p-6 text-center text-sm text-zinc-400">Aucun événement ne correspond.</li>}
-            </ol>
-          )}
-          <div
-            className={
-              preset.events === "agenda"
-                ? "hidden"
-                : preset.events === "carousel"
-                  ? "-mx-4 flex snap-x snap-mandatory gap-4 overflow-x-auto px-4 pb-3 [&>*]:w-[280px] [&>*]:shrink-0 [&>*]:snap-start"
-                  : preset.events === "featured"
-                    ? "grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 [&>*:first-child]:sm:col-span-2 [&>*:first-child]:lg:row-span-2"
-                    : "grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4"
-            }
-          >
-            {/* PREMIERS ÉVÉNEMENTS CORRESPONDANTS */}
-            {homeFilteredEvents.slice(0, shownCount).map((evt, i) => (
-              <div
-                key={evt.id}
-                className="group rounded-3xl border border-white/10 bg-white/[0.03] hover:bg-white/[0.06] hover:border-white/20 transition-all duration-300 overflow-hidden flex flex-col justify-between shadow-xl relative stay-lift"
-              >
-                {/* Event Image Banner */}
+      {/* 5. GALERIE & MOMENTS FORTS */}
+      {visibleSections.gallery && (
+        <section id="gallery-section" style={sectionOrder("gallery")} className="py-16 px-4 sm:px-8 border-t border-white/10 bg-[#06080a]">
+          <div className="mx-auto max-w-6xl space-y-8">
+            <div className="text-center space-y-2 max-w-2xl mx-auto">
+              <h2 className="font-display text-2xl sm:text-4xl font-extrabold text-white tracking-tight">
+                Galerie des Moments Forts
+              </h2>
+              <p className="text-xs sm:text-sm text-zinc-400">
+                Retour en images sur l&apos;énergie et la ferveur de nos dernières productions au Gabon.
+              </p>
+            </div>
+
+            <div className={galleryGridClass}>
+              {galleryImages.map((img, idx) => (
                 <div
-                  className={`relative w-full overflow-hidden bg-zinc-900 ${
-                    preset.events === "posters" ? "h-72" : preset.events === "featured" && i === 0 ? "h-44 lg:h-80" : "h-44"
-                  }`}
+                  key={idx}
+                  className="group relative h-44 sm:h-60 rounded-2xl overflow-hidden bg-zinc-900 border border-white/10 shadow-lg"
                 >
                   {/* eslint-disable-next-line @next/next/no-img-element */}
                   <img
-                    src={evt.coverImageUrl}
-                    alt={evt.title}
+                    src={img}
+                    alt={`Galerie ${idx + 1}`}
                     className="h-full w-full object-cover group-hover:scale-105 transition-transform duration-500"
                   />
-                  <div className="absolute inset-0 bg-gradient-to-t from-black via-black/40 to-transparent" />
+                  <div className="absolute inset-0 bg-black/30 group-hover:bg-black/60 transition-colors" />
 
-                  {/* Direct Poster Upload Button in Editor Mode */}
+                  {/* Direct Image Upload on Hover in Editor Mode */}
                   {isEditorMode && (
                     <button
                       type="button"
                       onClick={() => {
-                        setTargetEventCoverId(evt.id);
-                        eventCoverInputRef.current?.click();
+                        setTargetGalleryIdx(idx);
+                        galleryInputRef.current?.click();
                       }}
-                      className="absolute top-2.5 right-2.5 z-10 p-1.5 rounded-lg bg-black/80 hover:bg-black text-amber-400 border border-white/20 text-[10px] font-bold flex items-center gap-1 backdrop-blur-md opacity-0 group-hover:opacity-100 transition-opacity"
-                      title="Changer l'affiche"
+                      className="absolute inset-0 bg-black/70 backdrop-blur-xs opacity-0 group-hover:opacity-100 flex items-center justify-center gap-1.5 text-white font-extrabold text-xs transition-opacity"
                     >
-                      <Camera className="size-3" />
-                      <span>Modifier</span>
+                      <div className="flex items-center gap-1.5 rounded-xl bg-black/90 border border-amber-500/50 px-3 py-1.5 text-amber-300 shadow-xl">
+                        <Camera className="size-4 text-amber-400" />
+                        <span>Changer la Photo</span>
+                      </div>
                     </button>
                   )}
-
-                  {/* Badges on Banner */}
-                  <div className="absolute top-2.5 left-2.5 flex flex-wrap gap-1.5">
-                    <span className="rounded-full bg-black/70 backdrop-blur-md border border-white/20 px-2 py-0.5 text-[10px] font-bold text-white">
-                      {evt.category}
-                    </span>
-                  </div>
-
-                  {/* Starting Price Tag */}
-                  <div className="absolute bottom-2.5 right-2.5 rounded-lg bg-black/80 backdrop-blur-md border border-white/20 px-2 py-0.5">
-                    <span className={`font-mono font-black text-xs ${themeStyle.primaryText}`}>
-                      Dès {evt.startingPrice.toLocaleString("fr-FR")} FCFA
-                    </span>
-                  </div>
                 </div>
-
-                {/* Event Body Info */}
-                <div className="p-4 space-y-3 flex-1 flex flex-col justify-between">
-                  <div className="space-y-2">
-                    {isEditorMode ? (
-                      <input
-                        type="text"
-                        value={evt.title}
-                        onChange={(e) => updateEvent(evt.id, { title: e.target.value })}
-                        className="w-full font-display font-extrabold text-sm text-white bg-transparent border-b border-dashed border-white/20 hover:border-amber-400 focus:outline-none focus:border-amber-400"
-                        title="Modifier le titre"
-                      />
-                    ) : (
-                      <h3 className="font-display font-extrabold text-sm text-white group-hover:text-amber-400 transition-colors line-clamp-1" title={evt.title}>
-                        {evt.title}
-                      </h3>
-                    )}
-
-                    <p className="text-[11px] text-zinc-400 line-clamp-2 leading-relaxed">
-                      {evt.description}
-                    </p>
-
-                    <div className="space-y-1 pt-1 text-[11px] text-zinc-300">
-                      <div className="flex items-center gap-1.5">
-                        <Calendar className="size-3 text-emerald-400 shrink-0" />
-                        <span className="truncate">{evt.date}</span>
-                      </div>
-                      <div className="flex items-center gap-1.5">
-                        <MapPin className="size-3 text-rose-400 shrink-0" />
-                        <span className="truncate">{evt.location}</span>
-                      </div>
-                    </div>
-                  </div>
-
-                  {/* Action Button */}
-                  <div className="pt-2 border-t border-white/10">
-                    <Button
-                      onClick={() => handleOpenEventDetails(evt)}
-                      className={`w-full rounded-xl text-xs font-bold py-2 gap-1.5 shadow-md ${themeStyle.primary}`}
-                    >
-                      <Ticket className="size-3.5" />
-                      <span>Réserver</span>
-                      <ChevronRight className="size-3.5" />
-                    </Button>
-                  </div>
-                </div>
-              </div>
-            ))}
-
-            {/* 4TH CARD: INTERACTIVE "VOIR TOUT LE CATALOGUE" PORTAL CARD */}
-            <div
-              onClick={() => setIsCatalogOpen(true)}
-              className="group rounded-3xl border-2 border-dashed border-white/20 hover:border-emerald-500 bg-gradient-to-br from-emerald-950/30 via-white/[0.02] to-teal-950/30 p-5 flex flex-col justify-between cursor-pointer transition-all duration-300 hover:scale-[1.01] shadow-2xl relative overflow-hidden min-h-[340px]"
-            >
-              <div className="space-y-3">
-                <div className="flex items-center justify-between">
-                  <div className="flex size-10 items-center justify-center rounded-xl bg-emerald-500/20 text-emerald-400 border border-emerald-500/30 group-hover:scale-110 transition-transform">
-                    <Search className="size-5" />
-                  </div>
-                  <span className="rounded-full bg-emerald-500/15 border border-emerald-500/30 px-2.5 py-0.5 text-[10px] font-bold text-emerald-400">
-                    +{events.length - 3 > 0 ? events.length - 3 : "Tous"} Événements
-                  </span>
-                </div>
-
-                <div className="space-y-1.5">
-                  <h3 className="font-display font-extrabold text-lg text-white group-hover:text-emerald-400 transition-colors leading-tight">
-                    Voir Tout le Catalogue
-                  </h3>
-                  <p className="text-[11px] text-zinc-400 leading-relaxed">
-                    Accédez à la programmation complète, utilisez la recherche par mot-clé et réservez vos billets en ligne.
-                  </p>
-                </div>
-
-                <div className="space-y-1 pt-1 text-[10px] text-zinc-300">
-                  <div className="flex items-center gap-1.5">
-                    <CheckCircle2 className="size-3 text-emerald-400" />
-                    <span>Moteur de recherche direct</span>
-                  </div>
-                  <div className="flex items-center gap-1.5">
-                    <CheckCircle2 className="size-3 text-emerald-400" />
-                    <span>Filtres par catégorie & date</span>
-                  </div>
-                  <div className="flex items-center gap-1.5">
-                    <CheckCircle2 className="size-3 text-emerald-400" />
-                    <span>Paiement Airtel & Moov Money</span>
-                  </div>
-                </div>
-              </div>
-
-              <div className="pt-4 border-t border-white/10 flex items-center justify-between">
-                <span className="font-bold text-xs text-emerald-400 group-hover:underline">
-                  Ouvrir le catalogue
-                </span>
-                <div className="flex size-8 items-center justify-center rounded-xl bg-emerald-500 text-black group-hover:translate-x-1 transition-transform">
-                  <ArrowRight className="size-4" />
-                </div>
-              </div>
+              ))}
             </div>
           </div>
-        </div>
-      </section>
+        </section>
+      )}
 
-      {/* 4. SECTION À PROPOS DE L'ORGANISATION & NOTRE VISION */}
-      <section id="about-section" style={sectionOrder("about")} className="py-16 px-4 sm:px-8 border-t border-white/10 bg-[#090b0e]">
-        <div className="mx-auto max-w-5xl grid grid-cols-1 md:grid-cols-2 gap-10 items-center">
-          <div className="space-y-5">
-            <div className="inline-flex items-center gap-1.5 text-xs font-bold uppercase tracking-wider text-amber-400">
-              <Award className="size-3.5" />
-              <span>Savoir-Faire & Vision</span>
-            </div>
-
-            {isEditorMode ? (
-              <input
-                type="text"
-                value={aboutTitle}
-                onChange={(e) => updateField("aboutTitle", e.target.value)}
-                className="w-full font-display text-2xl sm:text-4xl font-extrabold text-white tracking-tight leading-tight bg-transparent border-b border-dashed border-white/20 hover:border-amber-400 focus:outline-none"
-              />
-            ) : (
-              <h2 className="font-display text-2xl sm:text-4xl font-extrabold text-white tracking-tight leading-tight">
-                {aboutTitle}
+      {/* 6. AVIS DES PARTICIPANTS & TÉMOIGNAGES */}
+      {visibleSections.testimonials && (
+        <section id="testimonials-section" style={sectionOrder("testimonials")} className="py-16 px-4 sm:px-8 border-t border-white/10 bg-[#090b0e]">
+          <div className="mx-auto max-w-6xl space-y-8">
+            <div className="text-center space-y-2 max-w-2xl mx-auto">
+              <h2 className="font-display text-2xl sm:text-4xl font-extrabold text-white tracking-tight">
+                Ce que disent nos Participants
               </h2>
-            )}
-
-            {isEditorMode ? (
-              <textarea
-                value={aboutText}
-                onChange={(e) => updateField("aboutText", e.target.value)}
-                rows={5}
-                className="w-full text-xs sm:text-sm text-zinc-300 leading-relaxed bg-transparent border border-dashed border-white/20 hover:border-amber-400 focus:outline-none rounded-xl p-2 resize-none"
-              />
-            ) : (
-              <p className="text-xs sm:text-sm text-zinc-300 leading-relaxed">
-                {aboutText}
+              <p className="text-xs sm:text-sm text-zinc-400">
+                Des milliers de festivaliers, congressistes et professionnels nous font confiance chaque année.
               </p>
-            )}
+            </div>
 
-            <div className="space-y-3 pt-2">
-              <div className="flex items-start gap-3">
-                <div className="flex size-6 shrink-0 items-center justify-center rounded-lg bg-emerald-500/20 text-emerald-400 mt-0.5">
-                  <CheckCircle2 className="size-4" />
-                </div>
-                <div>
-                  <h4 className="text-xs font-bold text-white">Scénographie & Régie Haute Définition</h4>
-                  <p className="text-[11px] text-zinc-400">Équipements son et lumière de niveau festival international.</p>
-                </div>
-              </div>
+            <div className={testimonialsGridClass}>
+              {testimonials.map((test) => (
+                <div
+                  key={test.id}
+                  className="rounded-3xl border border-white/10 bg-white/[0.03] p-6 space-y-4 flex flex-col justify-between shadow-xl"
+                >
+                  <div className="space-y-3">
+                    <div className="flex items-center gap-1">
+                      {[...Array(test.rating)].map((_, i) => (
+                        <Star key={i} className="size-4 fill-amber-400 text-amber-400" />
+                      ))}
+                    </div>
+                    <p className="text-xs text-zinc-300 leading-relaxed italic">
+                      &ldquo;{test.comment}&rdquo;
+                    </p>
+                  </div>
 
-              <div className="flex items-start gap-3">
-                <div className="flex size-6 shrink-0 items-center justify-center rounded-lg bg-emerald-500/20 text-emerald-400 mt-0.5">
-                  <CheckCircle2 className="size-4" />
+                  <div className="pt-3 border-t border-white/10 flex items-center justify-between">
+                    <div>
+                      <h4 className="text-xs font-bold text-white">{test.name}</h4>
+                      <p className="text-[10px] text-zinc-400">{test.role}</p>
+                    </div>
+                    <span className="text-[9px] font-bold text-emerald-400 bg-emerald-500/10 px-2 py-0.5 rounded-full">
+                      {test.eventName}
+                    </span>
+                  </div>
                 </div>
-                <div>
-                  <h4 className="text-xs font-bold text-white">Billetterie & Paiement Mobile Money Instantané</h4>
-                  <p className="text-[11px] text-zinc-400">Achat direct par Airtel Money et Moov Money sans intermédiaire.</p>
-                </div>
-              </div>
-
-              <div className="flex items-start gap-3">
-                <div className="flex size-6 shrink-0 items-center justify-center rounded-lg bg-emerald-500/20 text-emerald-400 mt-0.5">
-                  <CheckCircle2 className="size-4" />
-                </div>
-                <div>
-                  <h4 className="text-xs font-bold text-white">Contrôle d&apos;Accès & Attestations Certifiées</h4>
-                  <p className="text-[11px] text-zinc-400">QR codes infalsifiables et diplômes numériques délivrés après présence.</p>
-                </div>
-              </div>
+              ))}
             </div>
           </div>
-
-          <div className="group relative rounded-3xl border border-white/10 bg-white/5 p-2 shadow-2xl overflow-hidden">
-            {/* eslint-disable-next-line @next/next/no-img-element */}
-            <img
-              src={orgCoverUrl}
-              alt={orgName}
-              className="rounded-2xl w-full h-80 object-cover"
-            />
-            {isEditorMode && (
-              <button
-                type="button"
-                onClick={() => aboutImageInputRef.current?.click()}
-                className="absolute inset-0 bg-black/60 opacity-0 group-hover:opacity-100 flex items-center justify-center gap-2 text-white font-bold text-xs transition-opacity"
-              >
-                <Camera className="size-5 text-amber-400" />
-                <span>Remplacer la Photo À Propos</span>
-              </button>
-            )}
-          </div>
-        </div>
-      </section>
-
-      {/* 5. GALERIE & MOMENTS FORTS (NO ETIQUETTES / BADGES) */}
-      <section id="gallery-section" style={sectionOrder("gallery")} className="py-16 px-4 sm:px-8 border-t border-white/10 bg-[#06080a]">
-        <div className="mx-auto max-w-6xl space-y-8">
-          <div className="text-center space-y-2 max-w-2xl mx-auto">
-            <h2 className="font-display text-2xl sm:text-4xl font-extrabold text-white tracking-tight">
-              Galerie des Moments Forts
-            </h2>
-            <p className="text-xs sm:text-sm text-zinc-400">
-              Retour en images sur l&apos;énergie et la ferveur de nos dernières productions au Gabon.
-            </p>
-          </div>
-
-          <div className="grid grid-cols-2 sm:grid-cols-3 gap-3 sm:gap-4">
-            {galleryImages.map((img, idx) => (
-              <div
-                key={idx}
-                className="group relative h-44 sm:h-60 rounded-2xl overflow-hidden bg-zinc-900 border border-white/10 shadow-lg"
-              >
-                {/* eslint-disable-next-line @next/next/no-img-element */}
-                <img
-                  src={img}
-                  alt={`Galerie ${idx + 1}`}
-                  className="h-full w-full object-cover group-hover:scale-105 transition-transform duration-500"
-                />
-                <div className="absolute inset-0 bg-black/30 group-hover:bg-black/60 transition-colors" />
-
-                {/* Direct Image Upload on Hover in Editor Mode */}
-                {isEditorMode && (
-                  <button
-                    type="button"
-                    onClick={() => {
-                      setTargetGalleryIdx(idx);
-                      galleryInputRef.current?.click();
-                    }}
-                    className="absolute inset-0 opacity-0 group-hover:opacity-100 flex items-center justify-center gap-1.5 text-white font-bold text-xs transition-opacity"
-                  >
-                    <Camera className="size-4 text-amber-400" />
-                    <span>Changer la Photo</span>
-                  </button>
-                )}
-              </div>
-            ))}
-          </div>
-        </div>
-      </section>
-
-      {/* 6. AVIS DES PARTICIPANTS & TÉMOIGNAGES (NO ETIQUETTES / BADGES) */}
-      <section id="testimonials-section" style={sectionOrder("testimonials")} className="py-16 px-4 sm:px-8 border-t border-white/10 bg-[#090b0e]">
-        <div className="mx-auto max-w-6xl space-y-8">
-          <div className="text-center space-y-2 max-w-2xl mx-auto">
-            <h2 className="font-display text-2xl sm:text-4xl font-extrabold text-white tracking-tight">
-              Ce que disent nos Participants
-            </h2>
-            <p className="text-xs sm:text-sm text-zinc-400">
-              Des milliers de festivaliers, congressistes et professionnels nous font confiance chaque année.
-            </p>
-          </div>
-
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-5">
-            {testimonials.map((test) => (
-              <div
-                key={test.id}
-                className="rounded-3xl border border-white/10 bg-white/[0.03] p-6 space-y-4 flex flex-col justify-between shadow-xl"
-              >
-                <div className="space-y-3">
-                  <div className="flex items-center gap-1">
-                    {[...Array(test.rating)].map((_, i) => (
-                      <Star key={i} className="size-4 fill-amber-400 text-amber-400" />
-                    ))}
-                  </div>
-                  <p className="text-xs text-zinc-300 leading-relaxed italic">
-                    &ldquo;{test.comment}&rdquo;
-                  </p>
-                </div>
-
-                <div className="pt-3 border-t border-white/10 flex items-center justify-between">
-                  <div>
-                    <h4 className="text-xs font-bold text-white">{test.name}</h4>
-                    <p className="text-[10px] text-zinc-400">{test.role}</p>
-                  </div>
-                  <span className="text-[9px] font-bold text-emerald-400 bg-emerald-500/10 px-2 py-0.5 rounded-full">
-                    {test.eventName}
-                  </span>
-                </div>
-              </div>
-            ))}
-          </div>
-        </div>
-      </section>
+        </section>
+      )}
 
       {/* 7. FOIRE AUX QUESTIONS (FAQ) */}
-      <section id="faq-section" style={sectionOrder("faq")} className="py-16 px-4 sm:px-8 border-t border-white/10 bg-[#06080a]">
-        <div className="mx-auto max-w-4xl space-y-6">
-          <div className="text-center space-y-2">
-            <div className="inline-flex items-center gap-1.5 text-xs font-bold uppercase tracking-wider text-emerald-400">
-              <HelpCircle className="size-3.5" />
-              <span>Assistance & Réponses</span>
+      {visibleSections.faq && (
+        <section id="faq-section" style={sectionOrder("faq")} className="py-16 px-4 sm:px-8 border-t border-white/10 bg-[#06080a]">
+          <div className="mx-auto max-w-4xl space-y-6">
+            <div className="text-center space-y-2">
+              <div className="inline-flex items-center gap-1.5 text-xs font-bold uppercase tracking-wider text-emerald-400">
+                <HelpCircle className="size-3.5" />
+                <span>Assistance & Réponses</span>
+              </div>
+              <h2 className="font-display text-2xl sm:text-4xl font-extrabold text-white tracking-tight">
+                Foire Aux Questions Billetterie
+              </h2>
             </div>
-            <h2 className="font-display text-2xl sm:text-4xl font-extrabold text-white tracking-tight">
-              Foire Aux Questions Billetterie
-            </h2>
-          </div>
 
-          <div className="space-y-3 pt-4">
-            {faqs.map((faq) => {
-              const isOpen = openFaqId === faq.id;
-              return (
-                <div
-                  key={faq.id}
-                  className="rounded-2xl border border-white/10 bg-white/[0.02] overflow-hidden transition-all"
-                >
-                  <button
-                    type="button"
-                    onClick={() => setOpenFaqId(isOpen ? null : faq.id)}
-                    className="w-full p-4 text-left flex items-center justify-between gap-4 font-bold text-xs sm:text-sm text-white hover:bg-white/5 transition-colors"
+            <div className="space-y-3 pt-4">
+              {faqs.map((faq) => {
+                const isOpen = openFaqId === faq.id;
+                return (
+                  <div
+                    key={faq.id}
+                    className="rounded-2xl border border-white/10 bg-white/[0.02] overflow-hidden transition-all"
                   >
-                    <span>{faq.question}</span>
-                    {isOpen ? (
-                      <ChevronUp className="size-4 text-emerald-400 shrink-0" />
-                    ) : (
-                      <ChevronDown className="size-4 text-zinc-400 shrink-0" />
-                    )}
-                  </button>
+                    <button
+                      type="button"
+                      onClick={() => setOpenFaqId(isOpen ? null : faq.id)}
+                      className="w-full p-4 text-left flex items-center justify-between gap-4 font-bold text-xs sm:text-sm text-white hover:bg-white/5 transition-colors"
+                    >
+                      <span>{faq.question}</span>
+                      {isOpen ? (
+                        <ChevronUp className="size-4 text-emerald-400 shrink-0" />
+                      ) : (
+                        <ChevronDown className="size-4 text-zinc-400 shrink-0" />
+                      )}
+                    </button>
 
-                  {isOpen && (
-                    <div className="px-4 pb-4 pt-1 text-xs text-zinc-400 leading-relaxed border-t border-white/5">
-                      {faq.answer}
-                    </div>
-                  )}
-                </div>
-              );
-            })}
+                    {isOpen && (
+                      <div className="px-4 pb-4 pt-1 text-xs text-zinc-400 leading-relaxed border-t border-white/5">
+                        {faq.answer}
+                      </div>
+                    )}
+                  </div>
+                );
+              })}
+            </div>
           </div>
-        </div>
-      </section>
+        </section>
+      )}
 
       {/* 8. FOOTER OFFICIEL & COORDONNÉES */}
-      <footer style={{ order: 90 }} className="border-t border-white/10 bg-[#040507] py-12 px-4 sm:px-8 text-xs text-zinc-400">
-        <div className="mx-auto max-w-6xl space-y-8">
-          <div className="grid grid-cols-1 md:grid-cols-4 gap-8">
-            <div className="space-y-3 md:col-span-2">
-              <div className="flex items-center gap-2.5">
-                {orgLogoUrl ? (
-                  /* eslint-disable-next-line @next/next/no-img-element */
-                  <img
-                    src={orgLogoUrl}
-                    alt={orgName}
-                    className="size-8 rounded-lg object-contain bg-white/10 p-0.5 border border-white/20"
-                  />
-                ) : (
-                  <div className="flex size-8 items-center justify-center rounded-lg bg-white/20 text-white font-extrabold text-xs">
-                    {orgName.charAt(0)}
-                  </div>
-                )}
-                <span className="font-display font-extrabold text-base text-white">
-                  {orgName}
-                </span>
+      {visibleSections.footer && (
+        <footer style={{ order: 90 }} className="border-t border-white/10 bg-[#040507] py-12 px-4 sm:px-8 text-xs text-zinc-400">
+          <div className="mx-auto max-w-6xl space-y-8">
+            <div className={footerGridClass}>
+              <div className="space-y-3 md:col-span-2">
+                <div className="flex items-center gap-2.5">
+                  {orgLogoUrl ? (
+                    // eslint-disable-next-line @next/next/no-img-element
+                    <img
+                      src={orgLogoUrl}
+                      alt={orgName}
+                      className="size-8 rounded-lg object-contain bg-white/10 p-0.5 border border-white/20"
+                    />
+                  ) : (
+                    <div className="flex size-8 items-center justify-center rounded-lg bg-white/20 text-white font-extrabold text-xs">
+                      {orgName.charAt(0)}
+                    </div>
+                  )}
+                  <span className="font-display font-extrabold text-base text-white">
+                    {orgName}
+                  </span>
+                </div>
+                <p className="text-xs text-zinc-400 max-w-md">
+                  {orgTagline}. Billetterie officielle en ligne et organisation d&apos;événements de référence au Gabon.
+                </p>
+                <p className="text-[10px] font-mono text-zinc-500">
+                  NIF : {nif} • RCCM : {rccm}
+                </p>
               </div>
-              <p className="text-xs text-zinc-400 max-w-md">
-                {orgTagline}. Billetterie officielle en ligne et organisation d&apos;événements de référence au Gabon.
-              </p>
-              <p className="text-[10px] font-mono text-zinc-500">
-                NIF : {nif} • RCCM : {rccm}
-              </p>
+
+              <div className="space-y-2">
+                <h4 className="font-bold text-white text-xs uppercase tracking-wider">Contact & Support</h4>
+                <p className="text-xs text-zinc-300">{address}</p>
+                <p className="text-xs text-emerald-400 font-mono">WhatsApp : {whatsappNumber}</p>
+                <p className="text-xs text-zinc-300 font-mono">Tél : {supportPhone}</p>
+                <p className="text-xs text-zinc-300">{contactEmail}</p>
+              </div>
+
+              <div className="space-y-2">
+                <h4 className="font-bold text-white text-xs uppercase tracking-wider">Moyens de Paiement</h4>
+                <div className="flex flex-wrap gap-2 pt-1">
+                  <span className="rounded-lg bg-red-600/20 border border-red-500/30 px-2.5 py-1 text-[11px] font-bold text-red-400">
+                    Airtel Money
+                  </span>
+                  <span className="rounded-lg bg-blue-600/20 border border-blue-500/30 px-2.5 py-1 text-[11px] font-bold text-blue-400">
+                    Moov Money
+                  </span>
+                </div>
+                <p className="text-[10px] text-zinc-500 pt-1">Paiements 100% sécurisés et billets instantanés.</p>
+              </div>
             </div>
 
-            <div className="space-y-2">
-              <h4 className="font-bold text-white text-xs uppercase tracking-wider">Contact & Support</h4>
-              <p className="text-xs text-zinc-300">{address}</p>
-              <p className="text-xs text-emerald-400 font-mono">WhatsApp : {whatsappNumber}</p>
-              <p className="text-xs text-zinc-300 font-mono">Tél : {supportPhone}</p>
-              <p className="text-xs text-zinc-300">{contactEmail}</p>
-            </div>
-
-            <div className="space-y-2">
-              <h4 className="font-bold text-white text-xs uppercase tracking-wider">Moyens de Paiement</h4>
-              <div className="flex flex-wrap gap-2 pt-1">
-                <span className="rounded-lg bg-red-600/20 border border-red-500/30 px-2.5 py-1 text-[11px] font-bold text-red-400">
-                  Airtel Money
-                </span>
-                <span className="rounded-lg bg-blue-600/20 border border-blue-500/30 px-2.5 py-1 text-[11px] font-bold text-blue-400">
-                  Moov Money
-                </span>
-              </div>
-              <p className="text-[10px] text-zinc-500 pt-1">Paiements 100% sécurisés et billets instantanés.</p>
+            <div className="pt-6 border-t border-white/10 flex flex-col sm:flex-row items-center justify-between gap-3 text-[11px] text-zinc-500">
+              <p>© {new Date().getFullYear()} {orgName}. Tous droits réservés.</p>
+              <p className="flex items-center gap-1.5 text-zinc-400">
+                <span>Propulsé par la billetterie</span>
+                <strong className="text-white font-display">GiyaX</strong>
+              </p>
             </div>
           </div>
-
-          <div className="pt-6 border-t border-white/10 flex flex-col sm:flex-row items-center justify-between gap-3 text-[11px] text-zinc-500">
-            <p>© {new Date().getFullYear()} {orgName}. Tous droits réservés.</p>
-            <p className="flex items-center gap-1.5 text-zinc-400">
-              <span>Propulsé par la billetterie</span>
-              <strong className="text-white font-display">GiyaX</strong>
-            </p>
-          </div>
-        </div>
-      </footer>
+        </footer>
+      )}
 
       {/* Bouton billets toujours visible sur mobile (variantes « sticky ») */}
       {preset.sticky && !isEditorMode && (
@@ -1263,19 +1241,21 @@ export function ShowcaseCanvas({ isEditorMode = false, liveEvents, onReserve }: 
         </div>
       )}
 
-      {/* FLOATING WHATSAPP BUTTON (ALWAYS ACCESSIBLE) */}
-      <a
-        href={`https://wa.me/${whatsappNumber.replace(/[^0-9]/g, "")}`}
-        target="_blank"
-        rel="noreferrer"
-        className="fixed bottom-6 right-6 z-50 flex items-center gap-2.5 bg-[#25D366] hover:bg-[#20ba59] text-white px-4 py-3 rounded-full shadow-2xl shadow-emerald-950/60 transition-all hover:scale-105 active:scale-95 group font-bold text-xs"
-        title="Discuter sur WhatsApp"
-      >
-        <MessageCircle className="size-5 fill-white text-[#25D366]" />
-        <span className="hidden sm:inline font-semibold">Besoin d&apos;aide ? WhatsApp</span>
-      </a>
+      {/* FLOATING WHATSAPP BUTTON (MASQUÉ LORSQU'UNE MODAL EST OUVERTE) */}
+      {!isAIGeneratorOpen && !isCatalogOpen && !activeEvent && (
+        <a
+          href={`https://wa.me/${whatsappNumber.replace(/[^0-9]/g, "")}`}
+          target="_blank"
+          rel="noreferrer"
+          className="fixed bottom-6 right-6 z-40 flex items-center gap-2.5 bg-[#25D366] hover:bg-[#20ba59] text-white px-4 py-3 rounded-full shadow-2xl shadow-emerald-950/60 transition-all hover:scale-105 active:scale-95 group font-bold text-xs"
+          title="Discuter sur WhatsApp"
+        >
+          <MessageCircle className="size-5 fill-white text-[#25D366]" />
+          <span className="hidden sm:inline font-semibold">Besoin d&apos;aide ? WhatsApp</span>
+        </a>
+      )}
 
-      {/* 9. MODAL DÉDIÉE : CATALOGUE COMPLET DES ÉVÉNEMENTS (OUVERTE PAR LA 4E CARTE) */}
+      {/* 10. MODAL DÉDIÉE : CATALOGUE COMPLET DES ÉVÉNEMENTS (OUVERTE PAR LA 4E CARTE) */}
       <Dialog open={isCatalogOpen} onOpenChange={setIsCatalogOpen}>
         <DialogContent
           className={`rounded-3xl border border-white/20 bg-[#0d1117] text-white p-6 sm:max-w-4xl max-h-[85vh] shadow-2xl space-y-6 ${modalScrollClass}`}
@@ -1319,7 +1299,7 @@ export function ShowcaseCanvas({ isEditorMode = false, liveEvents, onReserve }: 
 
             {/* Category Filter Pills */}
             <div className="flex flex-wrap gap-1.5 p-1 rounded-2xl bg-white/5 border border-white/10">
-              {["Tous", "Concert & Festival", "Conférence & Gala", "Formation & Masterclass", "Soirée VIP"].map(
+              {["Tous", "Concert & Festival", "Conférence & Gala", "Mariage & Célébration", "Formation & Masterclass", "Soirée VIP"].map(
                 (cat) => (
                   <button
                     key={cat}

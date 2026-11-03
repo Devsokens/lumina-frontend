@@ -68,7 +68,7 @@ const FEATURE_CONFIGS: Record<
     icon: Crown,
     title: "Débloquez Toute la Puissance de GiyaX PRO",
     subtitle:
-      "Bénéficiez de toutes les fonctionnalités avancées pour propulser vos événements, restaurants et boutiques.",
+      "Bénéficiez de toutes les fonctionnalités avancées pour propulser vos événements, restaurants et logements.",
     benefitHighlight: "Accès à toutes les fonctionnalités IA, encaissements prioritaires & support 24/7",
   },
 };

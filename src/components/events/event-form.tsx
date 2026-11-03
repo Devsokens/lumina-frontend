@@ -36,6 +36,7 @@ import {
   ListFilter,
   BadgeCheck,
   Clock,
+  HeartHandshake,
   type LucideIcon,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
@@ -89,6 +90,7 @@ interface EventFormData {
 
 const EVENT_TYPES: { id: EventType; label: string; icon: LucideIcon; desc: string }[] = [
   { id: "CONCERT", label: "Concert & Festival", icon: Music, desc: "Musique live, DJs, plein air" },
+  { id: "WEDDING", label: "Mariage & Célébration", icon: HeartHandshake, desc: "Mariages, réceptions, listes cadeaux & RSVP" },
   { id: "CONFERENCE", label: "Conférence & Formation", icon: GraduationCap, desc: "Séminaires, masterclass avec attestation" },
   { id: "NIGHTLIFE", label: "Soirée VIP & Club", icon: Wine, desc: "Rooftop, lounge, tables privées" },
   { id: "EXHIBITION", label: "Salon & Expo", icon: Building, desc: "Foires, stands et networking" },

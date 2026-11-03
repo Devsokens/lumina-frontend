@@ -138,6 +138,11 @@
   html {
     @apply font-body scroll-smooth;
   }
+  /* Ancres de la landing : la barre de navigation fixe ne masque jamais le
+     haut de la section ciblée. */
+  section[id] {
+    scroll-margin-top: 5.5rem;
+  }
   h1,
   h2,
   h3,
@@ -256,9 +261,54 @@
   animation-play-state: paused;
 }
 
+/* Rangée qui défile dans l'autre sens (mur de logos « Ils utilisent GiyaX »). */
+.animate-marquee-reverse {
+  display: flex;
+  width: max-content;
+  animation: marquee 34s linear infinite reverse;
+}
+
+.animate-marquee-reverse:hover {
+  animation-play-state: paused;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .animate-marquee,
+  .animate-marquee-reverse {
+    animation: none;
+  }
+}
+
 .marquee-mask {
   mask-image: linear-gradient(to right, transparent, black 12%, black 88%, transparent);
   -webkit-mask-image: linear-gradient(to right, transparent, black 12%, black 88%, transparent);
+}
+
+/* GIYA AI Animated Button Effects */
+@keyframes ai-shimmer {
+  0% {
+    transform: translateX(-150%) skewX(-25deg);
+  }
+  40%, 100% {
+    transform: translateX(250%) skewX(-25deg);
+  }
+}
+
+.animate-ai-shimmer {
+  animation: ai-shimmer 3.2s cubic-bezier(0.4, 0, 0.2, 1) infinite;
+}
+
+@keyframes ai-glow {
+  0%, 100% {
+    box-shadow: 0 0 14px -1px rgba(245, 158, 11, 0.4), 0 0 28px -4px rgba(249, 115, 22, 0.2);
+  }
+  50% {
+    box-shadow: 0 0 24px 2px rgba(245, 158, 11, 0.75), 0 0 40px 2px rgba(249, 115, 22, 0.4);
+  }
+}
+
+.animate-ai-glow {
+  animation: ai-glow 2.8s ease-in-out infinite;
 }
 
 
@@ -351,5 +401,38 @@
     opacity: 1 !important;
     transform: none !important;
     transition: none !important;
+  }
+}
+
+/* Onglets autonomes de la section secteurs : la barre se remplit pendant
+   la durée d'affichage, puis l'onglet suivant prend le relais. */
+@keyframes tab-progress-y {
+  from { transform: scaleY(0); }
+  to { transform: scaleY(1); }
+}
+@keyframes tab-progress-x {
+  from { transform: scaleX(0); }
+  to { transform: scaleX(1); }
+}
+
+/* Apparition du texte du hero en CSS pur : visible dès le premier affichage,
+   sans attendre le chargement du JavaScript (connexions mobiles lentes). */
+@keyframes hero-reveal {
+  from {
+    opacity: 0;
+    transform: translateY(16px);
+  }
+  to {
+    opacity: 1;
+    transform: none;
+  }
+}
+.hero-reveal {
+  animation: hero-reveal 0.6s cubic-bezier(0.22, 1, 0.36, 1) both;
+  animation-delay: var(--hero-delay, 0ms);
+}
+@media (prefers-reduced-motion: reduce) {
+  .hero-reveal {
+    animation: none;
   }
 }

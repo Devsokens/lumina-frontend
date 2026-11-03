@@ -46,3 +46,9 @@ next-env.d.ts
 /public/sw.js.map
 /public/swe-worker*.js
 /public/swe-worker*.js.map
+
+# Rendus HyperFrames (master lourd) : les versions web sont dans public/videos
+motion/*/renders/
+# Séquences filmées des projets HyperFrames (lourdes) : voir motion/*/SOURCES.md pour les retélécharger
+motion/*/assets/video/
+motion/*/.hyperframes/

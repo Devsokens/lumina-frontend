@@ -10,7 +10,10 @@ export const loginSchema = z.object({
 });
 
 export const signupSchema = z.object({
-  fullName: z.string().min(2).max(120),
+  fullName: z
+    .string({ required_error: "Nom requis" })
+    .min(2, "Nom requis (2 caractères minimum)")
+    .max(120, "120 caractères maximum"),
   email: z.string().email("Email invalide").optional().or(z.literal("")),
   // Espaces, points, tirets et parenthèses tolérés à la saisie.
   phone: z
@@ -22,11 +25,14 @@ export const signupSchema = z.object({
     .min(8, "8 caractères minimum")
     .regex(/[A-Z]/, "Au moins une majuscule")
     .regex(/[0-9]/, "Au moins un chiffre"),
-  businessName: z.string().min(2).max(120),
+  businessName: z
+    .string({ required_error: "Nom de l'activité requis" })
+    .min(2, "Nom de l'activité requis")
+    .max(120, "120 caractères maximum"),
   slug: z
-    .string()
-    .min(3)
-    .max(50)
+    .string({ required_error: "Adresse requise" })
+    .min(3, "3 caractères minimum")
+    .max(50, "50 caractères maximum")
     .regex(/^[a-z0-9-]+$/, "Uniquement lettres minuscules, chiffres et tirets"),
   sector: z.enum(SECTORS),
   acceptedTerms: z.literal(true, {

@@ -1,0 +1,289 @@
+<template>
+  <style>
+    #root {
+      position: absolute;
+      inset: 0;
+      overflow: hidden;
+      background: #0b0f0e;
+      font-family: "Montserrat", sans-serif;
+    }
+    #a2-world,
+    #a2-cam {
+      position: absolute;
+      inset: 0;
+    }
+    #a2-cam video {
+      width: 100%;
+      height: 100%;
+      object-fit: cover;
+    }
+    #a2-scrim {
+      position: absolute;
+      inset: 0;
+      background: linear-gradient(180deg, rgba(0, 0, 0, 0.62) 0%, rgba(0, 0, 0, 0.32) 45%, rgba(0, 0, 0, 0.6) 100%);
+    }
+    #a2-head {
+      position: absolute;
+      left: 0;
+      right: 0;
+      top: 400px;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 26px;
+      text-align: center;
+    }
+    /* Grande question plein cadre (accroche du métier) */
+    #a2-q {
+      position: absolute;
+      left: 0;
+      right: 0;
+      top: 454px;
+      text-align: center;
+      color: #fff;
+    }
+    #a2-q .pre {
+      margin-bottom: 6px;
+      font-size: 60px;
+      font-weight: 600;
+      color: rgba(255, 255, 255, 0.86);
+    }
+    #a2-q .main {
+      font-size: 98px;
+      font-weight: 800;
+      line-height: 1.02;
+      letter-spacing: -0.025em;
+    }
+    #a2-q .w {
+      display: inline-block;
+    }
+    #a2-q .gold {
+      color: #f4b942;
+    }
+    #a2-qdim {
+      position: absolute;
+      inset: 0;
+      background: rgba(0, 0, 0, 0.42);
+    }
+    .a2-chip {
+      display: inline-flex;
+      align-items: center;
+      gap: 14px;
+      padding: 12px 28px 12px 22px;
+      border-radius: 999px;
+      background: rgba(10, 79, 60, 0.88);
+      border: 2px solid rgba(244, 185, 66, 0.75);
+      color: #fff;
+      font-size: 40px;
+      font-weight: 600;
+    }
+    .a2-chip svg {
+      width: 44px;
+      height: 44px;
+      color: #f4b942;
+    }
+    .a2-title {
+      color: #fff;
+      font-size: 80px;
+      font-weight: 800;
+      line-height: 1.05;
+      letter-spacing: -0.02em;
+    }
+    .a2-title .w {
+      display: inline-block;
+    }
+    .a2-title .gold {
+      color: #f4b942;
+    }
+    .a2-card {
+      position: absolute;
+      left: 580px;
+      width: 760px;
+      background: #fff;
+      color: #0b1f1a;
+      border-radius: 34px;
+      box-shadow: 0 30px 80px rgba(0, 0, 0, 0.5);
+    }
+    /* Commande passée depuis le menu QR de la table */
+    #a2-order {
+      top: 300px;
+      padding: 40px 44px 44px;
+    }
+    #a2-order .table {
+      font-size: 48px;
+      font-weight: 800;
+      color: #0a4f3c;
+      letter-spacing: -0.02em;
+    }
+    #a2-order .sub {
+      margin-top: 2px;
+      font-size: 30px;
+      font-weight: 500;
+      color: #5b6b66;
+    }
+    .a2-line {
+      display: flex;
+      justify-content: space-between;
+      padding: 8px 0;
+      font-size: 36px;
+      font-weight: 500;
+    }
+    .a2-line b {
+      font-weight: 800;
+    }
+    #a2-order .lines {
+      margin-top: 22px;
+    }
+    #a2-order .total {
+      display: flex;
+      justify-content: space-between;
+      margin-top: 16px;
+      padding-top: 18px;
+      border-top: 3px dashed #eae8e1;
+      font-size: 40px;
+      font-weight: 800;
+    }
+    /* Écran cuisine (KDS) */
+    #a2-kdsbar {
+      position: absolute;
+      left: 580px;
+      top: 270px;
+      width: 760px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 16px 30px;
+      border-radius: 22px;
+      background: #101614;
+      color: #fff;
+      font-size: 32px;
+      font-weight: 600;
+    }
+    #a2-kdsbar .live {
+      font-size: 28px;
+      color: #10b981;
+    }
+    #a2-kds {
+      top: 372px;
+      padding: 34px 40px 40px;
+      border: 5px solid #10b981;
+    }
+    #a2-kds .head {
+      display: flex;
+      justify-content: space-between;
+      align-items: baseline;
+      font-family: "JetBrains Mono", monospace;
+    }
+    #a2-kds .num {
+      font-size: 46px;
+      font-weight: 700;
+    }
+    #a2-kds .age {
+      font-size: 32px;
+      color: #5b6b66;
+    }
+    #a2-kds ul {
+      list-style: none;
+      margin-top: 18px;
+    }
+    #a2-kds li {
+      padding: 5px 0;
+      font-size: 40px;
+      font-weight: 500;
+    }
+    #a2-kds li b {
+      font-weight: 800;
+    }
+    #a2-btn {
+      position: relative;
+      margin-top: 26px;
+      height: 96px;
+      border-radius: 22px;
+      background: #0a4f3c;
+      color: #fff;
+      font-size: 38px;
+      font-weight: 700;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    }
+    #a2-btn span {
+      position: absolute;
+    }
+  </style>
+  <div id="root" data-composition-id="a2" data-width="1920" data-height="1080">
+    <div id="a2-world">
+      <div id="a2-cam">
+        <video id="a2-vid" class="clip" data-start="0" data-duration="8.15" data-media-start="1.5" muted playsinline src="assets/video/restaurant.mp4"></video>
+      </div>
+      <div id="a2-scrim"></div>
+      <div id="a2-qdim"></div>
+
+      <div id="a2-q" data-layout-allow-overlap>
+          <div class="pre"><span class="w">Vous</span> <span class="w">êtes</span></div>
+          <div class="main"><span class="w">restaurateur</span> <span class="w gold">?</span></div>
+      </div>
+
+      <div id="a2-head" data-layout-allow-overlap>
+        <div class="a2-title">
+          <div><span class="w">Prenez</span> <span class="w">les</span></div>
+          <div><span class="w">commandes</span> <span class="w gold">à table</span></div>
+        </div>
+      </div>
+
+      <div id="a2-stage" data-layout-allow-overlap>
+        <div id="a2-order" class="a2-card">
+          <div class="table">Table 04</div>
+          <div class="sub">Commande depuis le menu QR</div>
+          <div class="lines">
+            <div class="a2-line"><span><b>2×</b> Poisson braisé</span><span>12 000 FCFA</span></div>
+            <div class="a2-line"><span><b>1×</b> Poulet nyembwe</span><span>6 500 FCFA</span></div>
+            <div class="a2-line"><span><b>3×</b> Jus de bissap</span><span>3 000 FCFA</span></div>
+          </div>
+          <div class="total"><span>Total</span><span>21 500 FCFA</span></div>
+        </div>
+
+        <div id="a2-kdsbar"><span>Cuisine · 3 commande(s)</span><span class="live">Connecté</span></div>
+        <div id="a2-kds" class="a2-card">
+          <div class="head"><span class="num">CMD-0427</span><span class="age">0 min</span></div>
+          <ul>
+            <li><b>2×</b> Poisson braisé</li>
+            <li><b>1×</b> Poulet nyembwe</li>
+            <li><b>3×</b> Jus de bissap</li>
+          </ul>
+          <div id="a2-btn"><span id="a2-l1">En préparation</span><span id="a2-l2">Prêt</span></div>
+        </div>
+      </div>
+    </div>
+  </div>
+  <script>
+    (function () {
+      const tl = gsap.timeline({ paused: true });
+      // Entrée : whip depuis la droite (raccord avec la sortie de l'acte 1).
+      tl.fromTo("#a2-world", { x: 340, filter: "blur(18px)" }, { x: 0, filter: "blur(0px)", duration: 0.45, ease: "power3.out" }, 0);
+      tl.fromTo("#a2-cam", { scale: 1.02 }, { scale: 1.1, duration: 8.15, ease: "power1.inOut" }, 0);
+      tl.set(["#a2-kdsbar", "#a2-kds", "#a2-l2"], { opacity: 0 }, 0);
+      // La question, en grand, sous un voile plus sombre.
+      tl.fromTo("#a2-q .w", { opacity: 0, y: 14, filter: "blur(10px)" }, { opacity: 1, y: 0, filter: "blur(0px)", duration: 0.22, ease: "power3.out", stagger: 0.07 }, 0.4);
+      // Elle s'efface et laisse place à la réponse.
+      tl.to("#a2-q .w", { opacity: 0, y: -24, filter: "blur(10px)", duration: 0.2, ease: "power2.in", stagger: 0.03 }, 2.05);
+      tl.fromTo("#a2-qdim", { opacity: 1 }, { opacity: 0, duration: 0.45, ease: "power2.out" }, 2.0999999999999996);
+      tl.fromTo(".a2-title .w", { opacity: 0, filter: "blur(8px)" }, { opacity: 1, filter: "blur(0px)", duration: 0.18, ease: "power2.out", stagger: 0.08 }, 2.25);
+      tl.to("#a2-head", { y: -340, scale: 0.72, transformOrigin: "50% 0%", duration: 0.6, ease: "power3.inOut" }, 3.6);
+      // La commande de la table arrive.
+      tl.fromTo("#a2-order", { y: 60, opacity: 0, filter: "blur(10px)" }, { y: 0, opacity: 1, filter: "blur(0px)", duration: 0.7, ease: "expo.out" }, 3.9);
+      // Elle devient le bon cuisine (échange flou, même place).
+      tl.to("#a2-order", { opacity: 0, filter: "blur(8px)", duration: 0.18, ease: "power2.in" }, 5.5);
+      tl.fromTo("#a2-kdsbar", { opacity: 0, filter: "blur(8px)" }, { opacity: 1, filter: "blur(0px)", duration: 0.22, ease: "power2.out" }, 5.6);
+      tl.fromTo("#a2-kds", { opacity: 0, filter: "blur(8px)" }, { opacity: 1, filter: "blur(0px)", duration: 0.25, ease: "power2.out" }, 5.67);
+      // La cuisine lance la préparation : « Prêt ».
+      tl.to("#a2-btn", { scale: 0.96, duration: 0.1, ease: "power2.in" }, 6.75);
+      tl.to("#a2-btn", { scale: 1, duration: 0.14, ease: "power2.out" }, 6.85);
+      tl.to("#a2-l1", { opacity: 0, filter: "blur(6px)", duration: 0.15 }, 6.87);
+      tl.fromTo("#a2-l2", { opacity: 0, filter: "blur(6px)" }, { opacity: 1, filter: "blur(0px)", duration: 0.15 }, 6.95);
+      // Sortie : poussée vers l'avant avec flou.
+      tl.to("#a2-world", { scale: 1.25, filter: "blur(14px)", duration: 0.5, ease: "power3.in" }, 7.65);
+      window.__timelines["a2"] = tl;
+    })();
+  </script>
+</template>

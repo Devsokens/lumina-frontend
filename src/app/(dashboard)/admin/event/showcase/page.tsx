@@ -25,12 +25,14 @@ export default function ShowcaseEditorPage() {
   if (!tenant || loadedFor !== tenant.id) return <Skeleton className="h-[70vh]" />;
 
   return (
-    <div className="space-y-4 pb-16 max-w-7xl mx-auto">
-      {/* Top Floating Editor Toolbar */}
-      <ShowcaseEditorToolbar slug={tenant.slug} tenantName={tenant.name} config={tenant.config} />
+    <div className="flex flex-col h-[calc(100vh-6.5rem)] sm:h-[calc(100vh-7.5rem)] max-w-7xl mx-auto gap-3 overflow-hidden">
+      {/* Zone du haut fixe (Barre d'outils de l'éditeur) */}
+      <div className="shrink-0">
+        <ShowcaseEditorToolbar slug={tenant.slug} tenantName={tenant.name} config={tenant.config} />
+      </div>
 
-      {/* Direct In-Context Visual Canvas */}
-      <div className="w-full">
+      {/* Zone d'affichage et de défilement dédiée de la vitrine (ne passe jamais derrière la barre) */}
+      <div className="flex-1 min-h-0 overflow-y-auto overflow-x-hidden rounded-3xl border border-border/60 bg-muted/20 p-1 sm:p-2 [scrollbar-width:thin] [scrollbar-color:rgba(255,255,255,0.15)_transparent]">
         <ShowcaseCanvas isEditorMode={true} />
       </div>
     </div>
