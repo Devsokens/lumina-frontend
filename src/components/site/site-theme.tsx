@@ -29,8 +29,9 @@ export function SiteTheme({ children }: { children: React.ReactNode }) {
       </div>
     );
   }
+  const site = siteOf(tenant);
   return (
-    <div style={siteStyle(siteOf(tenant))} className="flex min-h-dvh flex-col bg-background text-foreground">
+    <div style={siteStyle(site)} data-motion={site.motion} className="flex min-h-dvh flex-col bg-background text-foreground">
       {children}
     </div>
   );

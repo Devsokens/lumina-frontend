@@ -13,7 +13,7 @@ import { cn } from "@/lib/utils";
 // Briques du site RBNB, partagées par les 6 dispositions
 // (stays-home.tsx). Une disposition choisit l'ordre et la variante.
 
-export type ListingsVariant = "grid" | "duo" | "magazine" | "carousel" | "bento" | "index";
+export type ListingsVariant = "grid" | "duo" | "magazine" | "carousel" | "bento" | "index" | "table";
 
 export function SectionTitle({ eyebrow, title, center }: { eyebrow?: string; title: string; center?: boolean }) {
   return (
@@ -156,6 +156,51 @@ export function ListingsView({
           </Reveal>
         ))}
       </ol>
+    );
+  }
+
+  if (variant === "table") {
+    return (
+      <div className="overflow-x-auto rounded-3xl border border-border bg-card">
+        <table className="w-full min-w-[640px] text-sm">
+          <thead className="text-left text-xs uppercase tracking-wider text-muted-foreground">
+            <tr className="border-b border-border">
+              <th className="px-4 py-3 font-medium">Logement</th>
+              <th className="px-4 py-3 font-medium">Voyageurs</th>
+              <th className="px-4 py-3 font-medium">Chambres</th>
+              <th className="px-4 py-3 text-right font-medium">Par nuit</th>
+              <th className="px-4 py-3" />
+            </tr>
+          </thead>
+          <tbody>
+            {listings.map((l, i) => (
+              <Reveal key={l.id} as="tr" index={i} className="border-b border-border/60 last:border-0">
+                <td className="px-4 py-3">
+                  <div className="flex items-center gap-3">
+                    <div className="size-14 shrink-0 overflow-hidden rounded-xl bg-muted">
+                      <Cover src={l.photos[0]} className="size-full" />
+                    </div>
+                    <div className="min-w-0">
+                      <p className="truncate font-semibold">{l.title}</p>
+                      <p className="truncate text-xs text-muted-foreground">
+                        {LISTING_TYPE_LABELS[l.type]} · {l.city}
+                      </p>
+                    </div>
+                  </div>
+                </td>
+                <td className="px-4 py-3 tabular-nums">{l.maxGuests}</td>
+                <td className="px-4 py-3 tabular-nums">{l.bedrooms}</td>
+                <td className="px-4 py-3 text-right font-semibold tabular-nums">{formatXAF(l.nightlyPrice)}</td>
+                <td className="px-4 py-3 text-right">
+                  <Link href={hrefOf(l.id)} className="inline-flex items-center gap-1 rounded-full bg-primary px-4 py-2 text-xs font-semibold text-primary-foreground">
+                    Réserver <ArrowUpRight className="size-3.5" />
+                  </Link>
+                </td>
+              </Reveal>
+            ))}
+          </tbody>
+        </table>
+      </div>
     );
   }
 

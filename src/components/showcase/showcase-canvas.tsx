@@ -40,6 +40,7 @@ import {
   type TicketTier,
   type ShowcaseTheme,
 } from "@/stores/useShowcaseStore";
+import { SHOWCASE_LAYOUTS, SHOWCASE_PRESETS, type ShowcaseSection } from "@/lib/showcase-layouts";
 import { Button } from "@/components/ui/button";
 import {
   Dialog,
@@ -72,6 +73,7 @@ const THEMES: { id: ShowcaseTheme; name: string; gradient: string }[] = [
 export function ShowcaseCanvas({ isEditorMode = false, liveEvents, onReserve }: ShowcaseCanvasProps) {
   const {
     theme,
+    layout,
     setTheme,
     fontFamily,
     deviceView,
@@ -104,6 +106,12 @@ export function ShowcaseCanvas({ isEditorMode = false, liveEvents, onReserve }: 
     updateGalleryImage,
   } = useShowcaseStore();
   const events = liveEvents ?? draftEvents;
+  // Variante de mise en page : couverture, ordre des sections, présentation
+  // des événements, bouton billet fixe, animations (lib/showcase-layouts.ts).
+  const preset = SHOWCASE_PRESETS[layout];
+  const sectionOrder = (id: ShowcaseSection) => ({ order: preset.order.indexOf(id) + 1 });
+  const heroLeft = preset.hero === "left" || preset.hero === "poster";
+  const shownCount = preset.events === "posters" ? 7 : preset.events === "carousel" || preset.events === "agenda" ? 6 : 3;
 
   // In-Page Event Search & Category Filter (Visible on main page)
   const [homeEventSearch, setHomeEventSearch] = useState("");
@@ -307,8 +315,9 @@ export function ShowcaseCanvas({ isEditorMode = false, liveEvents, onReserve }: 
 
   return (
     <div
-      className={`mx-auto bg-[#090b0e] text-white transition-all ${getDeviceClass()} relative`}
+      className={`mx-auto bg-[#090b0e] text-white transition-all ${getDeviceClass()} relative flex flex-col`}
       style={{ fontFamily }}
+      data-motion={preset.motion}
     >
       {/* HIDDEN FILE INPUTS FOR DIRECT UPLOADS */}
       <input
@@ -393,6 +402,23 @@ export function ShowcaseCanvas({ isEditorMode = false, liveEvents, onReserve }: 
               Cliquez directement sur n&apos;importe quel texte ou survolez une image pour la modifier.
             </span>
           </div>
+
+          {/* Variante de mise en page */}
+          <label className="flex items-center gap-1.5">
+            <span className="text-[11px] text-zinc-400 font-semibold">Disposition :</span>
+            <select
+              value={layout}
+              onChange={(e) => updateField("layout", e.target.value as typeof layout)}
+              className="rounded-lg bg-zinc-900 border border-white/20 px-2 py-1 text-[11px] text-white"
+              title={preset.hint}
+            >
+              {SHOWCASE_LAYOUTS.map((l) => (
+                <option key={l} value={l}>
+                  {SHOWCASE_PRESETS[l].label}
+                </option>
+              ))}
+            </select>
+          </label>
 
           {/* Quick Theme Swatches */}
           <div className="flex items-center gap-1.5">
@@ -529,15 +555,18 @@ export function ShowcaseCanvas({ isEditorMode = false, liveEvents, onReserve }: 
       </header>
 
       {/* 2. HERO SECTION OF THE ORGANIZATION (NO ETIQUETTES / BADGES) */}
-      <section className="relative overflow-hidden pt-12 pb-16 px-4 sm:px-8 group">
+      <section
+        className={`relative overflow-hidden px-4 sm:px-8 group ${preset.hero === "compact" ? "pt-8 pb-8" : "pt-12 pb-16"} ${preset.hero === "fullbleed" ? "min-h-[78svh] flex items-center" : ""}`}
+      >
         {/* Ambient Glows */}
         <div
           className={`absolute -top-24 left-1/2 -translate-x-1/2 size-[600px] rounded-full bg-gradient-to-b ${themeStyle.glow} blur-[120px] pointer-events-none opacity-60`}
         />
         <div
-          className="absolute inset-0 bg-cover bg-center opacity-15 pointer-events-none mix-blend-luminosity transition-all"
+          className={`absolute inset-0 bg-cover bg-center pointer-events-none transition-all ${preset.hero === "fullbleed" ? "opacity-55 stay-kenburns" : "opacity-15 mix-blend-luminosity"}`}
           style={{ backgroundImage: `url(${orgCoverUrl})` }}
         />
+        {preset.hero === "fullbleed" && <div className="absolute inset-0 bg-gradient-to-t from-[#090b0e] via-black/30 to-black/40 pointer-events-none" />}
 
         {/* Hero Cover Upload Trigger (Visible in Editor Mode) */}
         {isEditorMode && (
@@ -555,7 +584,8 @@ export function ShowcaseCanvas({ isEditorMode = false, liveEvents, onReserve }: 
           </div>
         )}
 
-        <div className="relative mx-auto max-w-5xl text-center space-y-6">
+        <div className={`relative mx-auto w-full ${preset.hero === "poster" ? "max-w-6xl grid gap-8 md:grid-cols-[1.1fr_0.9fr] items-center" : ""}`}>
+        <div className={`relative space-y-6 ${heroLeft ? "max-w-3xl text-left [&_h1]:mx-0 [&_p]:mx-0" : "mx-auto max-w-5xl text-center"}`}>
           {/* Main Headline */}
           {isEditorMode ? (
             <textarea
@@ -565,7 +595,7 @@ export function ShowcaseCanvas({ isEditorMode = false, liveEvents, onReserve }: 
               className="w-full font-display text-3xl sm:text-5xl md:text-6xl font-extrabold tracking-tight text-white leading-[1.1] max-w-4xl mx-auto bg-transparent border border-dashed border-white/20 hover:border-amber-400 focus:outline-none focus:border-amber-400 text-center rounded-2xl p-2 resize-none"
             />
           ) : (
-            <h1 className="font-display text-3xl sm:text-5xl md:text-6xl font-extrabold tracking-tight text-white leading-[1.1] max-w-4xl mx-auto">
+            <h1 className={`stay-intro font-display font-extrabold tracking-tight text-white leading-[1.1] max-w-4xl mx-auto ${preset.hero === "compact" ? "text-3xl sm:text-4xl" : "text-3xl sm:text-5xl md:text-6xl"}`}>
               {heroHeadline}
             </h1>
           )}
@@ -585,7 +615,7 @@ export function ShowcaseCanvas({ isEditorMode = false, liveEvents, onReserve }: 
           )}
 
           {/* Action CTAs (Clean without emojis) */}
-          <div className="flex flex-wrap items-center justify-center gap-3 pt-2">
+          <div className={`stay-intro flex flex-wrap items-center gap-3 pt-2 ${heroLeft ? "justify-start" : "justify-center"}`} style={{ "--i": 2 } as React.CSSProperties}>
             <Button
               size="lg"
               onClick={() => setIsCatalogOpen(true)}
@@ -597,7 +627,7 @@ export function ShowcaseCanvas({ isEditorMode = false, liveEvents, onReserve }: 
           </div>
 
           {/* Key Stats Strip (Directly Editable in Editor Mode) */}
-          <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 pt-8 max-w-4xl mx-auto">
+          <div className={`grid grid-cols-2 sm:grid-cols-4 gap-3 pt-8 max-w-4xl mx-auto ${preset.stats ? "" : "hidden"}`}>
             <div className="rounded-2xl border border-white/10 bg-white/5 p-4 backdrop-blur-md text-center space-y-1">
               {isEditorMode ? (
                 <input
@@ -663,10 +693,27 @@ export function ShowcaseCanvas({ isEditorMode = false, liveEvents, onReserve }: 
             </div>
           </div>
         </div>
+        {preset.hero === "poster" && events[0] && (
+          <button
+            type="button"
+            onClick={() => handleOpenEventDetails(events[0])}
+            className="stay-intro relative aspect-[3/4] w-full overflow-hidden rounded-[2rem] border border-white/15 shadow-2xl text-left"
+            style={{ "--i": 2 } as React.CSSProperties}
+          >
+            {/* eslint-disable-next-line @next/next/no-img-element */}
+            <img src={events[0].coverImageUrl} alt={events[0].title} className="size-full object-cover" />
+            <span className="absolute inset-x-0 bottom-0 bg-gradient-to-t from-black via-black/60 to-transparent p-5">
+              <span className="block text-[11px] font-bold uppercase tracking-wider text-white/70">Prochain événement</span>
+              <span className="mt-1 block font-display text-xl font-extrabold text-white">{events[0].title}</span>
+              <span className="mt-1 block text-xs text-white/80">{events[0].date} · {events[0].location}</span>
+            </span>
+          </button>
+        )}
+        </div>
       </section>
 
       {/* 3. SECTION ÉVÉNEMENTS (AVEC BARRE DE RECHERCHE VISIBLE DIRECTEMENT SUR LA PAGE) */}
-      <section id="events-section" className="py-16 px-4 sm:px-8 border-t border-white/10 bg-[#06080a]">
+      <section id="events-section" style={sectionOrder("events")} className="py-16 px-4 sm:px-8 border-t border-white/10 bg-[#06080a]">
         <div className="mx-auto max-w-6xl space-y-7">
           {/* Section Header */}
           <div className="flex flex-col sm:flex-row sm:items-end justify-between gap-4">
@@ -735,15 +782,51 @@ export function ShowcaseCanvas({ isEditorMode = false, liveEvents, onReserve }: 
           </div>
 
           {/* 4 Cards Linear Row: 3 Events + 1 "Voir Tout le Catalogue" Card */}
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
-            {/* 3 FIRST MATCHING EVENTS */}
-            {homeFilteredEvents.slice(0, 3).map((evt) => (
+          {preset.events === "agenda" && (
+            <ol className="divide-y divide-white/10 rounded-3xl border border-white/10 bg-white/[0.03]">
+              {homeFilteredEvents.slice(0, shownCount).map((evt, i) => (
+                <li key={evt.id} className="stay-reveal flex flex-wrap items-center gap-4 p-4 sm:flex-nowrap" data-shown="true" style={{ "--i": i } as React.CSSProperties}>
+                  <div className={`flex size-16 shrink-0 flex-col items-center justify-center rounded-2xl border border-white/15 ${themeStyle.primaryText}`}>
+                    <Calendar className="size-4" />
+                    <span className="mt-1 text-[10px] font-bold text-white/80">{evt.date.split(" ").slice(0, 2).join(" ")}</span>
+                  </div>
+                  <div className="min-w-0 flex-1">
+                    <p className="text-[11px] font-bold uppercase tracking-wider text-white/60">{evt.category}</p>
+                    <h3 className="truncate font-display text-lg font-extrabold text-white">{evt.title}</h3>
+                    <p className="truncate text-xs text-zinc-400">{evt.date} · {evt.location}</p>
+                  </div>
+                  <span className={`font-mono text-xs font-black ${themeStyle.primaryText}`}>Dès {evt.startingPrice.toLocaleString("fr-FR")} FCFA</span>
+                  <Button onClick={() => handleOpenEventDetails(evt)} className={`rounded-xl text-xs font-bold gap-1.5 ${themeStyle.primary}`}>
+                    <Ticket className="size-3.5" /> Billets
+                  </Button>
+                </li>
+              ))}
+              {homeFilteredEvents.length === 0 && <li className="p-6 text-center text-sm text-zinc-400">Aucun événement ne correspond.</li>}
+            </ol>
+          )}
+          <div
+            className={
+              preset.events === "agenda"
+                ? "hidden"
+                : preset.events === "carousel"
+                  ? "-mx-4 flex snap-x snap-mandatory gap-4 overflow-x-auto px-4 pb-3 [&>*]:w-[280px] [&>*]:shrink-0 [&>*]:snap-start"
+                  : preset.events === "featured"
+                    ? "grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 [&>*:first-child]:sm:col-span-2 [&>*:first-child]:lg:row-span-2"
+                    : "grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4"
+            }
+          >
+            {/* PREMIERS ÉVÉNEMENTS CORRESPONDANTS */}
+            {homeFilteredEvents.slice(0, shownCount).map((evt, i) => (
               <div
                 key={evt.id}
-                className="group rounded-3xl border border-white/10 bg-white/[0.03] hover:bg-white/[0.06] hover:border-white/20 transition-all duration-300 overflow-hidden flex flex-col justify-between shadow-xl relative"
+                className="group rounded-3xl border border-white/10 bg-white/[0.03] hover:bg-white/[0.06] hover:border-white/20 transition-all duration-300 overflow-hidden flex flex-col justify-between shadow-xl relative stay-lift"
               >
                 {/* Event Image Banner */}
-                <div className="relative h-44 w-full overflow-hidden bg-zinc-900">
+                <div
+                  className={`relative w-full overflow-hidden bg-zinc-900 ${
+                    preset.events === "posters" ? "h-72" : preset.events === "featured" && i === 0 ? "h-44 lg:h-80" : "h-44"
+                  }`}
+                >
                   {/* eslint-disable-next-line @next/next/no-img-element */}
                   <img
                     src={evt.coverImageUrl}
@@ -885,7 +968,7 @@ export function ShowcaseCanvas({ isEditorMode = false, liveEvents, onReserve }: 
       </section>
 
       {/* 4. SECTION À PROPOS DE L'ORGANISATION & NOTRE VISION */}
-      <section id="about-section" className="py-16 px-4 sm:px-8 border-t border-white/10 bg-[#090b0e]">
+      <section id="about-section" style={sectionOrder("about")} className="py-16 px-4 sm:px-8 border-t border-white/10 bg-[#090b0e]">
         <div className="mx-auto max-w-5xl grid grid-cols-1 md:grid-cols-2 gap-10 items-center">
           <div className="space-y-5">
             <div className="inline-flex items-center gap-1.5 text-xs font-bold uppercase tracking-wider text-amber-400">
@@ -974,7 +1057,7 @@ export function ShowcaseCanvas({ isEditorMode = false, liveEvents, onReserve }: 
       </section>
 
       {/* 5. GALERIE & MOMENTS FORTS (NO ETIQUETTES / BADGES) */}
-      <section id="gallery-section" className="py-16 px-4 sm:px-8 border-t border-white/10 bg-[#06080a]">
+      <section id="gallery-section" style={sectionOrder("gallery")} className="py-16 px-4 sm:px-8 border-t border-white/10 bg-[#06080a]">
         <div className="mx-auto max-w-6xl space-y-8">
           <div className="text-center space-y-2 max-w-2xl mx-auto">
             <h2 className="font-display text-2xl sm:text-4xl font-extrabold text-white tracking-tight">
@@ -1020,7 +1103,7 @@ export function ShowcaseCanvas({ isEditorMode = false, liveEvents, onReserve }: 
       </section>
 
       {/* 6. AVIS DES PARTICIPANTS & TÉMOIGNAGES (NO ETIQUETTES / BADGES) */}
-      <section id="testimonials-section" className="py-16 px-4 sm:px-8 border-t border-white/10 bg-[#090b0e]">
+      <section id="testimonials-section" style={sectionOrder("testimonials")} className="py-16 px-4 sm:px-8 border-t border-white/10 bg-[#090b0e]">
         <div className="mx-auto max-w-6xl space-y-8">
           <div className="text-center space-y-2 max-w-2xl mx-auto">
             <h2 className="font-display text-2xl sm:text-4xl font-extrabold text-white tracking-tight">
@@ -1064,7 +1147,7 @@ export function ShowcaseCanvas({ isEditorMode = false, liveEvents, onReserve }: 
       </section>
 
       {/* 7. FOIRE AUX QUESTIONS (FAQ) */}
-      <section id="faq-section" className="py-16 px-4 sm:px-8 border-t border-white/10 bg-[#06080a]">
+      <section id="faq-section" style={sectionOrder("faq")} className="py-16 px-4 sm:px-8 border-t border-white/10 bg-[#06080a]">
         <div className="mx-auto max-w-4xl space-y-6">
           <div className="text-center space-y-2">
             <div className="inline-flex items-center gap-1.5 text-xs font-bold uppercase tracking-wider text-emerald-400">
@@ -1110,7 +1193,7 @@ export function ShowcaseCanvas({ isEditorMode = false, liveEvents, onReserve }: 
       </section>
 
       {/* 8. FOOTER OFFICIEL & COORDONNÉES */}
-      <footer className="border-t border-white/10 bg-[#040507] py-12 px-4 sm:px-8 text-xs text-zinc-400">
+      <footer style={{ order: 90 }} className="border-t border-white/10 bg-[#040507] py-12 px-4 sm:px-8 text-xs text-zinc-400">
         <div className="mx-auto max-w-6xl space-y-8">
           <div className="grid grid-cols-1 md:grid-cols-4 gap-8">
             <div className="space-y-3 md:col-span-2">
@@ -1170,6 +1253,15 @@ export function ShowcaseCanvas({ isEditorMode = false, liveEvents, onReserve }: 
           </div>
         </div>
       </footer>
+
+      {/* Bouton billets toujours visible sur mobile (variantes « sticky ») */}
+      {preset.sticky && !isEditorMode && (
+        <div className="fixed inset-x-0 bottom-0 z-40 border-t border-white/10 bg-[#090b0e]/95 p-3 backdrop-blur md:hidden">
+          <Button onClick={() => setIsCatalogOpen(true)} className={`h-12 w-full rounded-2xl text-sm font-bold gap-2 ${themeStyle.primary}`}>
+            <Ticket className="size-4" /> Acheter mes billets
+          </Button>
+        </div>
+      )}
 
       {/* FLOATING WHATSAPP BUTTON (ALWAYS ACCESSIBLE) */}
       <a

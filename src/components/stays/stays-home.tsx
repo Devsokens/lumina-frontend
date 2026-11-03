@@ -7,6 +7,7 @@ import { usePublicListings } from "@/hooks/useStays";
 import { restaurantInfo } from "@/lib/order-document";
 import { staySiteOf, type StayLayout, type StaySiteConfig } from "@/lib/stay-site";
 import { Skeleton } from "@/components/ui/skeleton";
+import { formatXAF } from "@/lib/format";
 import {
   About,
   Contact,
@@ -32,6 +33,10 @@ const LAYOUTS: Record<StayLayout, { listings: ListingsVariant; featured: Listing
   galerie: { listings: "bento", featured: "grid", order: ["listings", "gallery", "about", "highlights", "contact"] },
   boutique: { listings: "duo", featured: "grid", order: ["highlights", "listings", "about", "gallery", "contact"] },
   nomade: { listings: "index", featured: "carousel", order: ["listings", "highlights", "featured", "about", "gallery", "contact"] },
+  lodge: { listings: "grid", featured: "carousel", order: ["listings", "highlights", "featured", "about", "gallery", "contact"] },
+  carnet: { listings: "duo", featured: "grid", order: ["about", "highlights", "listings", "gallery", "contact"] },
+  comparatif: { listings: "table", featured: "grid", order: ["listings", "highlights", "featured", "about", "contact"] },
+  panorama: { listings: "bento", featured: "grid", order: ["highlights", "listings", "gallery", "about", "contact"] },
 };
 
 type HeroProps = {
@@ -43,6 +48,8 @@ type HeroProps = {
   city?: string;
   count: number;
   filters: React.ReactNode;
+  preview: PublicListing[];
+  hrefOf: (id: string) => string;
 };
 
 // Accueil du site d'un hébergeur, mis en forme selon config.staySite.
@@ -66,7 +73,9 @@ export function StaysHome() {
   const hrefOf = (id: string) => `/${tenant.slug}/stays/${id}`;
   const cities = [...new Set(all.map((l) => l.city))];
 
-  const filters = <Filters types={types} type={type} onType={setType} guests={guests} onGuests={setGuests} floating={site.layout === "riviera"} />;
+  // Couvertures qui portent déjà les filtres : pas de doublon au-dessus des logements.
+  const filtersInHero = site.layout === "riviera" || site.layout === "lodge";
+  const filters = <Filters types={types} type={type} onType={setType} guests={guests} onGuests={setGuests} floating={filtersInHero} />;
   const hero: HeroProps = {
     site,
     name: tenant.name,
@@ -76,6 +85,8 @@ export function StaysHome() {
     city: cities.length === 1 ? cities[0] : undefined,
     count: all.length,
     filters,
+    preview: all.slice(0, 6),
+    hrefOf,
   };
   const Hero = HEROES[site.layout];
 
@@ -92,7 +103,7 @@ export function StaysHome() {
     listings: (
       <div id="logements" className="scroll-mt-24">
         <SectionTitle eyebrow={`${all.length} logement${all.length > 1 ? "s" : ""}`} title="Choisissez votre séjour" center={site.layout === "boutique"} />
-        {site.layout !== "riviera" && <div className="mb-8">{filters}</div>}
+        {!filtersInHero && <div className="mb-8">{filters}</div>}
         {isLoading ? (
           <div className="grid gap-6 sm:grid-cols-2 lg:grid-cols-3">
             {[0, 1, 2].map((i) => (
@@ -319,6 +330,133 @@ function HeroNomade({ site, headline, tagline, cover, city, count }: HeroProps) 
   );
 }
 
+function HeroLodge({ site, headline, tagline, cover, filters, count, city }: HeroProps) {
+  return (
+    <section className="mx-auto grid w-full max-w-6xl items-stretch gap-6 px-4 pt-8 lg:grid-cols-[1fr_380px]">
+      <div className="relative isolate flex min-h-[60svh] items-end overflow-hidden rounded-[2.5rem] p-8 text-white">
+        <Cover src={cover} className="stay-kenburns absolute inset-0 -z-10 size-full" />
+        <div className="absolute inset-0 -z-10 bg-gradient-to-t from-black/75 to-transparent" />
+        <div className="max-w-xl">
+          <Eyebrow text={site.eyebrow} className="text-white/80" />
+          <h1 style={{ "--i": 1 } as React.CSSProperties} className="stay-intro mt-3 font-display text-4xl font-semibold tracking-tight text-balance sm:text-6xl">
+            {headline}
+          </h1>
+          {tagline && (
+            <p style={{ "--i": 2 } as React.CSSProperties} className="stay-intro mt-3 text-white/85">
+              {tagline}
+            </p>
+          )}
+        </div>
+      </div>
+      <aside
+        style={{ "--i": 2 } as React.CSSProperties}
+        className="stay-intro flex flex-col justify-between gap-6 rounded-[2.5rem] border border-border bg-card p-6 shadow-xl lg:sticky lg:top-24 lg:self-start"
+      >
+        <div>
+          <p className="text-xs font-semibold uppercase tracking-[0.2em] text-primary">Réservation directe</p>
+          <p className="mt-2 font-display text-2xl font-semibold">Trouvez votre séjour</p>
+          <p className="mt-1 text-sm text-muted-foreground">
+            {count} logement{count > 1 ? "s" : ""}
+            {city ? ` à ${city}` : ""} · paiement Mobile Money sécurisé
+          </p>
+        </div>
+        <div className="[&>div]:flex-col [&>div]:items-stretch [&_label]:ml-0">{filters}</div>
+        <a href="#logements" className="inline-flex items-center justify-center gap-2 rounded-full bg-primary px-6 py-3 font-semibold text-primary-foreground">
+          Voir les disponibilités <ArrowDown className="size-4" />
+        </a>
+      </aside>
+    </section>
+  );
+}
+
+function HeroCarnet({ site, headline, tagline, cover, name }: HeroProps) {
+  return (
+    <section className="mx-auto w-full max-w-3xl px-4 pb-4 pt-16 sm:pt-24">
+      <Eyebrow text={site.eyebrow || name} className="text-primary" />
+      <h1 style={{ "--i": 1 } as React.CSSProperties} className="stay-intro mt-5 font-display text-5xl font-medium leading-[1.05] tracking-tight text-balance sm:text-7xl">
+        {headline}
+      </h1>
+      {tagline && (
+        <p style={{ "--i": 2 } as React.CSSProperties} className="stay-intro mt-6 border-l-2 border-primary pl-5 text-xl italic leading-relaxed text-muted-foreground">
+          {tagline}
+        </p>
+      )}
+      <div style={{ "--i": 3 } as React.CSSProperties} className="stay-intro mt-12 overflow-hidden rounded-3xl">
+        <Cover src={cover} className="stay-kenburns aspect-[3/2]" />
+      </div>
+    </section>
+  );
+}
+
+function HeroComparatif({ site, headline, tagline, count, city }: HeroProps) {
+  return (
+    <section className="border-b border-border bg-[var(--site-soft)]">
+      <div className="mx-auto flex w-full max-w-6xl flex-wrap items-end justify-between gap-6 px-4 py-14">
+        <div className="max-w-2xl">
+          <Eyebrow text={site.eyebrow} className="text-primary" />
+          <h1 style={{ "--i": 1 } as React.CSSProperties} className="stay-intro mt-3 font-display text-4xl font-semibold tracking-tight sm:text-5xl">
+            {headline}
+          </h1>
+          {tagline && (
+            <p style={{ "--i": 2 } as React.CSSProperties} className="stay-intro mt-3 text-muted-foreground">
+              {tagline}
+            </p>
+          )}
+        </div>
+        <div style={{ "--i": 3 } as React.CSSProperties} className="stay-intro flex gap-6 text-sm">
+          <span>
+            <span className="block font-display text-3xl font-semibold">{count}</span>
+            <span className="text-muted-foreground">logements</span>
+          </span>
+          {city && (
+            <span>
+              <span className="block font-display text-3xl font-semibold">{city}</span>
+              <span className="text-muted-foreground">ville</span>
+            </span>
+          )}
+        </div>
+      </div>
+    </section>
+  );
+}
+
+function HeroPanorama({ site, headline, tagline, cover, preview, hrefOf }: HeroProps) {
+  return (
+    <section className="relative isolate flex min-h-[94svh] flex-col justify-between overflow-hidden text-white">
+      <Cover src={cover} className="stay-kenburns absolute inset-0 -z-10 size-full" />
+      <div className="absolute inset-0 -z-10 bg-gradient-to-b from-black/50 via-black/10 to-black/80" />
+      <div className="mx-auto w-full max-w-6xl px-4 pt-20 text-center">
+        <Eyebrow text={site.eyebrow} className="text-white/80" />
+        <h1 style={{ "--i": 1 } as React.CSSProperties} className="stay-intro mx-auto mt-4 max-w-4xl font-display text-5xl font-semibold tracking-tight text-balance sm:text-7xl">
+          {headline}
+        </h1>
+        {tagline && (
+          <p style={{ "--i": 2 } as React.CSSProperties} className="stay-intro mx-auto mt-4 max-w-xl text-white/85">
+            {tagline}
+          </p>
+        )}
+      </div>
+      {preview.length > 0 && (
+        <div style={{ "--i": 3 } as React.CSSProperties} className="stay-intro mx-auto w-full max-w-6xl px-4 pb-8">
+          <div className="flex snap-x gap-3 overflow-x-auto pb-2">
+            {preview.map((l) => (
+              <a key={l.id} href={hrefOf(l.id)} className="flex w-64 shrink-0 snap-start items-center gap-3 rounded-2xl bg-white/10 p-2 pr-4 backdrop-blur-md transition-colors hover:bg-white/20">
+                <div className="size-14 shrink-0 overflow-hidden rounded-xl">
+                  <Cover src={l.photos[0]} className="size-full" />
+                </div>
+                <span className="min-w-0">
+                  <span className="block truncate text-sm font-semibold">{l.title}</span>
+                  <span className="text-xs text-white/75">{formatXAF(l.nightlyPrice)} / nuit</span>
+                </span>
+              </a>
+            ))}
+          </div>
+        </div>
+      )}
+    </section>
+  );
+}
+
 const HEROES: Record<StayLayout, (p: HeroProps) => React.ReactNode> = {
   riviera: HeroRiviera,
   atelier: HeroAtelier,
@@ -326,4 +464,8 @@ const HEROES: Record<StayLayout, (p: HeroProps) => React.ReactNode> = {
   galerie: HeroGalerie,
   boutique: HeroBoutique,
   nomade: HeroNomade,
+  lodge: HeroLodge,
+  carnet: HeroCarnet,
+  comparatif: HeroComparatif,
+  panorama: HeroPanorama,
 };

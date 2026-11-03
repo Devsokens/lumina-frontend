@@ -1,4 +1,5 @@
 import { create } from "zustand";
+import { showcaseLayoutOf, type ShowcaseLayout } from "@/lib/showcase-layouts";
 
 export type ShowcaseTheme = "emerald" | "amber" | "electric" | "ruby" | "dark" | "indigo";
 
@@ -47,6 +48,8 @@ export type FAQItem = {
 export type ShowcaseState = {
   // Appearance & Theme
   theme: ShowcaseTheme;
+  // Variante de mise en page (lib/showcase-layouts.ts).
+  layout: ShowcaseLayout;
   fontFamily: "Outfit" | "Syne" | "Inter" | "Plus Jakarta Sans";
   mode: "dark" | "light";
 
@@ -292,6 +295,7 @@ const DEFAULT_STATE: Omit<
   | "resetToDefaults"
 > = {
   theme: "emerald",
+  layout: "scene",
   fontFamily: "Outfit",
   mode: "dark",
 
@@ -398,6 +402,7 @@ const DEFAULT_STATE: Omit<
 // événements réellement en vente.
 export const SHOWCASE_CONTENT_KEYS = [
   "theme",
+  "layout",
   "fontFamily",
   "orgName",
   "orgTagline",
@@ -465,7 +470,7 @@ export function showcaseFromConfig(config: Record<string, unknown> | undefined, 
   const picked = Object.fromEntries(
     SHOWCASE_CONTENT_KEYS.filter((k) => saved[k] !== undefined).map((k) => [k, saved[k]]),
   );
-  return { ...base, ...picked };
+  return { ...base, ...picked, layout: showcaseLayoutOf(saved.layout) };
 }
 
 export const useShowcaseStore = create<ShowcaseState>((set) => ({

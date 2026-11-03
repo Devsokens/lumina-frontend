@@ -11,11 +11,27 @@ export const SITE_PALETTES = ["safran", "bordeaux", "olive", "ocean", "terracott
 export const SITE_FONTS = ["classique", "moderne", "audacieux"] as const;
 export const SITE_MENU_LAYOUTS = ["carte", "cartes", "mosaique"] as const;
 export const SITE_MODES = ["clair", "sombre"] as const;
+// Variantes de mise en page (structure, ergonomie, animations, parcours).
+export const SITE_LAYOUTS = [
+  "brasserie",
+  "gastronomique",
+  "maison",
+  "carte",
+  "street",
+  "terrasse",
+  "comptoir",
+  "lounge",
+  "marche",
+  "editorial",
+] as const;
+export const SITE_MOTIONS = ["aucune", "douce", "vive"] as const;
 
 export type SitePalette = (typeof SITE_PALETTES)[number];
 export type SiteFont = (typeof SITE_FONTS)[number];
 export type SiteMenuLayout = (typeof SITE_MENU_LAYOUTS)[number];
 export type SiteMode = (typeof SITE_MODES)[number];
+export type SiteLayout = (typeof SITE_LAYOUTS)[number];
+export type SiteMotion = (typeof SITE_MOTIONS)[number];
 
 export type SiteHours = { day: number; open: boolean; from: string; to: string };
 
@@ -28,6 +44,8 @@ export type SiteSections = {
 };
 
 export type SiteConfig = {
+  layout: SiteLayout;
+  motion: SiteMotion;
   palette: SitePalette;
   mode: SiteMode;
   font: SiteFont;
@@ -74,6 +92,23 @@ export const LAYOUT_INFO: Record<SiteMenuLayout, { label: string; hint: string }
   mosaique: { label: "Mosaïque", hint: "Grandes photos, idéal pour Instagram" },
 };
 
+// Inspirations : sites de référence du secteur (recherche 2026-11), voir
+// docs/DESIGN_VARIANTS.md côté frontend.
+export const SITE_LAYOUT_INFO: Record<SiteLayout, { label: string; hint: string }> = {
+  brasserie: { label: "Brasserie", hint: "Grande photo, plats vedettes en carrousel : l'efficacité classique" },
+  gastronomique: { label: "Gastronomique", hint: "Sobriété haut de gamme : typographie centrée, peu d'éléments, beaucoup d'air" },
+  maison: { label: "Maison", hint: "L'histoire d'abord : texte et photo en regard, la carte vient ensuite" },
+  carte: { label: "Carte d'abord", hint: "Pour commander vite : la carte lisible dès l'arrivée, bouton fixe en bas d'écran" },
+  street: { label: "Street", hint: "Titres XXL, mosaïque de photos : pensé pour Instagram et TikTok" },
+  terrasse: { label: "Terrasse", hint: "L'ambiance en premier : mosaïque de photos du lieu" },
+  comptoir: { label: "Comptoir", hint: "Service rapide : ouvert ou fermé, commander, WhatsApp, horaires en tête" },
+  lounge: { label: "Lounge", hint: "Ambiance de soirée immersive : plein écran, centré, zoom lent" },
+  marche: { label: "Marché", hint: "Catalogue dense façon e-commerce : idéal pour les boutiques" },
+  editorial: { label: "Éditorial", hint: "Mise en page magazine : produits en grandes rangées alternées" },
+};
+
+export const SITE_MOTION_INFO: Record<SiteMotion, string> = { aucune: "Aucune", douce: "Douce", vive: "Vive" };
+
 export const DEFAULT_HOURS: SiteHours[] = DAYS.map((_, day) => ({
   day,
   open: day !== 0,
@@ -82,6 +117,8 @@ export const DEFAULT_HOURS: SiteHours[] = DAYS.map((_, day) => ({
 }));
 
 export const DEFAULT_SITE: SiteConfig = {
+  layout: "brasserie",
+  motion: "douce",
   palette: "safran",
   mode: "clair",
   font: "classique",
@@ -123,6 +160,8 @@ export function normalizeSite(raw: unknown): SiteConfig {
   const sections = (s.sections && typeof s.sections === "object" ? s.sections : {}) as Record<string, unknown>;
   const hours = Array.isArray(s.hours) ? (s.hours as Record<string, unknown>[]) : [];
   return {
+    layout: oneOf(s.layout, SITE_LAYOUTS, DEFAULT_SITE.layout),
+    motion: oneOf(s.motion, SITE_MOTIONS, DEFAULT_SITE.motion),
     palette: oneOf(s.palette, SITE_PALETTES, DEFAULT_SITE.palette),
     mode: oneOf(s.mode, SITE_MODES, DEFAULT_SITE.mode),
     font: oneOf(s.font, SITE_FONTS, DEFAULT_SITE.font),

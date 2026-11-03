@@ -15,7 +15,7 @@ export function Reveal({
   className?: string;
   // Décalage en cascade (grilles).
   index?: number;
-  as?: "div" | "section" | "li" | "article";
+  as?: "div" | "section" | "li" | "article" | "tr";
 }) {
   const ref = useRef<HTMLElement>(null);
 

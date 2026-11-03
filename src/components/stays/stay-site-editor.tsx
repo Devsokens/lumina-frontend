@@ -382,6 +382,45 @@ function LayoutThumb({ layout }: { layout: StayLayout }) {
           <span className={cn(img, "mt-auto h-1/2 w-3/4 rounded-b-none rounded-t-full")} />
         </div>
       )}
+      {layout === "lodge" && (
+        <div className="grid flex-1 grid-cols-[2fr_1fr] gap-1">
+          <span className={cn(img, "rounded-lg")} />
+          <div className="flex flex-col gap-1 rounded-lg bg-card p-1">
+            <span className={cn(bar, "h-1.5 w-full")} />
+            <span className="h-1 w-2/3 rounded-full bg-foreground/15" />
+            <span className="mt-auto h-2 w-full rounded-full bg-primary/60" />
+          </div>
+        </div>
+      )}
+      {layout === "carnet" && (
+        <div className="flex flex-1 flex-col gap-1 px-2 pt-1">
+          <span className={cn(bar, "h-2 w-4/5")} />
+          <span className="h-1 w-3/5 border-l-2 border-primary pl-1" />
+          <span className={cn(img, "mt-auto h-1/2 w-full")} />
+        </div>
+      )}
+      {layout === "comparatif" && (
+        <div className="flex flex-1 flex-col gap-1">
+          <span className={cn(bar, "h-1.5 w-1/2")} />
+          {[0, 1, 2].map((i) => (
+            <div key={i} className="flex items-center gap-1 rounded bg-card p-0.5">
+              <span className={cn(img, "size-2.5 shrink-0")} />
+              <span className="h-1 flex-1 rounded-full bg-foreground/20" />
+              <span className="h-1.5 w-3 rounded-full bg-primary/60" />
+            </div>
+          ))}
+        </div>
+      )}
+      {layout === "panorama" && (
+        <div className="flex flex-1 flex-col justify-between rounded-lg bg-primary/35 p-1.5">
+          <span className="mx-auto h-1.5 w-1/2 rounded-full bg-white/80" />
+          <div className="flex gap-1">
+            {[0, 1, 2].map((i) => (
+              <span key={i} className="h-2.5 flex-1 rounded bg-white/50" />
+            ))}
+          </div>
+        </div>
+      )}
       {layout === "nomade" && (
         <>
           <div className="flex flex-1 flex-col justify-end gap-1 rounded-lg bg-foreground/85 p-1.5">

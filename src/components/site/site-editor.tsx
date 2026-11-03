@@ -20,7 +20,11 @@ import {
   LAYOUT_INFO,
   PALETTE_INFO,
   SITE_FONTS,
+  SITE_LAYOUTS,
+  SITE_LAYOUT_INFO,
   SITE_MENU_LAYOUTS,
+  SITE_MOTIONS,
+  SITE_MOTION_INFO,
   SITE_PALETTES,
   normalizeSite,
   siteOf,
@@ -79,6 +83,29 @@ export function SiteEditor({ tenant }: { tenant: Tenant }) {
             </Button>
           </div>
         </div>
+
+        <Panel title="Disposition (10 variantes)">
+          <div className="grid grid-cols-2 gap-2">
+            {SITE_LAYOUTS.map((l) => (
+              <button
+                key={l}
+                type="button"
+                onClick={() => set("layout", l)}
+                aria-pressed={site.layout === l}
+                className={`rounded-xl border p-3 text-left transition-colors ${site.layout === l ? "border-primary bg-primary/5 ring-2 ring-primary/30" : "border-border hover:border-foreground/30"}`}
+              >
+                <span className="block text-sm font-semibold">{SITE_LAYOUT_INFO[l].label}</span>
+                <span className="mt-0.5 line-clamp-2 block text-xs text-muted-foreground">{SITE_LAYOUT_INFO[l].hint}</span>
+              </button>
+            ))}
+          </div>
+          <Choice
+            label="Animations"
+            value={site.motion}
+            options={SITE_MOTIONS.map((m) => ({ value: m, label: SITE_MOTION_INFO[m] }))}
+            onChange={(v) => set("motion", v)}
+          />
+        </Panel>
 
         <Panel title="Style">
           <Label>Couleur signature</Label>
@@ -225,7 +252,13 @@ export function SiteEditor({ tenant }: { tenant: Tenant }) {
           className={`mx-auto h-[78vh] overflow-y-auto rounded-3xl border-8 border-foreground/80 shadow-2xl ${device === "mobile" ? "max-w-[400px]" : "w-full"}`}
         >
           {/* Les liens de l'aperçu sont désactivés : on reste dans l'éditeur. */}
-          <div style={siteStyle(site)} className={`${siteFontVariables} pointer-events-none min-h-full bg-background text-foreground [&_a]:pointer-events-none`}>
+          {/* key : rejoue les animations d'entrée quand la disposition change. */}
+          <div
+            key={`${site.layout}-${site.motion}`}
+            style={siteStyle(site)}
+            data-motion={site.motion}
+            className={`${siteFontVariables} pointer-events-none min-h-full bg-background text-foreground [&_a]:pointer-events-none`}
+          >
             <TenantContext.Provider value={preview}>
               <SiteHome />
             </TenantContext.Provider>

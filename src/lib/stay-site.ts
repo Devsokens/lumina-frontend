@@ -7,7 +7,18 @@ import { isPublishableImage } from "@/lib/showcase-payload";
 // docs/API_CONTRACT.md. Les listes doivent rester alignées sur
 // UpdateStaySiteDto côté backend.
 
-export const STAY_LAYOUTS = ["riviera", "atelier", "horizon", "galerie", "boutique", "nomade"] as const;
+export const STAY_LAYOUTS = [
+  "riviera",
+  "atelier",
+  "horizon",
+  "galerie",
+  "boutique",
+  "nomade",
+  "lodge",
+  "carnet",
+  "comparatif",
+  "panorama",
+] as const;
 export const STAY_PALETTES = ["sable", "lagon", "foret", "corail", "ardoise", "terre", "ivoire", "minuit"] as const;
 export const STAY_TYPOGRAPHIES = [
   "editorial",
@@ -71,6 +82,10 @@ export const STAY_LAYOUT_INFO: Record<StayLayout, { label: string; hint: string 
   galerie: { label: "Galerie", hint: "Mosaïque de photos, idéal pour les beaux intérieurs" },
   boutique: { label: "Boutique", hint: "Typographie centrée, épurée, façon hôtel de charme" },
   nomade: { label: "Nomade", hint: "Ambiance immersive et index numéroté des logements" },
+  lodge: { label: "Lodge", hint: "Recherche toujours visible à côté de la couverture : réserver en deux gestes" },
+  carnet: { label: "Carnet", hint: "Le récit du lieu d'abord, façon boutique-hôtel, puis les logements" },
+  comparatif: { label: "Comparatif", hint: "Tableau des logements (voyageurs, chambres, prix) pour choisir vite" },
+  panorama: { label: "Panorama", hint: "Plein écran, les logements défilent au bas de la couverture" },
 };
 
 // accent2 : teinte douce pour les fonds de section et les dégradés.
