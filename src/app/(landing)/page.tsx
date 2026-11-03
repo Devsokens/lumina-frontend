@@ -12,7 +12,7 @@ export default function LandingPage() {
       <HeroSection />
       <LogoMarquee />
 
-      {/* 2. Hub Interactif 4 Secteurs (Événementiel, Restauration, E-Commerce, Airbnb) (Scroll 2-3) */}
+      {/* 2. Hub Interactif 4 Secteurs (Événementiel, Restauration, E-Commerce, RBNB) (Scroll 2-3) */}
       <SectorShowcaseHub />
 
       {/* 3. Grille Tarifaire Simplifiée & Infrastructure Mobile Money (Scroll 4) */}

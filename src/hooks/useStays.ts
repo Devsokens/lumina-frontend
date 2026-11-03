@@ -14,7 +14,7 @@ import type {
   StayStats,
 } from "@/types/stays";
 
-// Airbnb — docs/API_CONTRACT.md §15. Prix et disponibilités calculés
+// RBNB — docs/API_CONTRACT.md §15. Prix et disponibilités calculés
 // par le serveur ; ce fichier ne fait que transporter les données.
 
 async function get<T>(url: string) {

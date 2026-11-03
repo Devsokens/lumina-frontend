@@ -44,7 +44,7 @@ const SECTION_LABELS: Record<keyof StaySiteSections, string> = {
   contact: "Contact et réseaux",
 };
 
-// Éditeur du site Airbnb (config.staySite) : réglages à gauche, aperçu
+// Éditeur du site RBNB (config.staySite) : réglages à gauche, aperçu
 // réel à droite (mêmes composants que le site public, avec le brouillon).
 export function StaySiteEditor({ tenant }: { tenant: Tenant }) {
   const [site, setSite] = useState<StaySiteConfig>(() => staySiteOf(tenant));

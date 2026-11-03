@@ -26,7 +26,7 @@ const jetbrainsMono = JetBrains_Mono({
 export const metadata: Metadata = {
   title: "GiyaX — La plateforme de commerce et gestion pour l'Afrique",
   description:
-    "GiyaX digitalise vos activités en Afrique : Événementiel, Restauration, E-Commerce et Airbnb avec paiement Mobile Money et mode hors-ligne.",
+    "GiyaX digitalise vos activités en Afrique : Événementiel, Restauration, E-Commerce et RBNB avec paiement Mobile Money et mode hors-ligne.",
   manifest: "/manifest.json",
   applicationName: "GiyaX",
   // iOS : écran d'accueil en plein écran, barre d'état fondue dans l'app.

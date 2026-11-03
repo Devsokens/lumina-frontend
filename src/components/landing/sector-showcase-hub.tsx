@@ -107,8 +107,8 @@ const SECTORS_DATA: Record<SectorKey, SectorData> = {
   },
   accommodation: {
     id: "accommodation",
-    label: "Airbnb",
-    badge: "Nouveau • Airbnb & Motels",
+    label: "RBNB",
+    badge: "Nouveau • RBNB & Motels",
     title: "Gérez vos appartements meublés, réservations et reçus fiscaux",
     tagline:
       "Fini le carnet papier et les no-shows. Calendrier de disponibilité temps réel, acompte Mobile Money sécurisé et check-in digital.",
@@ -563,7 +563,7 @@ function AccommodationSimulator() {
       <div className="flex items-center justify-between">
         <span className="text-xs font-semibold uppercase tracking-wider text-muted-foreground flex items-center gap-1.5">
           <Calendar className="size-3.5 text-purple-400" />
-          Réservation Airbnb
+          Réservation RBNB
         </span>
         <span className="text-xs font-mono px-2 py-0.5 rounded-full bg-purple-500/15 text-purple-400 font-semibold">
           Acompte 30% Sécurisé

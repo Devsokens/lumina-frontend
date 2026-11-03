@@ -17,7 +17,7 @@ const TYPE_LABELS: Record<InvoiceRow["type"], string> = {
   TAKEAWAY: "À emporter",
   DELIVERY: "Livraison",
   EVENT: "Billetterie",
-  STAY: "Séjour Airbnb",
+  STAY: "Séjour RBNB",
 };
 
 const METHOD_LABELS: Record<InvoiceRow["paymentMethod"], string> = {

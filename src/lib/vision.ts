@@ -82,7 +82,7 @@ export const SECTOR_LABELS: Record<string, string> = {
   RESTAURANT: "Restauration",
   SHOP: "Commerce",
   EVENT: "Événementiel",
-  ACCOMMODATION: "Airbnb",
+  ACCOMMODATION: "RBNB",
 };
 
 export const STATUS_LABELS: Record<string, string> = {
