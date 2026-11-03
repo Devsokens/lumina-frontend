@@ -93,8 +93,18 @@ export function ListingForm({ listing, onSaved }: { listing?: Listing; onSaved: 
           <Field label="Type">
             <NativeSelect value={form.type} onChange={(v) => set("type", v as ListingType)} options={LISTING_TYPE_LABELS} />
           </Field>
+          {/* Archiver / remettre en ligne : bouton à double confirmation de la
+              fiche (ListingArchiveButton), pas ce menu. */}
           <Field label="Visibilité">
-            <NativeSelect value={form.status} onChange={(v) => set("status", v as ListingStatus)} options={LISTING_STATUS_LABELS} />
+            {form.status === "ARCHIVED" ? (
+              <NativeSelect value="ARCHIVED" onChange={() => undefined} options={{ ARCHIVED: LISTING_STATUS_LABELS.ARCHIVED }} disabled />
+            ) : (
+              <NativeSelect
+                value={form.status}
+                onChange={(v) => set("status", v as ListingStatus)}
+                options={{ DRAFT: LISTING_STATUS_LABELS.DRAFT, PUBLISHED: LISTING_STATUS_LABELS.PUBLISHED }}
+              />
+            )}
           </Field>
           <Field label="Ville">
             <Input value={form.city} maxLength={80} placeholder="Libreville" onChange={(e) => set("city", e.target.value)} />
@@ -194,10 +204,21 @@ function Field({ label, className, children }: { label: string; className?: stri
   );
 }
 
-function NativeSelect({ value, onChange, options }: { value: string; onChange: (v: string) => void; options: Record<string, string> }) {
+function NativeSelect({
+  value,
+  onChange,
+  options,
+  disabled,
+}: {
+  value: string;
+  onChange: (v: string) => void;
+  options: Record<string, string>;
+  disabled?: boolean;
+}) {
   return (
     <select
       value={value}
+      disabled={disabled}
       onChange={(e) => onChange(e.target.value)}
       className="h-9 w-full rounded-md border border-input bg-transparent px-3 text-sm"
     >

@@ -40,6 +40,9 @@ const SECTION_LABELS: Record<keyof SiteSections, string> = {
   location: "Adresse et itinéraire",
 };
 
+// Champs Panel / Field / Choice / ImageField réutilisés par l'éditeur du
+// site hébergement (components/stays/stay-site-editor.tsx).
+
 // Éditeur du site public (config.site) : réglages à gauche, aperçu réel à
 // droite (mêmes composants que le site, avec le brouillon).
 export function SiteEditor({ tenant }: { tenant: Tenant }) {
@@ -233,7 +236,7 @@ export function SiteEditor({ tenant }: { tenant: Tenant }) {
   );
 }
 
-function Panel({ title, children }: { title: string; children: React.ReactNode }) {
+export function Panel({ title, children }: { title: string; children: React.ReactNode }) {
   return (
     <section className="space-y-3 rounded-2xl border border-border bg-card p-5">
       <h2 className="font-semibold">{title}</h2>
@@ -242,7 +245,7 @@ function Panel({ title, children }: { title: string; children: React.ReactNode }
   );
 }
 
-function Field({ label, hint, value, max, onChange }: { label: string; hint?: string; value: string; max: number; onChange: (v: string) => void }) {
+export function Field({ label, hint, value, max, onChange }: { label: string; hint?: string; value: string; max: number; onChange: (v: string) => void }) {
   const id = `f-${label.replace(/\W+/g, "-")}`;
   return (
     <div className="space-y-1.5">
@@ -252,7 +255,7 @@ function Field({ label, hint, value, max, onChange }: { label: string; hint?: st
   );
 }
 
-function Choice<T extends string>({ label, value, options, onChange }: { label: string; value: T; options: { value: T; label: string }[]; onChange: (v: T) => void }) {
+export function Choice<T extends string>({ label, value, options, onChange }: { label: string; value: T; options: { value: T; label: string }[]; onChange: (v: T) => void }) {
   return (
     <div className="space-y-1.5">
       <Label>{label}</Label>
@@ -272,7 +275,7 @@ function Choice<T extends string>({ label, value, options, onChange }: { label: 
   );
 }
 
-function ImagePicker({ onPick, className = "" }: { onPick: (dataUrl: string) => void; className?: string }) {
+export function ImagePicker({ onPick, className = "" }: { onPick: (dataUrl: string) => void; className?: string }) {
   const input = useRef<HTMLInputElement>(null);
   const [busy, setBusy] = useState(false);
   return (
@@ -309,7 +312,7 @@ function ImagePicker({ onPick, className = "" }: { onPick: (dataUrl: string) => 
   );
 }
 
-function ImageField({ label, value, onChange }: { label: string; value: string; onChange: (v: string) => void }) {
+export function ImageField({ label, value, onChange }: { label: string; value: string; onChange: (v: string) => void }) {
   return (
     <div className="space-y-1.5">
       <Label>{label}</Label>

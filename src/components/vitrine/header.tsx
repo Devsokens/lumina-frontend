@@ -6,6 +6,7 @@ import { ShoppingBag } from "lucide-react";
 import { useTenant } from "@/hooks/useTenant";
 import { useCartStore } from "@/stores/useCartStore";
 import { siteOf } from "@/lib/site";
+import { staySiteOf } from "@/lib/stay-site";
 import { restaurantInfo } from "@/lib/order-document";
 
 export function VitrineHeader() {
@@ -19,17 +20,21 @@ export function VitrineHeader() {
   const isShop = tenant.sector === "SHOP";
   // Hébergement : pas de carte ni de panier, on réserve depuis un logement.
   const isStay = tenant.sector === "ACCOMMODATION";
+  // Hébergement : bandeau et sections viennent de config.staySite.
+  const stay = isStay ? staySiteOf(tenant) : null;
+  const announcement = stay ? stay.announcement : site.announcement;
+  const hasAbout = stay ? stay.sections.about && !!stay.aboutText : site.sections.about && !!site.aboutText;
   const links = [
     isStay ? { href: `${home}#logements`, label: "Logements" } : { href: `${home}/menu`, label: isShop ? "Catalogue" : "La carte" },
-    ...(site.sections.about && site.aboutText ? [{ href: `${home}#maison`, label: "La maison" }] : []),
-    { href: `${home}#infos`, label: "Infos" },
+    ...(hasAbout ? [{ href: `${home}#maison`, label: stay ? stay.aboutTitle || "La maison" : "La maison" }] : []),
+    ...(!stay || stay.sections.contact ? [{ href: `${home}#infos`, label: stay ? "Contact" : "Infos" }] : []),
   ];
 
   return (
     <>
-      {site.announcement && (
+      {announcement && (
         <div className="bg-primary px-4 py-2 text-center text-sm font-medium text-primary-foreground">
-          {site.announcement}
+          {announcement}
         </div>
       )}
       <header className="sticky top-0 z-40 border-b border-border bg-background/85 backdrop-blur-xl">

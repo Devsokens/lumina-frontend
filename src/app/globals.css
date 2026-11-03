@@ -273,3 +273,83 @@
     overscroll-behavior-y: none;
   }
 }
+
+/* ---------- Site hébergement : animations (data-motion sur le thème) ----------
+   aucune : rien ; douce : apparitions discrètes ; vive : apparitions marquées,
+   couverture en lent zoom, cartes qui se soulèvent. Désactivées si le
+   visiteur demande moins d'animations. */
+
+@keyframes stay-rise {
+  from {
+    opacity: 0;
+    transform: translateY(var(--stay-rise, 18px));
+  }
+  to {
+    opacity: 1;
+    transform: none;
+  }
+}
+
+@keyframes stay-kenburns {
+  from {
+    transform: scale(1.02);
+  }
+  to {
+    transform: scale(1.12) translate(-1.5%, -1%);
+  }
+}
+
+[data-motion="douce"] {
+  --stay-rise: 14px;
+  --stay-speed: 0.8s;
+}
+
+[data-motion="vive"] {
+  --stay-rise: 40px;
+  --stay-speed: 1s;
+}
+
+[data-motion="douce"] .stay-intro,
+[data-motion="vive"] .stay-intro {
+  animation: stay-rise var(--stay-speed) cubic-bezier(0.2, 0.7, 0.2, 1) both;
+  animation-delay: calc(var(--i, 0) * 120ms);
+}
+
+[data-motion="douce"] .stay-reveal,
+[data-motion="vive"] .stay-reveal {
+  opacity: 0;
+  transform: translateY(var(--stay-rise));
+  transition:
+    opacity var(--stay-speed) ease,
+    transform var(--stay-speed) cubic-bezier(0.2, 0.7, 0.2, 1);
+  transition-delay: calc(var(--i, 0) * 90ms);
+}
+
+.stay-reveal[data-shown="true"] {
+  opacity: 1;
+  transform: none;
+}
+
+[data-motion="vive"] .stay-kenburns {
+  animation: stay-kenburns 22s ease-in-out infinite alternate;
+}
+
+[data-motion="vive"] .stay-lift {
+  transition: transform 0.4s cubic-bezier(0.2, 0.7, 0.2, 1);
+}
+
+[data-motion="vive"] .stay-lift:hover {
+  transform: translateY(-6px);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  [data-motion] .stay-intro,
+  [data-motion] .stay-kenburns {
+    animation: none !important;
+  }
+  [data-motion] .stay-reveal {
+    opacity: 1 !important;
+    transform: none !important;
+    transition: none !important;
+  }
+}

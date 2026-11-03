@@ -48,6 +48,7 @@ export function navLinks(sectorParam: string | undefined, role: Role | undefined
       { href: base, label: "Tableau de bord", icon: LayoutDashboard, exact: true },
       { href: `${base}/listings`, label: "Logements", icon: BedDouble, roles: OWNER_MANAGER },
       { href: `${base}/bookings`, label: "Réservations", icon: CalendarDays },
+      { href: `${base}/site`, label: "Site & apparence", icon: Palette, roles: OWNER_MANAGER },
       { href: `${base}/customers`, label: "Clients", icon: Contact, roles: OWNER_MANAGER },
       { href: `${base}/team`, label: "Équipe", icon: Users, roles: OWNER_MANAGER },
       { href: `${base}/settings`, label: "Paramètres", icon: Settings, roles: OWNER_MANAGER },
