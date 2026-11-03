@@ -29,6 +29,10 @@ const ACTION_LABELS: Record<string, { label: string; tone: "good" | "bad" | "war
   ENABLE_USER: { label: "Utilisateur réactivé", tone: "accent" },
   ADMIN_CREATED_CLI: { label: "Admin créé (CLI)", tone: "accent" },
   ADMIN_RESET_CLI: { label: "Admin réinitialisé (CLI)", tone: "accent" },
+  ADMIN_CREATED_MIGRATION: { label: "Admin créé (migration)", tone: "accent" },
+  ADMIN_EMAIL_CHANGED_MIGRATION: { label: "E-mail admin modifié", tone: "accent" },
+  VISION_PASSWORD_CHANGED: { label: "Mot de passe changé", tone: "good" },
+  VISION_PASSWORD_CHANGE_FAILED: { label: "Changement de mot de passe refusé", tone: "bad" },
 };
 
 export default function VisionLogsPage() {

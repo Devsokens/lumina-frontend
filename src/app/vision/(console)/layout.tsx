@@ -8,6 +8,7 @@ import {
   Building2,
   Coins,
   Globe,
+  KeyRound,
   LayoutDashboard,
   LogOut,
   Menu,
@@ -101,6 +102,9 @@ export default function VisionConsoleLayout({ children }: { children: React.Reac
       <div className="mt-auto space-y-2 rounded-2xl border border-border p-3">
         <p className="truncate text-sm font-medium">{session.admin.name}</p>
         <p className="truncate text-xs text-muted-foreground">{session.admin.email}</p>
+        <Link href="/vision/account" onClick={() => setOpen(false)} className="flex items-center gap-2 text-xs text-muted-foreground hover:text-foreground">
+          <KeyRound className="size-3.5" /> Mon compte
+        </Link>
         <button type="button" onClick={logout} className="flex items-center gap-2 text-xs text-muted-foreground hover:text-destructive">
           <LogOut className="size-3.5" /> Se déconnecter
         </button>
