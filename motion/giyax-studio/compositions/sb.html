@@ -1,0 +1,888 @@
+<template>
+  <style>
+    @font-face {
+      font-family: "Space Grotesk";
+      font-style: normal;
+      font-weight: 500;
+      font-display: block;
+      src: url("assets/fonts/space-grotesk-latin-500.woff2") format("woff2");
+      unicode-range: U+0000-00FF, U+0131, U+0152-0153, U+02BB-02BC, U+02C6, U+02DA, U+02DC, U+0304, U+0308, U+0329, U+2000-206F, U+20AC, U+2122, U+2191, U+2193, U+2212, U+2215, U+FEFF, U+FFFD;
+    }
+    @font-face {
+      font-family: "Space Grotesk";
+      font-style: normal;
+      font-weight: 500;
+      font-display: block;
+      src: url("assets/fonts/space-grotesk-latin-ext-500.woff2") format("woff2");
+      unicode-range: U+0100-02BA, U+02BD-02C5, U+02C7-02CC, U+02CE-02D7, U+02DD-02FF, U+0304, U+0308, U+0329, U+1D00-1DBF, U+1E00-1E9F, U+1EF2-1EFF, U+2020, U+20A0-20AB, U+20AD-20C0, U+2113, U+2C60-2C7F, U+A720-A7FF;
+    }
+    @font-face {
+      font-family: "Space Grotesk";
+      font-style: normal;
+      font-weight: 600;
+      font-display: block;
+      src: url("assets/fonts/space-grotesk-latin-600.woff2") format("woff2");
+      unicode-range: U+0000-00FF, U+0131, U+0152-0153, U+02BB-02BC, U+02C6, U+02DA, U+02DC, U+0304, U+0308, U+0329, U+2000-206F, U+20AC, U+2122, U+2191, U+2193, U+2212, U+2215, U+FEFF, U+FFFD;
+    }
+    @font-face {
+      font-family: "Space Grotesk";
+      font-style: normal;
+      font-weight: 600;
+      font-display: block;
+      src: url("assets/fonts/space-grotesk-latin-ext-600.woff2") format("woff2");
+      unicode-range: U+0100-02BA, U+02BD-02C5, U+02C7-02CC, U+02CE-02D7, U+02DD-02FF, U+0304, U+0308, U+0329, U+1D00-1DBF, U+1E00-1E9F, U+1EF2-1EFF, U+2020, U+20A0-20AB, U+20AD-20C0, U+2113, U+2C60-2C7F, U+A720-A7FF;
+    }
+    @font-face {
+      font-family: "Space Grotesk";
+      font-style: normal;
+      font-weight: 700;
+      font-display: block;
+      src: url("assets/fonts/space-grotesk-latin-700.woff2") format("woff2");
+      unicode-range: U+0000-00FF, U+0131, U+0152-0153, U+02BB-02BC, U+02C6, U+02DA, U+02DC, U+0304, U+0308, U+0329, U+2000-206F, U+20AC, U+2122, U+2191, U+2193, U+2212, U+2215, U+FEFF, U+FFFD;
+    }
+    @font-face {
+      font-family: "Space Grotesk";
+      font-style: normal;
+      font-weight: 700;
+      font-display: block;
+      src: url("assets/fonts/space-grotesk-latin-ext-700.woff2") format("woff2");
+      unicode-range: U+0100-02BA, U+02BD-02C5, U+02C7-02CC, U+02CE-02D7, U+02DD-02FF, U+0304, U+0308, U+0329, U+1D00-1DBF, U+1E00-1E9F, U+1EF2-1EFF, U+2020, U+20A0-20AB, U+20AD-20C0, U+2113, U+2C60-2C7F, U+A720-A7FF;
+    }
+    #root {
+      position: absolute;
+      inset: 0;
+      overflow: hidden;
+      font-family: "Inter", sans-serif;
+    }
+    svg {
+      width: 1em;
+      height: 1em;
+      flex-shrink: 0;
+    }
+    .b-ttl {
+      position: absolute;
+      left: 0;
+      right: 0;
+      top: 96px;
+      text-align: center;
+      color: #fff;
+      font-family: "Space Grotesk", sans-serif;
+      font-size: 64px;
+      line-height: 1.08;
+      font-weight: 700;
+      letter-spacing: -0.03em;
+      white-space: nowrap;
+      z-index: 5;
+    }
+    .b-ttl .w {
+      display: inline-block;
+    }
+    .b-ttl .gold {
+      color: #f4b942;
+    }
+    /* Question plein cadre qui pose le problème avant la démo. */
+    .q {
+      position: absolute;
+      inset: 0;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      z-index: 8;
+    }
+    .q-in {
+      text-align: center;
+    }
+    .q-eb {
+      display: inline-flex;
+      align-items: center;
+      gap: 18px;
+      margin-bottom: 34px;
+      font-family: "Inter", sans-serif;
+      font-size: 24px;
+      font-weight: 600;
+      letter-spacing: 0.24em;
+      text-transform: uppercase;
+      color: #f4b942;
+    }
+    .q-eb::before,
+    .q-eb::after {
+      content: "";
+      width: 56px;
+      height: 2px;
+      background: rgba(244, 185, 66, 0.6);
+    }
+    .q-tx {
+      font-family: "Space Grotesk", sans-serif;
+      font-size: 92px;
+      font-weight: 700;
+      line-height: 1.08;
+      letter-spacing: -0.035em;
+      color: #fff;
+    }
+    .q-tx .ln {
+      white-space: nowrap;
+    }
+    .q-tx .w {
+      display: inline-block;
+    }
+    .q-tx .qm {
+      color: #f4b942;
+    }
+    #b-cam {
+      position: absolute;
+      inset: 0;
+    }
+    #b-shadow {
+      position: absolute;
+      left: 260px;
+      top: 1004px;
+      width: 1400px;
+      height: 60px;
+      border-radius: 50%;
+      background: radial-gradient(ellipse at center, rgba(0, 0, 0, 0.55), rgba(0, 0, 0, 0) 70%);
+    }
+    /* Ordinateur portable vu de face */
+    #b-laptop {
+      position: absolute;
+      left: 300px;
+      top: 268px;
+      width: 1320px;
+      height: 750px;
+    }
+    .b-lid {
+      position: absolute;
+      left: 80px;
+      top: 0;
+      width: 1160px;
+      height: 724px;
+      padding: 14px;
+      border-radius: 26px 26px 6px 6px;
+      background: #0b0d0c;
+      box-shadow: inset 0 0 0 2px #2b302e;
+    }
+    .b-cam-dot {
+      position: absolute;
+      top: 5px;
+      left: 50%;
+      width: 6px;
+      height: 6px;
+      margin-left: -3px;
+      border-radius: 50%;
+      background: #1f2523;
+    }
+    .b-base {
+      position: absolute;
+      left: 0;
+      top: 722px;
+      width: 1320px;
+      height: 26px;
+      border-radius: 4px 4px 22px 22px;
+      background: linear-gradient(180deg, #d9dcdb 0%, #a9aeac 55%, #6f7472 100%);
+    }
+    .b-notch {
+      position: absolute;
+      left: 580px;
+      top: 0;
+      width: 160px;
+      height: 10px;
+      border-radius: 0 0 10px 10px;
+      background: #8d9290;
+    }
+    .b-screen {
+      position: relative;
+      width: 1132px;
+      height: 696px;
+      border-radius: 10px;
+      overflow: hidden;
+      background: #f8f7f4;
+      color: #1c1c1e;
+    }
+    .b-scr {
+      position: absolute;
+      inset: 0;
+      background: #f8f7f4;
+    }
+    /* ---------- Écran 1 : cuisine (KDS) ---------- */
+    .k-top {
+      height: 64px;
+      padding: 0 28px;
+      border-bottom: 1.5px solid #eae8e1;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      background: #fff;
+    }
+    .k-title {
+      position: relative;
+      white-space: nowrap;
+      font-family: "Space Grotesk", sans-serif;
+      font-size: 24px;
+      font-weight: 600;
+    }
+    #k-c2,
+    #k-c3 {
+      display: inline-block;
+    }
+    #k-c3 {
+      position: absolute;
+      left: 0;
+      top: 0;
+    }
+    .k-live {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      font-size: 16px;
+      font-weight: 600;
+      color: #10b981;
+    }
+    .k-live i {
+      width: 10px;
+      height: 10px;
+      border-radius: 50%;
+      background: #10b981;
+    }
+    .k-grid {
+      position: absolute;
+      left: 24px;
+      right: 24px;
+      top: 88px;
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 20px;
+    }
+    .k-card {
+      display: flex;
+      flex-direction: column;
+      gap: 14px;
+      padding: 20px;
+      border: 3px solid;
+      border-radius: 22px;
+    }
+    .k-ok {
+      border-color: #10b981;
+      background: rgba(16, 185, 129, 0.08);
+    }
+    .k-warn {
+      border-color: #ea580c;
+      background: rgba(234, 88, 12, 0.08);
+    }
+    .k-head {
+      display: flex;
+      justify-content: space-between;
+      align-items: baseline;
+      font-family: "JetBrains Mono", monospace;
+    }
+    .k-num {
+      font-size: 26px;
+      font-weight: 700;
+    }
+    .k-age {
+      font-size: 17px;
+      color: #6b7280;
+    }
+    .k-items {
+      list-style: none;
+      font-size: 20px;
+      line-height: 1.55;
+      min-height: 124px;
+    }
+    .k-items b {
+      font-weight: 700;
+    }
+    .k-btn {
+      position: relative;
+      height: 58px;
+      border-radius: 14px;
+      background: #0a4f3c;
+      color: #fff;
+      font-size: 19px;
+      font-weight: 600;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    }
+    .k-btn span {
+      position: absolute;
+    }
+    /* ---------- Coquille du tableau de bord (sidebar) ---------- */
+    .s-side {
+      position: absolute;
+      left: 0;
+      top: 0;
+      bottom: 0;
+      width: 232px;
+      padding: 16px 12px;
+      border-right: 1.5px solid #0d4a37;
+      background: linear-gradient(to bottom, #052b20, #04241a, #021811);
+      color: #fff;
+    }
+    .s-org {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      padding: 4px 4px 0;
+      margin-bottom: 20px;
+    }
+    .s-av {
+      width: 38px;
+      height: 38px;
+      border-radius: 12px;
+      border: 1.5px solid rgba(255, 255, 255, 0.2);
+      background: rgba(255, 255, 255, 0.15);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 14px;
+      font-weight: 700;
+    }
+    .s-orgname {
+      font-family: "Space Grotesk", sans-serif;
+      font-size: 15px;
+      font-weight: 700;
+      line-height: 1.2;
+    }
+    .s-orgname small {
+      display: block;
+      font-family: "Inter", sans-serif;
+      font-size: 11px;
+      font-weight: 500;
+      color: rgba(255, 255, 255, 0.6);
+    }
+    .s-nav {
+      display: flex;
+      flex-direction: column;
+      gap: 5px;
+    }
+    .s-link {
+      display: flex;
+      align-items: center;
+      gap: 11px;
+      padding: 9px 12px;
+      border-radius: 12px;
+      font-size: 14px;
+      font-weight: 500;
+      color: rgba(255, 255, 255, 0.85);
+    }
+    .s-link svg {
+      width: 17px;
+      height: 17px;
+    }
+    .s-link.on {
+      background: #fff;
+      color: #18181b;
+      font-weight: 700;
+      box-shadow: 0 8px 20px rgba(0, 0, 0, 0.2);
+    }
+    .s-main {
+      position: absolute;
+      left: 232px;
+      right: 0;
+      top: 0;
+      bottom: 0;
+      padding: 24px 26px;
+    }
+    .s-h1 {
+      font-family: "Space Grotesk", sans-serif;
+      font-size: 28px;
+      font-weight: 700;
+    }
+    .s-sub {
+      font-size: 15px;
+      color: #6b7280;
+    }
+    .s-card {
+      position: absolute;
+      padding: 18px 20px;
+      border: 1.5px solid #eae8e1;
+      border-radius: 20px;
+      background: #fff;
+    }
+    .s-cardt {
+      font-family: "Space Grotesk", sans-serif;
+      font-size: 17px;
+      font-weight: 700;
+    }
+    /* ---------- Écran 2 : réservations + calendrier ---------- */
+    #r-cal {
+      left: 26px;
+      top: 110px;
+      width: 500px;
+      height: 520px;
+    }
+    .r-month {
+      margin-bottom: 10px;
+      text-align: center;
+      font-size: 19px;
+      font-weight: 600;
+    }
+    .r-grid {
+      display: grid;
+      grid-template-columns: repeat(7, 1fr);
+      row-gap: 6px;
+      justify-items: center;
+    }
+    .r-wd {
+      padding-bottom: 4px;
+      font-size: 14px;
+      font-weight: 600;
+      color: #6b7280;
+    }
+    .r-d {
+      width: 54px;
+      height: 54px;
+      border-radius: 50%;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 17px;
+    }
+    .r-booked {
+      background: rgba(10, 79, 60, 0.85);
+      color: #fff;
+    }
+    #r-list {
+      left: 544px;
+      top: 110px;
+      width: 304px;
+      height: 520px;
+    }
+    .r-row {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      padding: 13px 0;
+      border-bottom: 1.5px solid #f0eee8;
+      font-size: 14px;
+    }
+    .r-row b {
+      display: block;
+      font-size: 15px;
+    }
+    .r-row small {
+      color: #6b7280;
+    }
+    .r-amt {
+      font-weight: 700;
+      white-space: nowrap;
+    }
+    .r-new {
+      margin: 6px -10px 0;
+      padding: 12px 10px;
+      border-radius: 14px;
+      background: rgba(16, 185, 129, 0.1);
+      border-bottom: none;
+    }
+    #r-toast {
+      position: absolute;
+      right: 22px;
+      bottom: 22px;
+      display: flex;
+      align-items: center;
+      gap: 14px;
+      padding: 14px 20px 14px 16px;
+      border-radius: 18px;
+      background: #1c1c1e;
+      color: #fff;
+      box-shadow: 0 16px 40px rgba(0, 0, 0, 0.25);
+    }
+    #r-toast svg {
+      width: 30px;
+      height: 30px;
+      color: #34d399;
+    }
+    #r-toast b {
+      display: block;
+      font-size: 17px;
+    }
+    #r-toast small {
+      font-size: 13px;
+      color: rgba(255, 255, 255, 0.7);
+    }
+    /* ---------- Écran 3 : tableau de bord (StatCard, analytics) ---------- */
+    .d-stats {
+      position: absolute;
+      left: 26px;
+      right: 26px;
+      top: 104px;
+      display: grid;
+      grid-template-columns: repeat(4, 1fr);
+      gap: 14px;
+    }
+    .d-stat {
+      padding: 14px 16px;
+      border: 1.5px solid #e2dfd6;
+      border-radius: 20px;
+      background: #fff;
+    }
+    .d-stat .top {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+    }
+    .d-stat .lb {
+      font-size: 14px;
+      font-weight: 600;
+      color: #6b7280;
+    }
+    .d-stat .ic {
+      width: 28px;
+      height: 28px;
+      border-radius: 9px;
+      background: rgba(10, 79, 60, 0.1);
+      color: #0a4f3c;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    }
+    .d-stat .ic svg {
+      width: 16px;
+      height: 16px;
+    }
+    .d-stat .val {
+      margin-top: 4px;
+      font-family: "Space Grotesk", sans-serif;
+      font-size: 26px;
+      font-weight: 700;
+      white-space: nowrap;
+    }
+    #d-chart {
+      left: 26px;
+      top: 236px;
+      width: 540px;
+      height: 400px;
+    }
+    .d-bars {
+      position: absolute;
+      left: 20px;
+      right: 20px;
+      bottom: 46px;
+      height: 270px;
+      display: flex;
+      align-items: flex-end;
+      justify-content: space-between;
+      gap: 18px;
+    }
+    .d-bar {
+      flex: 1;
+      border-radius: 10px 10px 4px 4px;
+      background: #0a4f3c;
+      transform-origin: 50% 100%;
+    }
+    .d-bar.today {
+      background: #f4b942;
+    }
+    .d-days {
+      position: absolute;
+      left: 20px;
+      right: 20px;
+      bottom: 16px;
+      display: flex;
+      justify-content: space-between;
+      font-size: 13px;
+      color: #6b7280;
+    }
+    .d-days span {
+      flex: 1;
+      text-align: center;
+    }
+    #d-pay {
+      left: 584px;
+      top: 236px;
+      width: 264px;
+      height: 400px;
+    }
+    .d-donut {
+      width: 150px;
+      height: 150px;
+      display: block;
+      margin: 16px auto 10px;
+    }
+    .d-leg {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      padding: 5px 0;
+      font-size: 14px;
+    }
+    .d-leg span {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+    .d-leg i {
+      width: 11px;
+      height: 11px;
+      border-radius: 3px;
+    }
+  </style>
+  <div id="root" data-composition-id="sb" data-width="1920" data-height="1080">
+    <div id="b-q1" class="q" data-layout-allow-overlap>
+      <div class="q-in">
+        <div class="q-eb">Restauration</div>
+        <div class="q-tx">
+          <div class="ln"><span class="w">Des</span> <span class="w">commandes</span></div>
+          <div class="ln"><span class="w">qui</span> <span class="w">se</span> <span class="w">perdent</span></div>
+          <div class="ln"><span class="w">en</span> <span class="w">cuisine&nbsp;<span class="qm">?</span></span></div>
+        </div>
+      </div>
+    </div>
+    <div id="b-q2" class="q" data-layout-allow-overlap>
+      <div class="q-in">
+        <div class="q-eb">Hébergement</div>
+        <div class="q-tx">
+          <div class="ln"><span class="w">Des</span> <span class="w">nuits</span> <span class="w">vides</span></div>
+          <div class="ln"><span class="w">et</span> <span class="w">un</span> <span class="w">planning</span></div>
+          <div class="ln"><span class="w">sur</span> <span class="w">un</span> <span class="w">cahier&nbsp;<span class="qm">?</span></span></div>
+        </div>
+      </div>
+    </div>
+    <div id="b-q3" class="q" data-layout-allow-overlap>
+      <div class="q-in">
+        <div class="q-eb">Votre argent</div>
+        <div class="q-tx">
+          <div class="ln"><span class="w">Combien</span> <span class="w">avez-vous</span></div>
+          <div class="ln"><span class="w">vraiment</span> <span class="w">gagné</span></div>
+          <div class="ln"><span class="w">aujourd’hui&nbsp;<span class="qm">?</span></span></div>
+        </div>
+      </div>
+    </div>
+    <div id="b-t1" class="b-ttl" data-layout-allow-overlap><span class="w">Chaque commande,</span><br /><span class="w gold">direct en cuisine.</span></div>
+    <div id="b-t2" class="b-ttl" data-layout-allow-overlap><span class="w">Réservé en ligne,</span><br /><span class="w gold">payé d’avance.</span></div>
+    <div id="b-t3" class="b-ttl" data-layout-allow-overlap><span class="w">Chaque franc encaissé,</span><br /><span class="w gold">sous vos yeux.</span></div>
+
+    <div id="b-cam">
+      <div id="b-shadow"></div>
+      <div id="b-laptop">
+        <div class="b-lid">
+          <div class="b-cam-dot"></div>
+          <div class="b-screen">
+            <!-- Écran 1 : cuisine -->
+            <div id="b-s1" class="b-scr" data-layout-allow-overlap>
+              <div class="k-top">
+                <span class="k-title"><span id="k-c2">Cuisine · 2 commande(s)</span><span id="k-c3">Cuisine · 3 commande(s)</span></span>
+                <span class="k-live"><i></i>Connecté</span>
+              </div>
+              <div class="k-grid">
+                <div class="k-card k-warn">
+                  <div class="k-head"><span class="k-num">CMD-0425</span><span class="k-age">8 min</span></div>
+                  <ul class="k-items"><li><b>2×</b> Brochettes de bœuf</li><li><b>1×</b> Alloco</li><li><b>2×</b> Jus de gingembre</li></ul>
+                  <div class="k-btn"><span>Prêt</span></div>
+                </div>
+                <div class="k-card k-ok">
+                  <div class="k-head"><span class="k-num">CMD-0426</span><span class="k-age">3 min</span></div>
+                  <ul class="k-items"><li><b>1×</b> Poisson braisé</li><li><b>1×</b> Banane plantain</li></ul>
+                  <div class="k-btn"><span>Prêt</span></div>
+                </div>
+                <div id="k-new" class="k-card k-ok">
+                  <div class="k-head"><span class="k-num">CMD-0427</span><span class="k-age">0 min</span></div>
+                  <ul class="k-items"><li><b>2×</b> Poisson braisé</li><li><b>1×</b> Poulet nyembwe</li><li><b>3×</b> Jus de bissap</li></ul>
+                  <div id="k-btn" class="k-btn"><span id="k-l1">En préparation</span><span id="k-l2">Prêt</span></div>
+                </div>
+              </div>
+            </div>
+
+            <!-- Écran 2 : réservations (logements) -->
+            <div id="b-s2" class="b-scr" data-layout-allow-overlap>
+              <div class="s-side">
+                <div class="s-org"><div class="s-av">SK</div><div class="s-orgname">Suites Komo<small>RBNB</small></div></div>
+                <div class="s-nav">
+                  <div class="s-link"><svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect width="7" height="9" x="3" y="3" rx="1"></rect><rect width="7" height="5" x="14" y="3" rx="1"></rect><rect width="7" height="9" x="14" y="12" rx="1"></rect><rect width="7" height="5" x="3" y="16" rx="1"></rect></svg> Tableau de bord</div>
+                  <div class="s-link"><svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M2 20v-8a2 2 0 0 1 2-2h16a2 2 0 0 1 2 2v8"></path><path d="M4 10V6a2 2 0 0 1 2-2h12a2 2 0 0 1 2 2v4"></path><path d="M12 4v6"></path><path d="M2 18h20"></path></svg> Logements</div>
+                  <div class="s-link on"><svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M8 2v3"></path><path d="M16 2v3"></path><rect x="3" y="3" width="18" height="18" rx="2"></rect><path d="M3 9h18"></path><path d="M8 13h.01"></path><path d="M12 13h.01"></path><path d="M16 13h.01"></path><path d="M8 17h.01"></path><path d="M12 17h.01"></path><path d="M16 17h.01"></path></svg> Réservations</div>
+                  <div class="s-link"><svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 17V7"></path><path d="M16 8h-6a2 2 0 0 0 0 4h4a2 2 0 0 1 0 4H8"></path><path d="M4 3a1 1 0 0 1 1-1 1.3 1.3 0 0 1 .7.2l.933.6a1.3 1.3 0 0 0 1.4 0l.934-.6a1.3 1.3 0 0 1 1.4 0l.933.6a1.3 1.3 0 0 0 1.4 0l.933-.6a1.3 1.3 0 0 1 1.4 0l.934.6a1.3 1.3 0 0 0 1.4 0l.933-.6A1.3 1.3 0 0 1 19 2a1 1 0 0 1 1 1v18a1 1 0 0 1-1 1 1.3 1.3 0 0 1-.7-.2l-.933-.6a1.3 1.3 0 0 0-1.4 0l-.934.6a1.3 1.3 0 0 1-1.4 0l-.933-.6a1.3 1.3 0 0 0-1.4 0l-.933.6a1.3 1.3 0 0 1-1.4 0l-.934-.6a1.3 1.3 0 0 0-1.4 0l-.933.6a1.3 1.3 0 0 1-.7.2 1 1 0 0 1-1-1z"></path></svg> Factures</div>
+                  <div class="s-link"><svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 22a1 1 0 0 1 0-20 10 9 0 0 1 10 9 5 5 0 0 1-5 5h-2.25a1.75 1.75 0 0 0-1.4 2.8l.3.4a1.75 1.75 0 0 1-1.4 2.8z"></path><circle cx="13.5" cy="6.5" r=".5" fill="currentColor"></circle><circle cx="17.5" cy="10.5" r=".5" fill="currentColor"></circle><circle cx="6.5" cy="12.5" r=".5" fill="currentColor"></circle><circle cx="8.5" cy="7.5" r=".5" fill="currentColor"></circle></svg> Site &amp; apparence</div>
+                  <div class="s-link"><svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M16 2v2"></path><path d="M7 21v-2a2 2 0 012-2h6a2 2 0 012 2v2"></path><path d="M8 2v2"></path><circle cx="12" cy="10" r="3"></circle><rect x="3" y="3" width="18" height="18" rx="2"></rect></svg> Clients</div>
+                  <div class="s-link"><svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M9.671 4.136a2.34 2.34 0 0 1 4.659 0 2.34 2.34 0 0 0 3.319 1.915 2.34 2.34 0 0 1 2.33 4.033 2.34 2.34 0 0 0 0 3.831 2.34 2.34 0 0 1-2.33 4.033 2.34 2.34 0 0 0-3.319 1.915 2.34 2.34 0 0 1-4.659 0 2.34 2.34 0 0 0-3.32-1.915 2.34 2.34 0 0 1-2.33-4.033 2.34 2.34 0 0 0 0-3.831A2.34 2.34 0 0 1 6.35 6.051a2.34 2.34 0 0 0 3.319-1.915"></path><circle cx="12" cy="12" r="3"></circle></svg> Paramètres</div>
+                </div>
+              </div>
+              <div class="s-main">
+                <div class="s-h1">Réservations</div>
+                <div class="s-sub">Planning de vos logements</div>
+                <div id="r-cal" class="s-card">
+                  <div class="r-month">décembre 2026</div>
+                  <div class="r-grid">
+                    <span class="r-wd">L</span><span class="r-wd">M</span><span class="r-wd">M</span><span class="r-wd">J</span><span class="r-wd">V</span><span class="r-wd">S</span><span class="r-wd">D</span>
+                    <span class="r-d"></span><span id="r-d1" class="r-d">1</span><span id="r-d2" class="r-d">2</span><span id="r-d3" class="r-d">3</span><span id="r-d4" class="r-d r-booked">4</span><span id="r-d5" class="r-d r-booked">5</span><span id="r-d6" class="r-d r-booked">6</span><span id="r-d7" class="r-d">7</span><span id="r-d8" class="r-d">8</span><span id="r-d9" class="r-d">9</span><span id="r-d10" class="r-d">10</span><span id="r-d11" class="r-d r-booked">11</span><span id="r-d12" class="r-d r-booked">12</span><span id="r-d13" class="r-d r-booked">13</span><span id="r-d14" class="r-d">14</span><span id="r-d15" class="r-d">15</span><span id="r-d16" class="r-d">16</span><span id="r-d17" class="r-d">17</span><span id="r-d18" class="r-d">18</span><span id="r-d19" class="r-d">19</span><span id="r-d20" class="r-d">20</span><span id="r-d21" class="r-d">21</span><span id="r-d22" class="r-d">22</span><span id="r-d23" class="r-d">23</span><span id="r-d24" class="r-d">24</span><span id="r-d25" class="r-d">25</span><span id="r-d26" class="r-d">26</span><span id="r-d27" class="r-d">27</span><span id="r-d28" class="r-d">28</span><span id="r-d29" class="r-d">29</span><span id="r-d30" class="r-d">30</span><span id="r-d31" class="r-d">31</span>
+                  </div>
+                </div>
+                <div id="r-list" class="s-card">
+                  <div class="s-cardt">Prochaines arrivées</div>
+                  <div id="r-newrow" class="r-row r-new"><span><b>Awa N.</b><small>21 → 24 déc. · 3 nuits</small></span><span class="r-amt">135 000 F</span></div>
+                  <div class="r-row"><span><b>Serge M.</b><small>18 → 21 déc. · 3 nuits</small></span><span class="r-amt">135 000 F</span></div>
+                  <div class="r-row"><span><b>Grace O.</b><small>11 → 14 déc. · 3 nuits</small></span><span class="r-amt">120 000 F</span></div>
+                  <div class="r-row"><span><b>Paul E.</b><small>4 → 7 déc. · 3 nuits</small></span><span class="r-amt">120 000 F</span></div>
+                </div>
+                <div id="r-toast"><svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"></circle><path d="m9 12 2 2 4-4"></path></svg><span><b>Séjour réservé !</b><small>R-2048 · 3 nuits · 135 000 FCFA</small></span></div>
+              </div>
+            </div>
+
+            <!-- Écran 3 : tableau de bord -->
+            <div id="b-s3" class="b-scr" data-layout-allow-overlap>
+              <div class="s-side">
+                <div class="s-org"><div class="s-av">MN</div><div class="s-orgname">Maison Nyembwe<small>Restauration</small></div></div>
+                <div class="s-nav">
+                  <div class="s-link on"><svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect width="7" height="9" x="3" y="3" rx="1"></rect><rect width="7" height="5" x="14" y="3" rx="1"></rect><rect width="7" height="9" x="14" y="12" rx="1"></rect><rect width="7" height="5" x="3" y="16" rx="1"></rect></svg> Tableau de bord</div>
+                  <div class="s-link"><svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m16 2-2.3 2.3a3 3 0 0 0 0 4.2l1.8 1.8a3 3 0 0 0 4.2 0L22 8"></path><path d="M15 15 3.3 3.3a4.2 4.2 0 0 0 0 6l7.3 7.3c.7.7 2 .7 2.8 0L15 15Zm0 0 7 7"></path><path d="m2.1 21.8 6.4-6.3"></path><path d="m19 5-7 7"></path></svg> Menu</div>
+                  <div class="s-link"><svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect width="8" height="4" x="8" y="2" rx="1" ry="1"></rect><path d="M16 4h2a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2V6a2 2 0 0 1 2-2h2"></path><path d="M12 11h4"></path><path d="M12 16h4"></path><path d="M8 11h.01"></path><path d="M8 16h.01"></path></svg> Commandes</div>
+                  <div class="s-link"><svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 17V7"></path><path d="M16 8h-6a2 2 0 0 0 0 4h4a2 2 0 0 1 0 4H8"></path><path d="M4 3a1 1 0 0 1 1-1 1.3 1.3 0 0 1 .7.2l.933.6a1.3 1.3 0 0 0 1.4 0l.934-.6a1.3 1.3 0 0 1 1.4 0l.933.6a1.3 1.3 0 0 0 1.4 0l.933-.6a1.3 1.3 0 0 1 1.4 0l.934.6a1.3 1.3 0 0 0 1.4 0l.933-.6A1.3 1.3 0 0 1 19 2a1 1 0 0 1 1 1v18a1 1 0 0 1-1 1 1.3 1.3 0 0 1-.7-.2l-.933-.6a1.3 1.3 0 0 0-1.4 0l-.934.6a1.3 1.3 0 0 1-1.4 0l-.933-.6a1.3 1.3 0 0 0-1.4 0l-.933.6a1.3 1.3 0 0 1-1.4 0l-.934-.6a1.3 1.3 0 0 0-1.4 0l-.933.6a1.3 1.3 0 0 1-.7.2 1 1 0 0 1-1-1z"></path></svg> Factures</div>
+                  <div class="s-link"><svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M17 21a1 1 0 0 0 1-1v-5.35c0-.457.316-.844.727-1.041a4 4 0 0 0-2.134-7.589 5 5 0 0 0-9.186 0 4 4 0 0 0-2.134 7.588c.411.198.727.585.727 1.041V20a1 1 0 0 0 1 1Z"></path><path d="M6 17h12"></path></svg> Écran Cuisine (KDS)</div>
+                  <div class="s-link"><svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect width="5" height="5" x="3" y="3" rx="1"></rect><rect width="5" height="5" x="16" y="3" rx="1"></rect><rect width="5" height="5" x="3" y="16" rx="1"></rect><path d="M21 16h-3a2 2 0 0 0-2 2v3"></path><path d="M21 21v.01"></path><path d="M12 7v3a2 2 0 0 1-2 2H7"></path><path d="M3 12h.01"></path><path d="M12 3h.01"></path><path d="M12 16v.01"></path><path d="M16 12h1"></path><path d="M21 12v.01"></path><path d="M12 21v-1"></path></svg> QR Code</div>
+                  <div class="s-link"><svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M16 2v2"></path><path d="M7 21v-2a2 2 0 012-2h6a2 2 0 012 2v2"></path><path d="M8 2v2"></path><circle cx="12" cy="10" r="3"></circle><rect x="3" y="3" width="18" height="18" rx="2"></rect></svg> Clients</div>
+                  <div class="s-link"><svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M9.671 4.136a2.34 2.34 0 0 1 4.659 0 2.34 2.34 0 0 0 3.319 1.915 2.34 2.34 0 0 1 2.33 4.033 2.34 2.34 0 0 0 0 3.831 2.34 2.34 0 0 1-2.33 4.033 2.34 2.34 0 0 0-3.319 1.915 2.34 2.34 0 0 1-4.659 0 2.34 2.34 0 0 0-3.32-1.915 2.34 2.34 0 0 1-2.33-4.033 2.34 2.34 0 0 0 0-3.831A2.34 2.34 0 0 1 6.35 6.051a2.34 2.34 0 0 0 3.319-1.915"></path><circle cx="12" cy="12" r="3"></circle></svg> Paramètres</div>
+                </div>
+              </div>
+              <div class="s-main">
+                <div class="s-h1">Tableau de bord</div>
+                <div class="s-sub">Activité en temps réel et tendances</div>
+                <div class="d-stats">
+                  <div class="d-stat"><div class="top"><span class="lb">Ventes du jour</span><span class="ic"><svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M19 7V4a1 1 0 0 0-1-1H5a2 2 0 0 0 0 4h15a1 1 0 0 1 1 1v4h-3a2 2 0 0 0 0 4h3a1 1 0 0 0 1-1v-2a1 1 0 0 0-1-1"></path><path d="M3 5v14a2 2 0 0 0 2 2h15a1 1 0 0 0 1-1v-4"></path></svg></span></div><div id="d-sales" class="val">0 FCFA</div></div>
+                  <div class="d-stat"><div class="top"><span class="lb">Commandes en cours</span><span class="ic"><svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect width="8" height="4" x="8" y="2" rx="1" ry="1"></rect><path d="M16 4h2a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2V6a2 2 0 0 1 2-2h2"></path><path d="M12 11h4"></path><path d="M12 16h4"></path><path d="M8 11h.01"></path><path d="M8 16h.01"></path></svg></span></div><div id="d-orders" class="val">0</div></div>
+                  <div class="d-stat"><div class="top"><span class="lb">Stock alerte</span><span class="ic"><svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 22V12"></path><path d="m16.5 14.5 5 5"></path><path d="m16.5 19.5 5-5"></path><path d="M21 10.5V8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.729l7 4a2 2 0 0 0 2 .001l.13-.074"></path><path d="M3.29 7 12 12l8.71-5"></path><path d="m7.5 4.27 8.997 5.148"></path></svg></span></div><div id="d-stock" class="val">0</div></div>
+                  <div class="d-stat"><div class="top"><span class="lb">Clients</span><span class="ic"><svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2"></path><path d="M16 3.128a4 4 0 0 1 0 7.744"></path><path d="M22 21v-2a4 4 0 0 0-3-3.87"></path><circle cx="9" cy="7" r="4"></circle></svg></span></div><div id="d-clients" class="val">0</div></div>
+                </div>
+                <div id="d-chart" class="s-card">
+                  <div class="s-cardt">Chiffre d'affaires · 7 derniers jours</div>
+                  <div class="d-bars">
+                    <div class="d-bar" style="height: 46%"></div>
+                    <div class="d-bar" style="height: 58%"></div>
+                    <div class="d-bar" style="height: 52%"></div>
+                    <div class="d-bar" style="height: 70%"></div>
+                    <div class="d-bar" style="height: 88%"></div>
+                    <div class="d-bar" style="height: 96%"></div>
+                    <div class="d-bar today" style="height: 78%"></div>
+                  </div>
+                  <div class="d-days"><span>lun.</span><span>mar.</span><span>mer.</span><span>jeu.</span><span>ven.</span><span>sam.</span><span>dim.</span></div>
+                </div>
+                <div id="d-pay" class="s-card">
+                  <div class="s-cardt">Moyens de paiement</div>
+                  <svg class="d-donut" width="150" height="150" viewBox="0 0 150 150">
+                    <circle cx="75" cy="75" r="56" fill="none" stroke="#f0eee8" stroke-width="22"></circle>
+                    <circle id="d-seg1" cx="75" cy="75" r="56" fill="none" stroke="#0a4f3c" stroke-width="22" stroke-dasharray="204.1 351.9" stroke-dashoffset="0" transform="rotate(-90 75 75)"></circle>
+                    <circle id="d-seg2" cx="75" cy="75" r="56" fill="none" stroke="#f4b942" stroke-width="22" stroke-dasharray="105.6 351.9" stroke-dashoffset="-204.1" transform="rotate(-90 75 75)"></circle>
+                    <circle id="d-seg3" cx="75" cy="75" r="56" fill="none" stroke="#2e6baa" stroke-width="22" stroke-dasharray="42.2 351.9" stroke-dashoffset="-309.7" transform="rotate(-90 75 75)"></circle>
+                  </svg>
+                  <div class="d-leg"><span><i style="background: #0a4f3c"></i>Airtel Money</span><b>58 %</b></div>
+                  <div class="d-leg"><span><i style="background: #f4b942"></i>Moov Money</span><b>30 %</b></div>
+                  <div class="d-leg"><span><i style="background: #2e6baa"></i>Espèces</span><b>12 %</b></div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+        <div class="b-base"><div class="b-notch"></div></div>
+      </div>
+    </div>
+  </div>
+  <script>
+    (function () {
+      const tl = gsap.timeline({ paused: true });
+      // Les temps de chaque démo sont écrits comme si les démos s'enchaînaient ; T les
+      // décale pour laisser la place à la question qui précède chacune d'elles.
+      const T = (t) => t + (t < 5.35 ? 2.4 : t < 10.35 ? 4.65 : 6.9);
+      const to = (s, v, t) => tl.to(s, v, T(t));
+      const fromTo = (s, a, b, t) => tl.fromTo(s, a, b, T(t));
+      const press = (sel, at) => {
+        to(sel, { scale: 0.96, filter: "brightness(0.85)", duration: 0.1, ease: "power2.in" }, at);
+        to(sel, { scale: 1, filter: "brightness(1)", duration: 0.14, ease: "power2.out" }, at + 0.1);
+      };
+      const titleIn = (sel, at) =>
+        fromTo(sel + " .w", { opacity: 0, filter: "blur(10px)" }, { opacity: 1, filter: "blur(0px)", duration: 0.26, ease: "power2.out", stagger: 0.16 }, at);
+      const titleOut = (sel, at) =>
+        to(sel + " .w", { opacity: 0, filter: "blur(10px)", duration: 0.18, ease: "power2.in", stagger: 0.05 }, at);
+      // Caméra : amène le point (px, py) de l'image au centre, à l'échelle s.
+      // cy : hauteur où poser le point visé (assez bas pour que l'écran blanc
+      // ne remonte jamais sous le titre blanc).
+      const push = (px, py, s, at, cy = 620, dur = 0.8) =>
+        to("#b-cam", { scale: s, x: -s * (px - 960), y: cy - 540 - s * (py - 540), transformOrigin: "50% 50%", duration: dur, ease: "power2.inOut" }, at);
+      const back = (at) => to("#b-cam", { scale: 1, x: 0, y: 0, duration: 0.7, ease: "power2.inOut" }, at);
+      const count = (sel, val, at, dur, money) => {
+        const o = { v: 0 };
+        const fmt = (v) => String(Math.round(v)).replace(/\B(?=(\d{3})+(?!\d))/g, " ") + (money ? " FCFA" : "");
+        to(o, { v: val, duration: dur, ease: "power2.out", onUpdate: () => { document.querySelector(sel).textContent = fmt(o.v); } }, at);
+      };
+      // Temps absolus (hors démo) : questions, flou de l'ordinateur, changement d'écran caché.
+      const question = (sel, at, out) => {
+        tl.fromTo(sel + " .q-eb", { opacity: 0, y: 12 }, { opacity: 1, y: 0, duration: 0.35, ease: "power2.out" }, at);
+        tl.fromTo(sel + " .w", { opacity: 0, y: 26, filter: "blur(12px)" }, { opacity: 1, y: 0, filter: "blur(0px)", duration: 0.42, ease: "expo.out", stagger: 0.07 }, at + 0.1);
+        tl.fromTo(sel + " .q-in", { opacity: 1, scale: 1, filter: "blur(0px)" }, { opacity: 0, scale: 1.05, filter: "blur(14px)", duration: 0.32, ease: "power2.in", immediateRender: false }, out);
+      };
+      const SHARP = { opacity: 1, filter: "blur(0px) brightness(1)" };
+      const SOFT = { opacity: 0.4, filter: "blur(18px) brightness(0.5)" };
+      const dim = (at) => tl.fromTo("#b-cam", SHARP, { ...SOFT, duration: 0.45, ease: "power2.inOut", immediateRender: false }, at);
+      const undim = (at) => tl.fromTo("#b-cam", SOFT, { ...SHARP, duration: 0.5, ease: "power2.out", immediateRender: false }, at);
+      const go = (from, dest, at) => {
+        tl.to(from, { xPercent: -30, opacity: 0.3, duration: 0.45, ease: "power3.inOut" }, at);
+        tl.fromTo(dest, { xPercent: 100 }, { xPercent: 0, duration: 0.45, ease: "power3.inOut" }, at);
+      };
+
+      // États initiaux.
+      gsap.set(["#b-s2", "#b-s3"], { xPercent: 100 });
+      gsap.set(["#b-t2 .w", "#b-t3 .w", "#k-c3", "#k-l2", "#r-toast", "#r-newrow"], { opacity: 0 });
+      gsap.set("#k-new", { opacity: 0, x: 80 });
+
+      // Q1 « Des commandes qui se perdent en cuisine ? »
+      question("#b-q1", 0.05, 2.1);
+
+      // 1. « Chaque commande, direct en cuisine. » — l'ordinateur monte sur l'écran cuisine.
+      titleIn("#b-t1", 0);
+      fromTo("#b-laptop", { y: 920 }, { y: 0, duration: 1.1, ease: "expo.out" }, 0.1);
+      fromTo("#b-shadow", { opacity: 0, scaleX: 0.7 }, { opacity: 1, scaleX: 1, duration: 1.1, ease: "expo.out" }, 0.1);
+      // La commande de la table 04 arrive.
+      to("#k-new", { opacity: 1, x: 0, duration: 0.6, ease: "expo.out" }, 1.7);
+      to("#k-c2", { opacity: 0, duration: 0.15 }, 1.7);
+      to("#k-c3", { opacity: 1, duration: 0.15 }, 1.75);
+      push(1328, 535, 1.4, 2.2, 650);
+      press("#k-btn", 3.4);
+      to("#k-l1", { opacity: 0, filter: "blur(6px)", duration: 0.15 }, 3.5);
+      fromTo("#k-l2", { opacity: 0, filter: "blur(6px)" }, { opacity: 1, filter: "blur(0px)", duration: 0.15 }, 3.58);
+      back(4.5);
+      titleOut("#b-t1", 5.3);
+
+      // Q2 « Des nuits vides et un planning sur un cahier ? » — l'ordinateur passe dans le flou.
+      dim(7.75);
+      question("#b-q2", 7.9, 9.95);
+      go("#b-s1", "#b-s2", 8.6);
+      undim(9.95);
+
+      // 2. « Réservé en ligne, payé d'avance. » — réservations, le calendrier se remplit.
+      titleIn("#b-t2", 5.55);
+      push(902, 662, 1.25, 6.1, 750);
+      [[18, 19, 20], [24, 25, 26, 27], [30, 31], [21, 22, 23]].forEach((days, k) => {
+        fromTo(
+          days.map((d) => "#r-d" + d),
+          { backgroundColor: "rgba(10, 79, 60, 0)", color: "#1c1c1e", scale: 0.85 },
+          { backgroundColor: "rgba(10, 79, 60, 0.85)", color: "#ffffff", scale: 1, duration: 0.3, ease: "power2.out", stagger: 0.07 },
+          6.55 + k * 0.38,
+        );
+      });
+      back(8.0);
+      fromTo("#r-newrow", { opacity: 0, y: -10 }, { opacity: 1, y: 0, duration: 0.4, ease: "expo.out" }, 8.2);
+      fromTo("#r-toast", { opacity: 0, y: 30 }, { opacity: 1, y: 0, duration: 0.55, ease: "expo.out" }, 8.3);
+      titleOut("#b-t2", 10.3);
+
+      // Q3 « Combien avez-vous vraiment gagné aujourd'hui ? »
+      dim(15.0);
+      question("#b-q3", 15.15, 17.2);
+      go("#b-s2", "#b-s3", 15.8);
+      undim(17.2);
+
+      // 3. « Chaque franc encaissé, sous vos yeux. » — tableau de bord, les ventes défilent.
+      titleIn("#b-t3", 10.55);
+      fromTo(".d-stat", { opacity: 0, y: 12 }, { opacity: 1, y: 0, duration: 0.4, ease: "power2.out", stagger: 0.07 }, 10.85);
+      count("#d-sales", 1248500, 11.05, 1.7, true);
+      count("#d-orders", 12, 11.1, 1.2, false);
+      count("#d-stock", 2, 11.15, 1.0, false);
+      count("#d-clients", 386, 11.2, 1.4, false);
+      fromTo(".d-bar", { scaleY: 0 }, { scaleY: 1, duration: 0.6, ease: "expo.out", stagger: 0.06 }, 11.2);
+      fromTo("#d-seg1", { strokeDasharray: "0 351.9" }, { strokeDasharray: "204.1 351.9", duration: 0.6, ease: "power2.out" }, 11.4);
+      fromTo("#d-seg2", { strokeDasharray: "0 351.9" }, { strokeDasharray: "105.6 351.9", duration: 0.45, ease: "power2.out" }, 11.75);
+      fromTo("#d-seg3", { strokeDasharray: "0 351.9" }, { strokeDasharray: "42.2 351.9", duration: 0.35, ease: "power2.out" }, 12.0);
+      push(752, 450, 1.55, 11.9, 600);
+      back(13.9);
+      // Fin : l'ordinateur recule légèrement avant le logo.
+      to("#b-cam", { scale: 0.94, duration: 1.2, ease: "power2.inOut" }, 14.6);
+      window.__timelines["sb"] = tl;
+    })();
+  </script>
+</template>

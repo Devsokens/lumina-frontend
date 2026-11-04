@@ -4,11 +4,11 @@ import { useEffect, useRef, useState } from "react";
 import { Pause, Play } from "lucide-react";
 import { cn } from "@/lib/utils";
 
-// Film motion design GiyaX « Trois métiers, une plateforme » (30 s, muet) :
-// séquences filmées réelles (Pexels, licence libre) + interface de l'app.
-// Source éditable : motion/giyax-metiers (HyperFrames). Fichiers web générés
+// Film produit GiyaX « Studio produit » (30 s, muet) : les écrans de l'app
+// (reconstruits depuis les composants) dans un téléphone et un ordinateur.
+// Source éditable : motion/giyax-studio (HyperFrames). Fichiers web générés
 // dans public/videos (720p servi aux petits écrans).
-const POSTER = "/videos/giyax-presentation-poster.jpg";
+const POSTER = "/videos/giyax-studio-poster.jpg";
 
 interface BrandVideoProps {
   className?: string;
@@ -69,12 +69,12 @@ export function BrandVideo({ className, fit = "cover", controlPosition = "bottom
         loop
         playsInline
         preload="metadata"
-        aria-label="Film de présentation GiyaX : vendez vos billets en ligne, prenez les commandes à table, remplissez le calendrier de vos logements, encaissez en Mobile Money."
+        aria-label="Film de présentation GiyaX : billets vendus en ligne et contrôlés à l'entrée, commandes envoyées directement en cuisine, logements réservés et payés d'avance, ventes suivies en direct. Digitaliser son activité n'a jamais été aussi simple."
         onPlay={() => setPlaying(true)}
         onPause={() => setPlaying(false)}
       >
-        <source src="/videos/giyax-presentation-720.mp4" type="video/mp4" media="(max-width: 767px)" />
-        <source src="/videos/giyax-presentation-1080.mp4" type="video/mp4" />
+        <source src="/videos/giyax-studio-720.mp4" type="video/mp4" media="(max-width: 767px)" />
+        <source src="/videos/giyax-studio-1080.mp4" type="video/mp4" />
       </video>
       <button
         type="button"

@@ -114,8 +114,10 @@ function ScrollHero() {
             // Mobile : carré centré (le film garde ses titres et ses écrans dans
             // sa bande centrale) ; à partir de md : plein cadre sous la navbar.
             // Marges latérales conservées : la carte ne touche jamais les bords
-            // (au plus 1280 px de large, centrée, sur grand écran).
-            className="absolute inset-x-5 top-[calc((100svh-100vw+40px)/2)] z-20 aspect-square overflow-hidden bg-[#0a4f3c] shadow-[0_40px_120px_-30px_rgba(10,79,60,0.55)] ring-1 ring-black/5 will-change-transform sm:inset-x-8 sm:top-[calc((100svh-100vw+64px)/2)] md:inset-x-[max(2.5rem,calc((100%-1280px)/2))] md:top-[96px] md:bottom-6 md:aspect-auto lg:inset-x-[max(4rem,calc((100%-1280px)/2))]"
+            // (au plus 1280 px de large, centrée, sur grand écran) et n'est jamais
+            // plus large que 16:9, pour que le haut et le bas du film (titres,
+            // appareils) ne soient jamais rognés sur les écrans peu hauts.
+            className="absolute inset-x-5 top-[calc((100svh-100vw+40px)/2)] z-20 aspect-square overflow-hidden bg-[#0a4f3c] shadow-[0_40px_120px_-30px_rgba(10,79,60,0.55)] ring-1 ring-black/5 will-change-transform sm:inset-x-8 sm:top-[calc((100svh-100vw+64px)/2)] md:inset-x-[max(2.5rem,calc((100%-1280px)/2),calc((100%-(100svh-120px)*16/9)/2))] md:top-[96px] md:bottom-6 md:aspect-auto lg:inset-x-[max(4rem,calc((100%-1280px)/2),calc((100%-(100svh-120px)*16/9)/2))]"
           >
             <BrandVideo className="absolute inset-0" fit="cover" />
           </motion.div>
