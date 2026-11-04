@@ -1,0 +1,161 @@
+<template>
+  <style>
+    @font-face {
+      font-family: "Space Grotesk";
+      font-style: normal;
+      font-weight: 500;
+      font-display: block;
+      src: url("assets/fonts/space-grotesk-latin-500.woff2") format("woff2");
+      unicode-range: U+0000-00FF, U+0131, U+0152-0153, U+02BB-02BC, U+02C6, U+02DA, U+02DC, U+0304, U+0308, U+0329, U+2000-206F, U+20AC, U+2122, U+2191, U+2193, U+2212, U+2215, U+FEFF, U+FFFD;
+    }
+    @font-face {
+      font-family: "Space Grotesk";
+      font-style: normal;
+      font-weight: 500;
+      font-display: block;
+      src: url("assets/fonts/space-grotesk-latin-ext-500.woff2") format("woff2");
+      unicode-range: U+0100-02BA, U+02BD-02C5, U+02C7-02CC, U+02CE-02D7, U+02DD-02FF, U+0304, U+0308, U+0329, U+1D00-1DBF, U+1E00-1E9F, U+1EF2-1EFF, U+2020, U+20A0-20AB, U+20AD-20C0, U+2113, U+2C60-2C7F, U+A720-A7FF;
+    }
+    @font-face {
+      font-family: "Space Grotesk";
+      font-style: normal;
+      font-weight: 600;
+      font-display: block;
+      src: url("assets/fonts/space-grotesk-latin-600.woff2") format("woff2");
+      unicode-range: U+0000-00FF, U+0131, U+0152-0153, U+02BB-02BC, U+02C6, U+02DA, U+02DC, U+0304, U+0308, U+0329, U+2000-206F, U+20AC, U+2122, U+2191, U+2193, U+2212, U+2215, U+FEFF, U+FFFD;
+    }
+    @font-face {
+      font-family: "Space Grotesk";
+      font-style: normal;
+      font-weight: 600;
+      font-display: block;
+      src: url("assets/fonts/space-grotesk-latin-ext-600.woff2") format("woff2");
+      unicode-range: U+0100-02BA, U+02BD-02C5, U+02C7-02CC, U+02CE-02D7, U+02DD-02FF, U+0304, U+0308, U+0329, U+1D00-1DBF, U+1E00-1E9F, U+1EF2-1EFF, U+2020, U+20A0-20AB, U+20AD-20C0, U+2113, U+2C60-2C7F, U+A720-A7FF;
+    }
+    @font-face {
+      font-family: "Space Grotesk";
+      font-style: normal;
+      font-weight: 700;
+      font-display: block;
+      src: url("assets/fonts/space-grotesk-latin-700.woff2") format("woff2");
+      unicode-range: U+0000-00FF, U+0131, U+0152-0153, U+02BB-02BC, U+02C6, U+02DA, U+02DC, U+0304, U+0308, U+0329, U+2000-206F, U+20AC, U+2122, U+2191, U+2193, U+2212, U+2215, U+FEFF, U+FFFD;
+    }
+    @font-face {
+      font-family: "Space Grotesk";
+      font-style: normal;
+      font-weight: 700;
+      font-display: block;
+      src: url("assets/fonts/space-grotesk-latin-ext-700.woff2") format("woff2");
+      unicode-range: U+0100-02BA, U+02BD-02C5, U+02C7-02CC, U+02CE-02D7, U+02DD-02FF, U+0304, U+0308, U+0329, U+1D00-1DBF, U+1E00-1E9F, U+1EF2-1EFF, U+2020, U+20A0-20AB, U+20AD-20C0, U+2113, U+2C60-2C7F, U+A720-A7FF;
+    }
+    #root {
+      position: absolute;
+      inset: 0;
+      overflow: hidden;
+      font-family: "Space Grotesk", sans-serif;
+    }
+    #c-flood {
+      position: absolute;
+      inset: 0;
+      background: radial-gradient(ellipse 70% 62% at 50% 46%, #0d5a45 0%, #0a4f3c 55%, #073a2c 100%);
+    }
+    /* La promesse, en grand, avant le logo. */
+    #c-st {
+      position: absolute;
+      inset: 0;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    }
+    #c-stin {
+      text-align: center;
+      color: #fff;
+      font-size: 100px;
+      font-weight: 700;
+      line-height: 1.06;
+      letter-spacing: -0.035em;
+    }
+    #c-stin .ln {
+      white-space: nowrap;
+    }
+    #c-stin .w {
+      display: inline-block;
+    }
+    #c-stin .gold {
+      color: #f4b942;
+    }
+    #c-logo {
+      position: absolute;
+      left: 640px;
+      top: 278px;
+      width: 640px;
+      height: auto;
+    }
+    #c-tag {
+      position: absolute;
+      left: 0;
+      right: 0;
+      top: 600px;
+      text-align: center;
+      color: #fff;
+      font-size: 50px;
+      font-weight: 600;
+      letter-spacing: -0.01em;
+    }
+    #c-tag .w {
+      display: inline-block;
+    }
+    #c-tag .gold {
+      color: #f4b942;
+    }
+    #c-cta {
+      position: absolute;
+      left: 0;
+      right: 0;
+      top: 716px;
+      text-align: center;
+    }
+    #c-pill {
+      display: inline-flex;
+      align-items: center;
+      height: 72px;
+      padding: 0 40px;
+      border-radius: 999px;
+      background: #f4b942;
+      color: #0a4f3c;
+      font-size: 32px;
+      font-weight: 700;
+      letter-spacing: -0.01em;
+    }
+  </style>
+  <div id="root" data-composition-id="sc" data-width="1920" data-height="1080">
+    <div id="c-flood"></div>
+    <div id="c-st" data-layout-allow-overlap>
+      <div id="c-stin">
+        <div class="ln"><span class="w">Digitaliser</span></div>
+        <div class="ln"><span class="w">son</span> <span class="w">activité</span></div>
+        <div class="ln"><span class="w">n’a</span> <span class="w">jamais</span> <span class="w">été</span></div>
+        <div class="ln"><span class="w gold">aussi</span> <span class="w gold">simple.</span></div>
+      </div>
+    </div>
+    <img id="c-logo" src="assets/img/logo-white.png" alt="GiyaX" data-layout-allow-overlap />
+    <div id="c-tag" data-layout-allow-overlap>
+      <span class="w">La</span> <span class="w">digitalisation</span> <span class="w">qui</span> <span class="w gold">éclaire</span>
+    </div>
+    <div id="c-cta" data-layout-allow-overlap><span id="c-pill">Gratuit pour démarrer</span></div>
+  </div>
+  <script>
+    (function () {
+      const tl = gsap.timeline({ paused: true });
+      tl.fromTo("#c-flood", { clipPath: "inset(100% 0% 0% 0%)" }, { clipPath: "inset(0% 0% 0% 0%)", duration: 0.55, ease: "power2.inOut" }, 0);
+      // « Digitaliser son activité n'a jamais été aussi simple. »
+      tl.fromTo("#c-stin .w", { opacity: 0, y: 26, filter: "blur(12px)" }, { opacity: 1, y: 0, filter: "blur(0px)", duration: 0.42, ease: "expo.out", stagger: 0.08 }, 0.35);
+      tl.fromTo("#c-stin", { opacity: 1, scale: 1, filter: "blur(0px)" }, { opacity: 0, scale: 1.05, filter: "blur(14px)", duration: 0.32, ease: "power2.in", immediateRender: false }, 2.9);
+      // Logo, signature, appel à l'action.
+      tl.fromTo("#c-logo", { opacity: 0, scale: 0.94, filter: "blur(10px)" }, { opacity: 1, scale: 1, filter: "blur(0px)", duration: 0.6, ease: "expo.out" }, 3.1);
+      tl.fromTo("#c-tag .w", { opacity: 0, filter: "blur(6px)" }, { opacity: 1, filter: "blur(0px)", duration: 0.2, ease: "power2.out", stagger: 0.09 }, 3.45);
+      tl.fromTo("#c-pill", { opacity: 0, y: 16, scale: 0.96 }, { opacity: 1, y: 0, scale: 1, duration: 0.5, ease: "expo.out" }, 3.85);
+      window.__timelines["sc"] = tl;
+    })();
+  </script>
+</template>

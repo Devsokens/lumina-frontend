@@ -1,0 +1,691 @@
+<template>
+  <style>
+    @font-face {
+      font-family: "Space Grotesk";
+      font-style: normal;
+      font-weight: 500;
+      font-display: block;
+      src: url("assets/fonts/space-grotesk-latin-500.woff2") format("woff2");
+      unicode-range: U+0000-00FF, U+0131, U+0152-0153, U+02BB-02BC, U+02C6, U+02DA, U+02DC, U+0304, U+0308, U+0329, U+2000-206F, U+20AC, U+2122, U+2191, U+2193, U+2212, U+2215, U+FEFF, U+FFFD;
+    }
+    @font-face {
+      font-family: "Space Grotesk";
+      font-style: normal;
+      font-weight: 500;
+      font-display: block;
+      src: url("assets/fonts/space-grotesk-latin-ext-500.woff2") format("woff2");
+      unicode-range: U+0100-02BA, U+02BD-02C5, U+02C7-02CC, U+02CE-02D7, U+02DD-02FF, U+0304, U+0308, U+0329, U+1D00-1DBF, U+1E00-1E9F, U+1EF2-1EFF, U+2020, U+20A0-20AB, U+20AD-20C0, U+2113, U+2C60-2C7F, U+A720-A7FF;
+    }
+    @font-face {
+      font-family: "Space Grotesk";
+      font-style: normal;
+      font-weight: 600;
+      font-display: block;
+      src: url("assets/fonts/space-grotesk-latin-600.woff2") format("woff2");
+      unicode-range: U+0000-00FF, U+0131, U+0152-0153, U+02BB-02BC, U+02C6, U+02DA, U+02DC, U+0304, U+0308, U+0329, U+2000-206F, U+20AC, U+2122, U+2191, U+2193, U+2212, U+2215, U+FEFF, U+FFFD;
+    }
+    @font-face {
+      font-family: "Space Grotesk";
+      font-style: normal;
+      font-weight: 600;
+      font-display: block;
+      src: url("assets/fonts/space-grotesk-latin-ext-600.woff2") format("woff2");
+      unicode-range: U+0100-02BA, U+02BD-02C5, U+02C7-02CC, U+02CE-02D7, U+02DD-02FF, U+0304, U+0308, U+0329, U+1D00-1DBF, U+1E00-1E9F, U+1EF2-1EFF, U+2020, U+20A0-20AB, U+20AD-20C0, U+2113, U+2C60-2C7F, U+A720-A7FF;
+    }
+    @font-face {
+      font-family: "Space Grotesk";
+      font-style: normal;
+      font-weight: 700;
+      font-display: block;
+      src: url("assets/fonts/space-grotesk-latin-700.woff2") format("woff2");
+      unicode-range: U+0000-00FF, U+0131, U+0152-0153, U+02BB-02BC, U+02C6, U+02DA, U+02DC, U+0304, U+0308, U+0329, U+2000-206F, U+20AC, U+2122, U+2191, U+2193, U+2212, U+2215, U+FEFF, U+FFFD;
+    }
+    @font-face {
+      font-family: "Space Grotesk";
+      font-style: normal;
+      font-weight: 700;
+      font-display: block;
+      src: url("assets/fonts/space-grotesk-latin-ext-700.woff2") format("woff2");
+      unicode-range: U+0100-02BA, U+02BD-02C5, U+02C7-02CC, U+02CE-02D7, U+02DD-02FF, U+0304, U+0308, U+0329, U+1D00-1DBF, U+1E00-1E9F, U+1EF2-1EFF, U+2020, U+20A0-20AB, U+20AD-20C0, U+2113, U+2C60-2C7F, U+A720-A7FF;
+    }
+    #root {
+      position: absolute;
+      inset: 0;
+      overflow: hidden;
+      font-family: "Inter", sans-serif;
+    }
+    .a-ttl {
+      position: absolute;
+      left: 0;
+      right: 0;
+      top: 96px;
+      text-align: center;
+      color: #fff;
+      font-family: "Space Grotesk", sans-serif;
+      font-size: 64px;
+      line-height: 1.08;
+      font-weight: 700;
+      letter-spacing: -0.03em;
+      white-space: nowrap;
+    }
+    .a-ttl .w {
+      display: inline-block;
+    }
+    .a-ttl .gold {
+      color: #f4b942;
+    }
+    /* Question plein cadre qui pose le problème avant la démo. */
+    .q {
+      position: absolute;
+      inset: 0;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      z-index: 8;
+    }
+    .q-in {
+      text-align: center;
+    }
+    .q-eb {
+      display: inline-flex;
+      align-items: center;
+      gap: 18px;
+      margin-bottom: 34px;
+      font-family: "Inter", sans-serif;
+      font-size: 24px;
+      font-weight: 600;
+      letter-spacing: 0.24em;
+      text-transform: uppercase;
+      color: #f4b942;
+    }
+    .q-eb::before,
+    .q-eb::after {
+      content: "";
+      width: 56px;
+      height: 2px;
+      background: rgba(244, 185, 66, 0.6);
+    }
+    .q-tx {
+      font-family: "Space Grotesk", sans-serif;
+      font-size: 92px;
+      font-weight: 700;
+      line-height: 1.08;
+      letter-spacing: -0.035em;
+      color: #fff;
+    }
+    .q-tx .ln {
+      white-space: nowrap;
+    }
+    .q-tx .w {
+      display: inline-block;
+    }
+    .q-tx .qm {
+      color: #f4b942;
+    }
+    /* Ombre de contact au sol */
+    .a-shadow {
+      position: absolute;
+      width: 420px;
+      height: 46px;
+      top: 1006px;
+      border-radius: 50%;
+      background: radial-gradient(ellipse at center, rgba(0, 0, 0, 0.55), rgba(0, 0, 0, 0) 70%);
+    }
+    /* Téléphone */
+    .a-phone {
+      position: absolute;
+      top: 262px;
+      width: 380px;
+      height: 800px;
+      scale: 0.92;
+      transform-origin: 50% 0;
+      border-radius: 58px;
+      background: #0b0d0c;
+      padding: 12px;
+      box-shadow:
+        inset 0 0 0 2px #2b302e,
+        0 50px 110px rgba(0, 0, 0, 0.5);
+    }
+    .a-screen {
+      position: relative;
+      width: 356px;
+      height: 776px;
+      border-radius: 47px;
+      overflow: hidden;
+      background: #f8f7f4;
+      color: #1c1c1e;
+    }
+    .a-island {
+      position: absolute;
+      top: 12px;
+      left: 50%;
+      width: 108px;
+      height: 30px;
+      margin-left: -54px;
+      border-radius: 20px;
+      background: #000;
+      z-index: 5;
+    }
+    .a-scr {
+      position: absolute;
+      inset: 0;
+      background: #f8f7f4;
+    }
+    .a-pad {
+      padding: 18px 20px 0;
+    }
+    svg {
+      width: 1em;
+      height: 1em;
+      flex-shrink: 0;
+    }
+    /* L1 : page de l'événement, achat (ticket-purchase) */
+    .a-cover {
+      height: 196px;
+      overflow: hidden;
+    }
+    .a-cover img {
+      width: 100%;
+      height: 100%;
+      object-fit: cover;
+      object-position: 50% 35%;
+    }
+    .a-ev {
+      font-family: "Space Grotesk", sans-serif;
+      font-size: 30px;
+      font-weight: 700;
+      letter-spacing: -0.02em;
+    }
+    .a-meta {
+      margin-top: 4px;
+      display: flex;
+      align-items: center;
+      gap: 6px;
+      font-size: 15px;
+      color: #6b7280;
+    }
+    .a-legend {
+      margin: 16px 0 8px;
+      font-size: 17px;
+      font-weight: 600;
+    }
+    .a-opt {
+      display: flex;
+      align-items: flex-start;
+      justify-content: space-between;
+      gap: 10px;
+      padding: 12px 14px;
+      margin-bottom: 8px;
+      border: 1.5px solid #eae8e1;
+      border-radius: 18px;
+      background: #fff;
+      font-size: 17px;
+    }
+    .a-opt.sel {
+      border-color: #0a4f3c;
+      background: rgba(10, 79, 60, 0.05);
+    }
+    .a-opt .nm {
+      display: flex;
+      gap: 10px;
+      font-weight: 600;
+    }
+    .a-opt small {
+      display: block;
+      margin-top: 2px;
+      font-size: 13px;
+      font-weight: 400;
+      color: #6b7280;
+    }
+    .a-opt b {
+      font-size: 16px;
+      white-space: nowrap;
+    }
+    .a-radio {
+      width: 18px;
+      height: 18px;
+      margin-top: 2px;
+      border-radius: 50%;
+      border: 2px solid #b9b6ad;
+    }
+    .a-radio.on {
+      border: 6px solid #0a4f3c;
+    }
+    .a-qty,
+    .a-total {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+    }
+    .a-qty {
+      padding: 12px 14px;
+      border: 1.5px solid #eae8e1;
+      border-radius: 18px;
+      background: #fff;
+      font-size: 17px;
+      font-weight: 600;
+    }
+    .a-ctr {
+      display: flex;
+      align-items: center;
+      gap: 14px;
+      font-size: 19px;
+    }
+    .a-ctr svg {
+      width: 30px;
+      height: 30px;
+      padding: 6px;
+      border-radius: 50%;
+      border: 1.5px solid #eae8e1;
+    }
+    .a-total {
+      margin-top: 14px;
+      padding-top: 14px;
+      border-top: 1.5px solid #eae8e1;
+      font-size: 16px;
+      color: #6b7280;
+    }
+    .a-total b {
+      font-family: "Space Grotesk", sans-serif;
+      font-size: 26px;
+      color: #1c1c1e;
+    }
+    .a-btn {
+      margin-top: 14px;
+      height: 58px;
+      border-radius: 16px;
+      background: #0a4f3c;
+      color: #fff;
+      font-size: 17px;
+      font-weight: 600;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 8px;
+    }
+    /* L2 : paiement Mobile Money (pay/simulate) */
+    .a-appbar {
+      padding-top: 46px;
+      font-family: "Space Grotesk", sans-serif;
+      font-size: 24px;
+      font-weight: 700;
+    }
+    .a-card {
+      margin-top: 18px;
+      padding: 20px;
+      border: 1.5px solid #eae8e1;
+      border-radius: 26px;
+      background: #fff;
+    }
+    .a-small {
+      font-size: 14px;
+      color: #6b7280;
+    }
+    .a-amount {
+      font-family: "Space Grotesk", sans-serif;
+      font-size: 40px;
+      font-weight: 700;
+      letter-spacing: -0.02em;
+    }
+    .a-ops {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 8px;
+    }
+    .a-op {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 6px;
+      min-height: 52px;
+      border: 1.5px solid #eae8e1;
+      border-radius: 18px;
+      font-size: 15px;
+      font-weight: 600;
+    }
+    .a-op.sel {
+      border-color: #0a4f3c;
+      background: rgba(10, 79, 60, 0.1);
+      color: #0a4f3c;
+    }
+    /* L3 : paiement reçu + billet */
+    .a-center {
+      padding: 70px 22px 0;
+      text-align: center;
+    }
+    .a-okic svg {
+      width: 74px;
+      height: 74px;
+      color: #10b981;
+    }
+    .a-okt {
+      margin-top: 10px;
+      font-family: "Space Grotesk", sans-serif;
+      font-size: 32px;
+      font-weight: 700;
+    }
+    .a-oks {
+      font-size: 16px;
+      color: #6b7280;
+    }
+    .a-tk {
+      margin-top: 22px;
+      padding: 18px 18px 16px;
+      border-radius: 24px;
+      background: #fff;
+      border: 1.5px solid #eae8e1;
+      box-shadow: 0 10px 30px rgba(0, 0, 0, 0.08);
+    }
+    .a-tkhead {
+      font-family: "Space Grotesk", sans-serif;
+      font-size: 20px;
+      font-weight: 700;
+    }
+    .a-tkhead small {
+      display: block;
+      font-family: "Inter", sans-serif;
+      font-size: 14px;
+      font-weight: 500;
+      color: #0a4f3c;
+    }
+    .a-qr {
+      display: block;
+      width: 210px;
+      height: 210px;
+      margin: 14px auto 10px;
+    }
+    .a-tkfoot {
+      font-size: 13px;
+      color: #6b7280;
+    }
+    /* Téléphone 2 : scanner (scan-result + entry-counter) */
+    .a-dark {
+      background: #101614;
+    }
+    .a-counter {
+      position: absolute;
+      left: 16px;
+      right: 16px;
+      top: 54px;
+      padding: 12px 16px 14px;
+      border-radius: 18px;
+      background: rgba(0, 0, 0, 0.7);
+      color: #fff;
+    }
+    .a-counter .row {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+    }
+    .a-counter .lbl {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      font-size: 17px;
+    }
+    .a-num {
+      position: relative;
+      font-family: "JetBrains Mono", monospace;
+      font-size: 22px;
+      font-weight: 700;
+      white-space: nowrap;
+    }
+    .a-num .tot {
+      font-size: 16px;
+      opacity: 0.7;
+    }
+    #a-n1,
+    #a-n2 {
+      display: inline-block;
+    }
+    #a-n2 {
+      position: absolute;
+      left: 0;
+      top: 0;
+    }
+    .a-bar {
+      margin-top: 8px;
+      height: 7px;
+      border-radius: 4px;
+      background: rgba(255, 255, 255, 0.2);
+      overflow: hidden;
+    }
+    #a-barfill {
+      display: block;
+      width: 61.75%;
+      height: 100%;
+      background: #10b981;
+    }
+    .a-vf {
+      position: absolute;
+      left: 58px;
+      top: 168px;
+      width: 240px;
+      height: 240px;
+      padding: 22px;
+      border: 4px solid rgba(255, 255, 255, 0.6);
+      border-radius: 30px;
+    }
+    .a-vf img {
+      width: 100%;
+      height: 100%;
+      border-radius: 8px;
+      opacity: 0.92;
+    }
+    #a-sl {
+      position: absolute;
+      left: 10px;
+      right: 10px;
+      top: 18px;
+      height: 4px;
+      border-radius: 2px;
+      background: #f4b942;
+    }
+    .a-verdict {
+      position: absolute;
+      left: 0;
+      right: 0;
+      bottom: 0;
+      height: 340px;
+      padding: 26px 24px 32px;
+      border-radius: 30px 30px 0 0;
+      background: #10b981;
+      color: #fff;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      gap: 8px;
+      text-align: center;
+    }
+    .a-verdict svg {
+      width: 64px;
+      height: 64px;
+    }
+    .a-verdict .v {
+      font-family: "Space Grotesk", sans-serif;
+      font-size: 30px;
+      font-weight: 700;
+    }
+    .a-verdict .d {
+      font-size: 16px;
+      opacity: 0.92;
+    }
+    .a-vbtn {
+      margin-top: 8px;
+      width: 100%;
+      height: 54px;
+      border-radius: 14px;
+      background: #eae8e1;
+      color: #1c1c1e;
+      font-size: 16px;
+      font-weight: 600;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    }
+  </style>
+  <div id="root" data-composition-id="sa" data-width="1920" data-height="1080">
+    <div id="a-q" class="q" data-layout-allow-overlap>
+      <div class="q-in">
+        <div class="q-eb">Événements</div>
+        <div class="q-tx">
+          <div class="ln"><span class="w">Faux</span> <span class="w">billets,</span></div>
+          <div class="ln"><span class="w">files</span> <span class="w">d’attente</span></div>
+          <div class="ln"><span class="w">à</span> <span class="w">l’entrée&nbsp;<span class="qm">?</span></span></div>
+        </div>
+      </div>
+    </div>
+    <div id="a-t1" class="a-ttl" data-layout-allow-overlap>
+      <span class="w">Vendez en ligne.</span><br /><span class="w gold">Encaissez tout de suite.</span>
+    </div>
+    <div id="a-t2" class="a-ttl" data-layout-allow-overlap>
+      <span class="w">Zéro faux billet.</span><br /><span class="w gold">Une seconde par entrée.</span>
+    </div>
+
+    <div id="a-sh1" class="a-shadow" style="left: 750px"></div>
+    <div id="a-sh2" class="a-shadow" style="left: 980px"></div>
+
+    <!-- Téléphone 1 : le client achète ses billets -->
+    <div id="a-p1" class="a-phone" style="left: 770px">
+      <div class="a-screen">
+        <div class="a-island"></div>
+        <div id="a-l1" class="a-scr" data-layout-allow-overlap>
+          <div class="a-cover"><img src="assets/img/event-cover.jpg" alt="" /></div>
+          <div class="a-pad">
+            <div class="a-ev">Nuit Afro Live</div>
+            <div class="a-meta"><svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M20 10c0 4.993-5.539 10.193-7.399 11.799a1 1 0 0 1-1.202 0C9.539 20.193 4 14.993 4 10a8 8 0 0 1 16 0"></path><circle cx="12" cy="10" r="3"></circle></svg> Libreville · Sam. 14 nov. · 20h00</div>
+            <div class="a-legend">Formule</div>
+            <div class="a-opt sel">
+              <span class="nm"><span class="a-radio on"></span><span>Standard<small>Accès à la soirée</small></span></span><b>10 000 FCFA</b>
+            </div>
+            <div class="a-opt">
+              <span class="nm"><span class="a-radio"></span><span>VIP<small>Espace lounge</small></span></span><b>25 000 FCFA</b>
+            </div>
+            <div class="a-qty"><span>Quantité</span><span class="a-ctr"><svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12h14"></path></svg><b>2</b><svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12h14"></path><path d="M12 5v14"></path></svg></span></div>
+            <div class="a-total"><span>Total</span><b>20 000 FCFA</b></div>
+            <div id="a-btn1" class="a-btn"><svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M2 9a3 3 0 0 1 0 6v2a2 2 0 0 0 2 2h16a2 2 0 0 0 2-2v-2a3 3 0 0 1 0-6V7a2 2 0 0 0-2-2H4a2 2 0 0 0-2 2Z"></path><path d="M13 5v2"></path><path d="M13 17v2"></path><path d="M13 11v2"></path></svg> Payer et recevoir mes billets</div>
+          </div>
+        </div>
+        <div id="a-l2" class="a-scr" data-layout-allow-overlap>
+          <div class="a-pad">
+            <div class="a-appbar">Paiement</div>
+            <div class="a-card">
+              <div class="a-small">Commande CMD-1042</div>
+              <div class="a-amount">20 000 FCFA</div>
+              <div class="a-small">Nuit Afro Live</div>
+              <div class="a-legend">Opérateur</div>
+              <div class="a-ops">
+                <div class="a-op sel"><svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect width="14" height="20" x="5" y="2" rx="2" ry="2"></rect><path d="M12 18h.01"></path></svg> Airtel Money</div>
+                <div class="a-op"><svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect width="14" height="20" x="5" y="2" rx="2" ry="2"></rect><path d="M12 18h.01"></path></svg> Moov Money</div>
+              </div>
+            </div>
+            <div id="a-btn2" class="a-btn">Payer 20 000 FCFA</div>
+          </div>
+        </div>
+        <div id="a-l3" class="a-scr" data-layout-allow-overlap>
+          <div class="a-center">
+            <div id="a-okic" class="a-okic"><svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"></circle><path d="m9 12 2 2 4-4"></path></svg></div>
+            <div class="a-okt">Paiement reçu</div>
+            <div class="a-oks">Vos billets sont prêts</div>
+            <div id="a-tk" class="a-tk">
+              <div class="a-tkhead">Nuit Afro Live<small>Standard · 2 billets</small></div>
+              <img class="a-qr" src="assets/img/qr.svg" alt="" />
+              <div class="a-tkfoot">Présentez ce QR code à l'entrée</div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Téléphone 2 : le scanner de l'organisateur -->
+    <div id="a-p2" class="a-phone" style="left: 1000px">
+      <div class="a-screen a-dark">
+        <div class="a-island"></div>
+        <div class="a-counter">
+          <div class="row">
+            <span class="lbl"><svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2"></path><path d="M16 3.128a4 4 0 0 1 0 7.744"></path><path d="M22 21v-2a4 4 0 0 0-3-3.87"></path><circle cx="9" cy="7" r="4"></circle></svg> Entrées</span>
+            <span class="a-num" data-layout-allow-overlap><span id="a-n1">247</span><span id="a-n2">248</span> <span class="tot">/ 400</span></span>
+          </div>
+          <div class="a-bar"><span id="a-barfill"></span></div>
+        </div>
+        <div class="a-vf"><img src="assets/img/qr.svg" alt="" /><div id="a-sl"></div></div>
+        <div id="a-verdict" class="a-verdict">
+          <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"></circle><path d="m9 12 2 2 4-4"></path></svg>
+          <div class="v">Billet valide</div>
+          <div class="d">Standard · Awa N.</div>
+          <div class="a-vbtn">Scanner suivant</div>
+        </div>
+      </div>
+    </div>
+  </div>
+  <script>
+    (function () {
+      const tl = gsap.timeline({ paused: true });
+      // Les temps de la démo sont écrits « depuis le début de la démo » ; T les place
+      // après la question d'ouverture (et raccourcit l'attente avant la sortie).
+      const T = (t) => t + (t < 10.6 ? 2.4 : 1.4);
+      const to = (s, v, t) => tl.to(s, v, T(t));
+      const fromTo = (s, a, b, t) => tl.fromTo(s, a, b, T(t));
+      const press = (sel, at) => {
+        to(sel, { scale: 0.96, filter: "brightness(0.85)", duration: 0.1, ease: "power2.in" }, at);
+        to(sel, { scale: 1, filter: "brightness(1)", duration: 0.14, ease: "power2.out" }, at + 0.1);
+      };
+      const titleIn = (sel, at) =>
+        fromTo(sel + " .w", { opacity: 0, filter: "blur(10px)" }, { opacity: 1, filter: "blur(0px)", duration: 0.26, ease: "power2.out", stagger: 0.16 }, at);
+      const titleOut = (sel, at) =>
+        to(sel + " .w", { opacity: 0, filter: "blur(10px)", duration: 0.18, ease: "power2.in", stagger: 0.05 }, at);
+      // Question : les mots arrivent, la phrase reste immobile, puis s'efface en flou.
+      const question = (sel, at, out) => {
+        tl.fromTo(sel + " .q-eb", { opacity: 0, y: 12 }, { opacity: 1, y: 0, duration: 0.35, ease: "power2.out" }, at);
+        tl.fromTo(sel + " .w", { opacity: 0, y: 26, filter: "blur(12px)" }, { opacity: 1, y: 0, filter: "blur(0px)", duration: 0.42, ease: "expo.out", stagger: 0.07 }, at + 0.1);
+        tl.fromTo(sel + " .q-in", { opacity: 1, scale: 1, filter: "blur(0px)" }, { opacity: 0, scale: 1.05, filter: "blur(14px)", duration: 0.32, ease: "power2.in", immediateRender: false }, out);
+      };
+
+      // État initial.
+      gsap.set(["#a-l2", "#a-l3"], { xPercent: 100 });
+      gsap.set(["#a-p2", "#a-sh2"], { opacity: 0 });
+      gsap.set("#a-t2 .w", { opacity: 0 });
+
+      // 0. La question qui pose le problème.
+      question("#a-q", 0.15, 2.1);
+
+      // 1. « Vendez en ligne. » — le téléphone monte, page de l'événement.
+      titleIn("#a-t1", 0);
+      fromTo("#a-p1", { y: 300, opacity: 0 }, { y: 0, opacity: 1, duration: 1.0, ease: "expo.out" }, 0.1);
+      fromTo("#a-sh1", { opacity: 0, scaleX: 0.6 }, { opacity: 1, scaleX: 1, duration: 1.0, ease: "expo.out" }, 0.1);
+      press("#a-btn1", 1.7);
+      // Navigation vers le paiement.
+      to("#a-l1", { xPercent: -30, opacity: 0.4, duration: 0.45, ease: "power3.inOut" }, 2.0);
+      to("#a-l2", { xPercent: 0, duration: 0.45, ease: "power3.inOut" }, 2.0);
+      press("#a-btn2", 3.15);
+      // Paiement reçu, billet prêt.
+      to("#a-l2", { xPercent: -30, opacity: 0.4, duration: 0.45, ease: "power3.inOut" }, 3.45);
+      to("#a-l3", { xPercent: 0, duration: 0.45, ease: "power3.inOut" }, 3.45);
+      fromTo("#a-okic", { scale: 0.5, opacity: 0 }, { scale: 1, opacity: 1, duration: 0.5, ease: "back.out(1.6)" }, 3.75);
+      fromTo("#a-tk", { y: 40, opacity: 0 }, { y: 0, opacity: 1, duration: 0.6, ease: "expo.out" }, 3.95);
+
+      // 2. « Zéro faux billet. » — le scanner de l'organisateur entre.
+      titleOut("#a-t1", 5.55);
+      titleIn("#a-t2", 5.8);
+      to("#a-p1", { x: -230, duration: 0.75, ease: "power3.inOut" }, 5.6);
+      to("#a-sh1", { x: -230, duration: 0.75, ease: "power3.inOut" }, 5.6);
+      fromTo("#a-p2", { x: 700, opacity: 0 }, { x: 0, opacity: 1, duration: 0.85, ease: "expo.out" }, 5.75);
+      fromTo("#a-sh2", { opacity: 0, x: 700 }, { opacity: 1, x: 0, duration: 0.85, ease: "expo.out" }, 5.75);
+      // Scan du QR dans le viseur.
+      fromTo("#a-sl", { y: 0, opacity: 0 }, { opacity: 1, duration: 0.08 }, 7.1);
+      to("#a-sl", { y: 190, duration: 0.55, ease: "power1.inOut" }, 7.1);
+      to("#a-sl", { opacity: 0, duration: 0.08 }, 7.65);
+      fromTo("#a-verdict", { yPercent: 100 }, { yPercent: 0, duration: 0.6, ease: "expo.out" }, 7.75);
+      fromTo("#a-n2", { opacity: 0, y: 14 }, { opacity: 1, y: 0, duration: 0.2, ease: "power2.out" }, 8.2);
+      fromTo("#a-n1", { opacity: 1, y: 0 }, { opacity: 0, y: -14, duration: 0.2, ease: "power2.in" }, 8.2);
+      fromTo("#a-barfill", { width: "61.75%" }, { width: "62%", duration: 0.3 }, 8.2);
+
+      // Sortie : les téléphones descendent, l'ordinateur prendra le relais.
+      titleOut("#a-t2", 10.75);
+      to(["#a-p1", "#a-p2"], { y: 980, duration: 0.55, ease: "power3.in", stagger: 0.06 }, 10.7);
+      to(["#a-sh1", "#a-sh2"], { opacity: 0, duration: 0.4 }, 10.7);
+      window.__timelines["sa"] = tl;
+    })();
+  </script>
+</template>
