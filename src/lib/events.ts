@@ -68,6 +68,7 @@ export function toAttendees(tickets: ApiTicket[]): Attendee[] {
       status: t.status as Attendee["status"],
       scannedAt: t.scannedAt,
       purchaseDate: t.createdAt,
+      orderId: t.orderId,
     }));
 }
 
@@ -75,6 +76,39 @@ export function toAttendees(tickets: ApiTicket[]): Attendee[] {
 export function ticketNumber(ticketId: string) {
   return `#${ticketId.slice(0, 8).toUpperCase()}`;
 }
+
+export type EventLogoRole =
+  | "MAIN_ORGANIZER"
+  | "CO_ORGANIZER"
+  | "PARTNER"
+  | "SPONSOR"
+  | "INSTITUTION";
+
+export type EventLogo = {
+  id: string;
+  name: string;
+  role: EventLogoRole;
+  imageUrl?: string | null;
+};
+
+export type CropFocus = "center" | "top" | "bottom" | "left" | "right";
+
+export type PosterCrops = {
+  portrait45?: CropFocus;
+  square11?: CropFocus;
+  banner169?: CropFocus;
+};
+
+export type CertificateSignatory = {
+  name?: string;
+  role: string;
+  signatureUrl?: string | null;
+};
+
+export type CertificateRecipientsMode = "PRESENT_ONLY" | "ALL_REGISTERED" | "MANUAL";
+export type CertificateSendMode = "AUTO_NEXT_DAY" | "MANUAL";
+export type CertificateChannels = { email: boolean; whatsapp: boolean; portal: boolean };
+export type EventFormat = "ONSITE" | "ONLINE" | "HYBRID";
 
 export type EventPayload = {
   title: string;
@@ -87,6 +121,7 @@ export type EventPayload = {
   eventType?: string;
   capacity?: number;
   settings?: EventSettings;
+  notifyParticipants?: boolean;
 };
 
 // Event.settings côté serveur (EventSettingsDto).
@@ -96,6 +131,21 @@ export type EventSettings = {
   hasCertificate?: boolean;
   certificateTemplate?: string;
   ticketTemplate?: string;
+  format?: EventFormat;
+  logos?: EventLogo[];
+  logosDisplay?: { vitrine: boolean; billets: boolean; certificats: boolean };
+  posterCrops?: PosterCrops;
+  ticketColor?: string;
+  ticketShowPrice?: boolean;
+  ticketShowLogo?: boolean;
+  certificateTitle?: string;
+  certificateIssuer?: string;
+  certificateIssuedDate?: string;
+  certificateMention?: string;
+  certificateSignatories?: [CertificateSignatory, CertificateSignatory];
+  certificateRecipients?: CertificateRecipientsMode;
+  certificateSendMode?: CertificateSendMode;
+  certificateChannels?: CertificateChannels;
 };
 
 // Affiche : URL https ou image importée (data URL ré-encodée, vérifiée par
@@ -105,18 +155,28 @@ const IMAGE_REF = /^(https:\/\/|data:image\/(png|jpeg|webp);base64,)/;
 // Champs acceptés par le backend, réglages (questionnaire, modèles) compris.
 export function toEventPayload(form: Partial<Event>): EventPayload {
   const imageUrl = form.imageUrl && IMAGE_REF.test(form.imageUrl) ? form.imageUrl : undefined;
+  const extraSettings = form.settings ?? {};
   const settings: EventSettings = {
-    questionnaireEnabled: form.questionnaireEnabled ?? false,
-    questionnaire: (form.questionnaire ?? []).map((q) => ({
+    ...extraSettings,
+    questionnaireEnabled: form.questionnaireEnabled ?? extraSettings.questionnaireEnabled ?? false,
+    questionnaire: (form.questionnaire ?? extraSettings.questionnaire ?? []).map((q) => ({
       id: q.id,
       title: q.title,
       type: q.type,
       isRequired: q.isRequired,
       ...(q.options ? { options: q.options } : {}),
     })),
-    hasCertificate: form.hasCertificate ?? false,
-    ...(form.certificateTemplate ? { certificateTemplate: form.certificateTemplate } : {}),
-    ...(form.ticketTemplate ? { ticketTemplate: form.ticketTemplate } : {}),
+    hasCertificate: form.hasCertificate ?? extraSettings.hasCertificate ?? false,
+    ...(form.certificateTemplate
+      ? { certificateTemplate: form.certificateTemplate }
+      : extraSettings.certificateTemplate
+        ? { certificateTemplate: extraSettings.certificateTemplate }
+        : {}),
+    ...(form.ticketTemplate
+      ? { ticketTemplate: form.ticketTemplate }
+      : extraSettings.ticketTemplate
+        ? { ticketTemplate: extraSettings.ticketTemplate }
+        : {}),
   };
   return {
     settings,
@@ -129,11 +189,11 @@ export function toEventPayload(form: Partial<Event>): EventPayload {
     ...(form.venueName ? { venueName: form.venueName } : {}),
     ...(form.eventType ? { eventType: form.eventType } : {}),
     ...(form.capacity ? { capacity: form.capacity } : {}),
+    ...(form.notifyParticipants !== undefined ? { notifyParticipants: form.notifyParticipants } : {}),
   };
 }
 
-// Corps de création d'un type de billet. `saleEndsAt` et `template` ne
-// partent que si le serveur les gère (FEATURES.ticketExtras).
+// Corps de création d'un type de billet.
 export function ticketTypeBody(f: TicketType) {
   return {
     name: f.name,
@@ -142,6 +202,8 @@ export function ticketTypeBody(f: TicketType) {
     ...(f.description ? { description: f.description } : {}),
     ...(FEATURES.ticketExtras && f.saleEndsAt ? { saleEndsAt: f.saleEndsAt } : {}),
     ...(FEATURES.ticketExtras && f.ticketTemplate ? { template: f.ticketTemplate } : {}),
+    ...(FEATURES.ticketExtras && f.maxPerOrder ? { maxPerOrder: f.maxPerOrder } : {}),
+    ...(FEATURES.ticketExtras && f.visible !== undefined ? { visible: f.visible } : {}),
   };
 }
 
@@ -184,6 +246,7 @@ export function toShowcaseEvent(event: PublicEvent): EventItem {
     title: event.title,
     category: SHOWCASE_CATEGORY[event.eventType ?? ""] ?? "Concert & Festival",
     date: start.toLocaleDateString("fr-FR", { day: "numeric", month: "long", year: "numeric" }),
+    startsAt: event.startDate,
     time: start.toLocaleTimeString("fr-FR", { hour: "2-digit", minute: "2-digit" }),
     location: [event.venueName, event.location].filter(Boolean).join(" · ") || "Lieu à préciser",
     description: event.description ?? "",

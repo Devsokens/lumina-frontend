@@ -14,6 +14,7 @@ import { useAdminProducts } from "@/hooks/useMenu";
 import { useSaveSite } from "@/hooks/useAdmin";
 import { apiError } from "@/lib/api";
 import { prepareImage } from "@/lib/image";
+import { publicSiteUrl } from "@/lib/tenant-url";
 import {
   DAYS,
   FONT_INFO,
@@ -55,7 +56,7 @@ export function SiteEditor({ tenant }: { tenant: Tenant }) {
   const save = useSaveSite();
   const set = <K extends keyof SiteConfig>(key: K, value: SiteConfig[K]) => setSite((s) => ({ ...s, [key]: value }));
   const preview: Tenant = { ...tenant, config: { ...tenant.config, site } };
-  const publicUrl = `/${tenant.slug}`;
+  const publicUrl = publicSiteUrl(tenant.slug);
 
   async function publish() {
     try {

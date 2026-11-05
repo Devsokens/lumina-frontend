@@ -1,5 +1,6 @@
 import { z } from "zod";
 import { SECTORS } from "@/lib/constants";
+import { isReservedSlug } from "@/lib/tenant-url";
 
 // Zod obligatoire sur tous les formulaires — LUMINA_FRONTEND_CONTEXT.md 4.4,
 // LUMINA_Audit_Menaces_Complet.md 7.1 (mass assignment).
@@ -8,6 +9,17 @@ export const loginSchema = z.object({
   identifier: z.string().min(3, "Email ou téléphone requis"),
   password: z.string().min(8, "8 caractères minimum"),
 });
+
+// Adresse du site public : elle devient un sous-domaine (nom.giyax.com), donc
+// un libellé DNS valide (pas de tiret au début ni à la fin), et ne doit pas
+// prendre un nom réservé par l'application (www, admin, login…).
+export const slugSchema = z
+  .string({ required_error: "Adresse requise" })
+  .min(3, "3 caractères minimum")
+  .max(50, "50 caractères maximum")
+  .regex(/^[a-z0-9-]+$/, "Uniquement lettres minuscules, chiffres et tirets")
+  .regex(/^[a-z0-9](?:[a-z0-9-]*[a-z0-9])?$/, "Pas de tiret au début ni à la fin")
+  .refine((v) => !isReservedSlug(v), "Cette adresse est réservée, choisissez-en une autre");
 
 export const signupSchema = z.object({
   fullName: z
@@ -29,11 +41,7 @@ export const signupSchema = z.object({
     .string({ required_error: "Nom de l'activité requis" })
     .min(2, "Nom de l'activité requis")
     .max(120, "120 caractères maximum"),
-  slug: z
-    .string({ required_error: "Adresse requise" })
-    .min(3, "3 caractères minimum")
-    .max(50, "50 caractères maximum")
-    .regex(/^[a-z0-9-]+$/, "Uniquement lettres minuscules, chiffres et tirets"),
+  slug: slugSchema,
   sector: z.enum(SECTORS),
   acceptedTerms: z.literal(true, {
     invalid_type_error: "Vous devez accepter les CGU",

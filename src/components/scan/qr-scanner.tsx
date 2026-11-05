@@ -7,6 +7,7 @@ import { useScan } from "@/hooks/useScan";
 
 type CameraState = "checking" | "prompt" | "active" | "denied" | "unavailable";
 
+// Remplit son conteneur (plein écran sur mobile, carte sur ordinateur).
 // Caméra arrière demandée explicitement (bouton = geste utilisateur, exigé
 // par Safari iOS), puis lecture continue. Refus ou absence de caméra : message
 // clair, la saisie manuelle reste disponible en bas de l'écran.
@@ -46,7 +47,7 @@ export function QrScanner({
   }
 
   return (
-    <div className="flex h-dvh w-full items-center justify-center bg-black p-6 text-center text-white">
+    <div className="flex h-full w-full items-center justify-center bg-black p-6 text-center text-white">
       {state === "checking" ? null : (
         <div className="flex max-w-sm flex-col items-center gap-4">
           {state === "prompt" ? (
@@ -89,7 +90,7 @@ function ActiveScanner({
   const { ref, toggleTorch, isTorchAvailable, isTorchOn } = useScan(onResult, paused, onError);
 
   return (
-    <div className="relative h-dvh w-full overflow-hidden bg-black">
+    <div className="relative h-full w-full overflow-hidden bg-black">
       <video ref={ref} className="h-full w-full object-cover" muted playsInline autoPlay />
 
       <div className="pointer-events-none absolute inset-0 flex items-center justify-center">

@@ -9,6 +9,7 @@ import {
   SheetDescription,
 } from "@/components/ui/sheet";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { FEATURES } from "@/lib/features";
 import { Switch } from "@/components/ui/switch";
 import { Button } from "@/components/ui/button";
 import {
@@ -509,7 +510,9 @@ export function ShowcaseSettingsModal({ open, onOpenChange }: ShowcaseSettingsMo
                       Sections de la Page d&apos;Accueil
                     </h3>
                     <p className="text-[11px] text-zinc-400">
-                      Activez ou masquez les blocs selon les besoins de votre événement ou organisation.
+                      {FEATURES.showcaseSections
+                        ? "Activez ou masquez les blocs selon les besoins de votre événement ou organisation."
+                        : "Une section vide (avis, galerie, FAQ, présentation) n’apparaît pas en ligne. Le masquage manuel arrive bientôt."}
                     </p>
                   </div>
 
@@ -518,6 +521,7 @@ export function ShowcaseSettingsModal({ open, onOpenChange }: ShowcaseSettingsMo
                       type="button"
                       variant="ghost"
                       size="sm"
+                      disabled={!FEATURES.showcaseSections}
                       onClick={() => {
                         STANDARD_SECTIONS.forEach((s) => setSectionVisibility(s.key, true));
                         toast.success("Toutes les sections sont affichées.");
@@ -531,7 +535,7 @@ export function ShowcaseSettingsModal({ open, onOpenChange }: ShowcaseSettingsMo
 
                 <div className="divide-y divide-white/10 rounded-2xl border border-white/10 bg-white/[0.02] overflow-hidden">
                   {STANDARD_SECTIONS.map((sec) => {
-                    const isVisible = visibleSections[sec.key];
+                    const isVisible = !FEATURES.showcaseSections || visibleSections[sec.key];
                     const Icon = sec.icon;
 
                     return (
@@ -570,6 +574,7 @@ export function ShowcaseSettingsModal({ open, onOpenChange }: ShowcaseSettingsMo
 
                         <Switch
                           checked={isVisible}
+                          disabled={!FEATURES.showcaseSections}
                           onCheckedChange={() => {
                             toggleSectionVisibility(sec.key);
                             toast.info(

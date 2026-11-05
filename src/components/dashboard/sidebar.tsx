@@ -2,7 +2,7 @@
 
 import Link from "next/link";
 import { usePathname, useParams } from "next/navigation";
-import { navLinks } from "@/lib/navigation";
+import { sidebarLinks } from "@/lib/navigation";
 import { Logo } from "@/components/shared/logo";
 import { cn } from "@/lib/utils";
 
@@ -22,7 +22,7 @@ export function Sidebar() {
 
   const initials = (user?.fullName ?? user?.email ?? "Admin").slice(0, 2).toUpperCase();
 
-  const links = navLinks(sector ?? "event", user?.role);
+  const links = sidebarLinks(sector ?? "event", user?.role);
   // Nom saisi à l'inscription (serveur) en priorité sur la préférence locale.
   const orgName = tenant?.name || orgSettings.name;
 

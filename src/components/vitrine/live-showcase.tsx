@@ -37,6 +37,7 @@ export function LiveShowcase() {
       isEditorMode={false}
       liveEvents={liveEvents}
       onReserve={(evt) => router.push(`/${tenant.slug}/events/${evt.id}`)}
+      allEventsHref={`/${tenant.slug}/events`}
     />
   );
 }

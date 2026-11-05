@@ -17,8 +17,24 @@ const apiOrigin = (() => {
 // de Next.js (hydratation) tant qu'un CSP à base de nonce n'est pas mis en
 // place. Voir LUMINA_Audit_Menaces_Complet.md action critique #5.
 const isDev = process.env.NODE_ENV === "development";
-// WebSocket KDS : uniquement vers l'API (et non tout ws:/wss:).
-const wsOrigin = apiOrigin.replace(/^http/, "ws");
+// WebSocket KDS : uniquement vers l'API (et non tout ws:/wss:), ou vers
+// NEXT_PUBLIC_WS_URL quand il pointe ailleurs (proxy de développement).
+const wsOrigin = (() => {
+  try {
+    if (process.env.NEXT_PUBLIC_WS_URL) return new URL(process.env.NEXT_PUBLIC_WS_URL).origin;
+  } catch {
+    // valeur invalide : origine dérivée de l'API
+  }
+  return apiOrigin.replace(/^http/, "ws");
+})();
+
+// Développement local contre l'API en ligne : le backend n'autorise par CORS
+// que l'origine de production. Avec NEXT_PUBLIC_DEV_API_PROXY (ex.
+// https://giya-backend-gpy4.onrender.com) et NEXT_PUBLIC_API_URL=
+// http://localhost:3000/v1, le serveur de dev relaie /v1/* vers l'API : même
+// origine pour le navigateur, cookie de session (chemin /v1/auth) compris.
+// Ignoré en production.
+const devApiProxy = isDev ? process.env.NEXT_PUBLIC_DEV_API_PROXY?.replace(/\/+$/, "") : undefined;
 // Hébergeurs d'images autorisés (affiches, photos produits), séparés par des
 // espaces, ex. "https://res.cloudinary.com https://images.unsplash.com".
 // images.unsplash.com : visuels par défaut de la vitrine.
@@ -46,6 +62,14 @@ const csp = [
 ].join("; ");
 
 const nextConfig: NextConfig = {
+  async rewrites() {
+    return {
+      // Avant les pages : /v1/... ne doit jamais tomber sur /[tenant].
+      beforeFiles: devApiProxy ? [{ source: "/v1/:path*", destination: `${devApiProxy}/v1/:path*` }] : [],
+      afterFiles: [],
+      fallback: [],
+    };
+  },
   async headers() {
     return [
       {

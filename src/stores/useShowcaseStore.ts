@@ -1,5 +1,6 @@
 import { create } from "zustand";
 import { showcaseLayoutOf, type ShowcaseLayout } from "@/lib/showcase-layouts";
+import { FEATURES } from "@/lib/features";
 
 export type ShowcaseTheme = "emerald" | "amber" | "electric" | "ruby" | "dark" | "indigo";
 
@@ -19,6 +20,8 @@ export type EventItem = {
   category: "Concert & Festival" | "Conférence & Gala" | "Mariage & Célébration" | "Formation & Masterclass" | "Soirée VIP";
   date: string;
   time: string;
+  // Date ISO de début (événements réels) : puces « 14 nov. » et agenda.
+  startsAt?: string;
   location: string;
   googleMapsUrl?: string;
   description: string;
@@ -502,10 +505,16 @@ export const SHOWCASE_CONTENT_KEYS = [
   "facebookUrl",
 ] as const;
 
-export type ShowcaseContent = Pick<ShowcaseState, (typeof SHOWCASE_CONTENT_KEYS)[number]>;
+// visibleSections : publié seulement si le serveur l’accepte (drapeau
+// showcase-sections, lib/features.ts).
+export type ShowcaseContent = Pick<ShowcaseState, (typeof SHOWCASE_CONTENT_KEYS)[number]> & {
+  visibleSections?: ShowcaseSections;
+};
 
 export function showcaseContentOf(state: ShowcaseState): ShowcaseContent {
-  return Object.fromEntries(SHOWCASE_CONTENT_KEYS.map((k) => [k, state[k]])) as ShowcaseContent;
+  const content = Object.fromEntries(SHOWCASE_CONTENT_KEYS.map((k) => [k, state[k]])) as unknown as ShowcaseContent;
+  if (FEATURES.showcaseSections) content.visibleSections = state.visibleSections;
+  return content;
 }
 
 // Point de départ d'un compte sans vitrine enregistrée : mise en page
@@ -541,7 +550,11 @@ export function showcaseFromConfig(config: Record<string, unknown> | undefined, 
   const picked = Object.fromEntries(
     SHOWCASE_CONTENT_KEYS.filter((k) => saved[k] !== undefined).map((k) => [k, saved[k]]),
   );
-  return { ...base, ...picked, layout: showcaseLayoutOf(saved.layout) };
+  const sections =
+    FEATURES.showcaseSections && saved.visibleSections
+      ? { visibleSections: { ...DEFAULT_STATE.visibleSections, ...saved.visibleSections } }
+      : {};
+  return { ...base, ...picked, ...sections, layout: showcaseLayoutOf(saved.layout) };
 }
 
 export const useShowcaseStore = create<ShowcaseState>((set) => ({

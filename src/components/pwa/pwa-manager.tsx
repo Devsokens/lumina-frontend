@@ -1,6 +1,8 @@
 "use client";
 
 import { useEffect, useState } from "react";
+import { usePathname } from "next/navigation";
+import { cn } from "@/lib/utils";
 import { Download, Share, PlusSquare, X } from "lucide-react";
 import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
@@ -40,6 +42,8 @@ function recentlyDismissed() {
 
 // Installation (toutes plateformes), mise à jour et état réseau.
 export function PwaManager() {
+  // Back-office sur téléphone : au-dessus de la barre d’onglets du bas.
+  const aboveTabBar = usePathname().startsWith("/admin");
   const [deferred, setDeferred] = useState<BeforeInstallPromptEvent | null>(null);
   const [showIosHelp, setShowIosHelp] = useState(false);
   const [visible, setVisible] = useState(false);
@@ -131,8 +135,12 @@ export function PwaManager() {
     <div
       role="dialog"
       aria-label="Installer l'application GiyaX"
-      className="fixed inset-x-3 z-50 mx-auto max-w-md rounded-2xl border border-border bg-card/95 p-4 shadow-2xl backdrop-blur-md animate-in slide-in-from-bottom-4 fade-in"
-      style={{ bottom: "calc(env(safe-area-inset-bottom, 0px) + 12px)" }}
+      className={cn(
+        "fixed inset-x-3 z-50 mx-auto max-w-md rounded-2xl border border-border bg-card/95 p-4 shadow-2xl backdrop-blur-md animate-in slide-in-from-bottom-4 fade-in",
+        aboveTabBar
+          ? "bottom-[calc(max(env(safe-area-inset-bottom,0px),0.875rem)+5rem)] sm:bottom-[calc(env(safe-area-inset-bottom,0px)+12px)]"
+          : "bottom-[calc(env(safe-area-inset-bottom,0px)+12px)]"
+      )}
     >
       <button
         type="button"

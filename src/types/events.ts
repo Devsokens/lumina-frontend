@@ -11,10 +11,43 @@ export type ApiTicketType = {
   sold: number; // places réservées (payées + en attente de paiement)
   description: string | null;
   eventId: string;
-  // Champs V1 (voir docs/API_CONTRACT.md §14) : absents tant que le serveur
-  // ne les gère pas.
   saleEndsAt?: string | null;
   template?: string | null;
+  maxPerOrder?: number | null;
+  visible?: boolean;
+};
+
+export type {
+  CertificateChannels,
+  CertificateRecipientsMode,
+  CertificateSendMode,
+  CertificateSignatory,
+} from "@/lib/events";
+
+export type CertificateDispatchStatus = "SENT" | "OPENED" | "VERIFIED" | "FAILED";
+
+export type CertificateDispatchItem = {
+  id: string;
+  ticketId: string;
+  participantName: string;
+  participantEmail: string | null;
+  participantPhone: string | null;
+  certificateCode: string;
+  channels: ("email" | "whatsapp" | "portal")[];
+  status: CertificateDispatchStatus;
+  sentAt: string;
+  pdfUrl?: string | null;
+};
+
+export type SendCertificatesPayload = {
+  model: "CLASSIC" | "MODERN" | "EXECUTIVE";
+  title: string;
+  issuer: string;
+  issuedDate: string;
+  mention: string;
+  signatories: { name?: string; role: string; signatureUrl?: string | null }[];
+  channels: ("email" | "whatsapp" | "portal")[];
+  ticketIds?: string[];
 };
 
 export type ApiEvent = {
