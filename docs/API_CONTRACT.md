@@ -398,17 +398,29 @@ Achat : prix recalculé serveur, places réservées de façon atomique (**409** 
 |---|---|---|---|---|
 | GET | `/admin/events` | Bearer | — | `Event[]` (+ `ticketTypes`, avec `quantity`/`sold`) |
 | GET | `/admin/events/:id` | Bearer | — | `Event` |
-| POST | `/admin/events` | Bearer (OWNER/MANAGER) | `{ title, startDate, endDate?, description?, imageUrl? (https:// ou data URL PNG/JPEG/WebP vérifiée, ≤ 450 000 car.), location?, venueName?, eventType? (CONCERT/CONFERENCE/NIGHTLIFE/EXHIBITION/SPORTS/SHOW), lat?, lng?, capacity?, settings? }` | `Event` (`status: DRAFT`) |
+| POST | `/admin/events` | Bearer (OWNER/MANAGER) | `{ title, startDate, endDate?, description?, imageUrl? (https:// ou data URL PNG/JPEG/WebP vérifiée, ≤ 450 000 car.), location?, venueName?, eventType? (CONCERT/CONFERENCE/NIGHTLIFE/EXHIBITION/SPORTS/SHOW/WEDDING), lat?, lng?, capacity?, notifyParticipants?, settings? }` | `Event` (`status: DRAFT`) |
 | PATCH | `/admin/events/:id` | Bearer (OWNER/MANAGER) | mêmes champs + `status` (`DRAFT`/`PUBLISHED`/`ONGOING`/`COMPLETED`/`CANCELLED`) ; `settings` fusionné avec l'existant | `Event` |
 
-`settings` (`Event.settings`, JSON, renvoyé tel quel) : `{ questionnaireEnabled?, questionnaire?: [{ id, title, type (SHORT_TEXT/PARAGRAPH/SINGLE_CHOICE/MULTIPLE_CHOICE/DROPDOWN/RATING_SCALE), options?, isRequired }] (50 max), hasCertificate?, certificateTemplate?, ticketTemplate? }`. Affichage seulement : aucun effet sur la vente ni le contrôle d'accès.
+`settings` (`Event.settings`, JSON, persisté et renvoyé tel quel) :
+- Questionnaire : `{ questionnaireEnabled?: boolean, questionnaire?: [{ id, title, type (SHORT_TEXT/PARAGRAPH/SINGLE_CHOICE/MULTIPLE_CHOICE/DROPDOWN/RATING_SCALE/YES_NO/STAR_RATING/NUMBER/DATE), options?, isRequired }] (50 max) }`
+- Visuels & Logos : `{ format?: "ONSITE"|"ONLINE"|"HYBRID", posterCrops?: { portrait45?, square11?, banner169? }, logos?: [{ id, name, role ("MAIN_ORGANIZER"|"CO_ORGANIZER"|"PARTNER"|"SPONSOR"|"INSTITUTION"), imageUrl? }], logosDisplay?: { vitrine: boolean, billets: boolean, certificats: boolean } }`
+- Billetterie : `{ ticketTemplate?: string, ticketColor?: string, ticketShowPrice?: boolean, ticketShowLogo?: boolean }`
+- Certifications : `{ hasCertificate?: boolean, certificateTemplate?: "CLASSIC"|"MODERN"|"EXECUTIVE", certificateTitle?: string, certificateIssuer?: string, certificateIssuedDate?: string, certificateMention?: string, certificateSignatories?: [{ name?: string, role: string, signatureUrl?: string }], certificateRecipients?: "PRESENT_ONLY"|"ALL_REGISTERED"|"MANUAL", certificateSendMode?: "AUTO_NEXT_DAY"|"MANUAL", certificateChannels?: { email: boolean, whatsapp: boolean, portal: boolean } }`
 
 | DELETE | `/admin/events/:id` | Bearer (OWNER/MANAGER) | — | `{}` — **409** si billet émis/réservé/remboursé ou commande payée/remboursée (archiver via `PATCH` `status: CANCELLED`) |
 | GET | `/admin/events/:id/tickets` | Bearer (OWNER/MANAGER/STAFF) | — | `Ticket[]` (+ `ticketType: { name, price }`) |
 | GET | `/admin/events/:id/orders?page=&limit=` | Bearer (OWNER/MANAGER) | — | `[{ id, orderNumber, status, paymentStatus, paymentMethod, total, customerName, customerPhone, customerEmail, createdAt, tickets: [{ id, status, scannedAt, ticketType: { name } }] }]` + `meta` — commandes de billets de l'événement (réservations, remboursements) |
-| POST | `/admin/events/:id/ticket-types` | Bearer (OWNER/MANAGER) | `{ name, price, quantity, description? }` | `TicketType` |
-| PATCH | `/admin/ticket-types/:id` | Bearer (OWNER/MANAGER) | `{ name?, price?, quantity? }` | `TicketType` — **409** si `quantity` < vendus |
+| POST | `/admin/events/:id/ticket-types` | Bearer (OWNER/MANAGER) | `{ name, price, quantity, description?, saleEndsAt?, template?, maxPerOrder?, visible? }` | `TicketType` |
+| PATCH | `/admin/ticket-types/:id` | Bearer (OWNER/MANAGER) | `{ name?, price?, quantity?, description?, saleEndsAt?, template?, maxPerOrder?, visible? }` | `TicketType` — **409** si `quantity` < vendus |
 | DELETE | `/admin/ticket-types/:id` | Bearer (OWNER/MANAGER) | — | `{}` — **409** si `sold` > 0 ou si des billets de ce type existent |
+
+### 14.1 Émission et suivi des attestations / certificats
+
+| Méthode | Route | Auth | Body | Réponse `data` |
+|---|---|---|---|---|
+| POST | `/admin/events/:id/certificates/test` | Bearer (OWNER/MANAGER) | `{ model, title, issuer, issuedDate, mention, signatories, channels }` | `{ ok: true, sentTo: string }` — Envoie un aperçu PDF test à l'organisateur connecté |
+| POST | `/admin/events/:id/certificates/send` | Bearer (OWNER/MANAGER) | `{ model, title, issuer, issuedDate, mention, signatories, channels, ticketIds? }` | `{ count: number, dispatches: CertificateDispatchItem[] }` — Génère et dispatche les attestations sécurisées par QR code |
+| GET | `/admin/events/:id/certificates` | Bearer (OWNER/MANAGER/STAFF) | — | `CertificateDispatchItem[]` : `[{ id, ticketId, participantName, participantEmail, participantPhone, certificateCode, channels, status ("SENT"|"OPENED"|"VERIFIED"|"FAILED"), sentAt, pdfUrl }]` |
 
 Un événement n'est visible et achetable qu'en `PUBLISHED`/`ONGOING`. La somme des `quantity` des
 types de billets ne peut pas dépasser `capacity` (**409**). Validation à l'entrée : §7
@@ -510,6 +522,7 @@ coordonnée client renvoyée.
 
 ## Historique
 
+- **2026-11-04 (frontend, à aligner côté backend)** — Adresses des sites : le slug devient un sous-domaine (`nom.giyax.com`) dès que le domaine est branché, sinon `giyax.vercel.app/nom`. Le frontend refuse les slugs qui ne sont pas un libellé DNS valide (tiret au début ou à la fin) et la liste `RESERVED_SLUGS` de `src/lib/constants.ts` (sous-domaines techniques et chemins de l'application : `www`, `api`, `login`, `signup`, `scan`, `kitchen`…) : la même règle doit être appliquée par `POST /auth/register` et `POST /auth/google/complete`. CORS et cookie de rafraîchissement à ouvrir aux origines `https://*.giyax.com` le jour du branchement. Vitrine : `visibleSections` (`{ hero, stats, events, about, gallery, testimonials, faq, footer }`, booléens) à accepter dans `UpdateShowcaseDto` et à renvoyer dans `config.showcase` ; envoyé seulement avec le drapeau `NEXT_PUBLIC_FEATURES=showcase-sections`.
 - **2026-11-04** — Variantes de site : `layout` (10 valeurs) et `motion` facultatifs sur `PUT /admin/tenant/site` ; `layout` facultatif sur `PUT /admin/tenant/showcase` (`scene, affiche, agenda, festival, conference, gala, club, communaute, masterclass, minimal`) ; `PUT /admin/tenant/stay-site` accepte aussi `lodge, carnet, comparatif, panorama`.
 - **2026-11-04** — Signature numérique des factures/additions (QR + empreinte) et `GET /documents/verify/:code` (§18) ; billets vérifiables au même endroit.
 - **2026-11-04** — Google : `GET /auth/google/pending?token=` (identité pré-remplie : `{ email, fullName, avatarUrl }`), `phone` facultatif sur `POST /auth/google/complete`, lien réutilisable jusqu'à création du compte ; échec Google → `/login?error=google_failed`.

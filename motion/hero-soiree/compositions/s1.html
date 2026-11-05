@@ -1,0 +1,89 @@
+<template>
+  <style>
+    #root {
+      position: absolute;
+      inset: 0;
+      overflow: hidden;
+      font-family: "Montserrat", sans-serif;
+    }
+    #s1-world {
+      position: absolute;
+      inset: 0;
+    }
+    #s1-cam {
+      position: absolute;
+      inset: 0;
+    }
+    #s1-cam img {
+      width: 100%;
+      height: 100%;
+      object-fit: cover;
+      object-position: 50% 60%;
+    }
+    #s1-scrim {
+      position: absolute;
+      inset: 0;
+      background: linear-gradient(180deg, rgba(5, 12, 10, 0.1) 0%, rgba(5, 12, 10, 0.25) 45%, rgba(5, 12, 10, 0.55) 100%);
+    }
+    /* Le faisceau d'or du G du logo : un coin plat, sans halo. */
+    #s1-beam {
+      position: absolute;
+      left: 0;
+      top: 437px;
+      width: 1920px;
+      height: 6px;
+      border-radius: 3px;
+      transform-origin: 0% 50%;
+      background: linear-gradient(90deg, rgba(244, 185, 66, 0) 0%, rgba(244, 185, 66, 0.6) 55%, #ffe6a3 100%);
+    }
+    #s1-title {
+      position: absolute;
+      left: 0;
+      right: 0;
+      top: 600px;
+      text-align: center;
+      color: #fff;
+      font-weight: 700;
+      font-size: 84px;
+      line-height: 1.08;
+      letter-spacing: -0.02em;
+    }
+    #s1-title .w {
+      display: inline-block;
+    }
+    #s1-title .gold {
+      color: #f4b942;
+    }
+  </style>
+  <div id="root" data-composition-id="s1" data-width="1920" data-height="1080">
+    <div id="s1-world">
+      <div id="s1-cam"><img src="assets/img/sunset.jpg" alt="" /></div>
+      <div id="s1-scrim"></div>
+      <div id="s1-beam"></div>
+      <div id="s1-title">
+        <div><span class="w">Ce</span> <span class="w">soir,</span></div>
+        <div><span class="w">la</span> <span class="w">ville</span> <span class="w gold">s'allume</span></div>
+      </div>
+    </div>
+  </div>
+  <script>
+    (function () {
+      const tl = gsap.timeline({ paused: true });
+      // Caméra : poussée lente sur tout le plan.
+      tl.fromTo("#s1-cam", { scale: 1.04 }, { scale: 1.1, duration: 4.4, ease: "power2.inOut" }, 0);
+      // Le faisceau traverse l'image de gauche à droite.
+      tl.fromTo("#s1-beam", { scaleX: 0, opacity: 1 }, { scaleX: 1, duration: 0.7, ease: "power3.inOut" }, 0.5);
+      tl.to("#s1-beam", { opacity: 0, duration: 0.7, ease: "power2.out" }, 1.4);
+      // Titre mot à mot : flou → net, sans translation.
+      tl.fromTo(
+        "#s1-title .w",
+        { opacity: 0, filter: "blur(8px)" },
+        { opacity: 1, filter: "blur(0px)", duration: 0.22, ease: "power2.out", stagger: 0.09 },
+        1.2,
+      );
+      // Sortie : whip vers la gauche, le faisceau file avec.
+            tl.to("#s1-world", { x: -320, filter: "blur(18px)", duration: 0.4, ease: "power3.in" }, 3.95);
+      window.__timelines["s1"] = tl;
+    })();
+  </script>
+</template>

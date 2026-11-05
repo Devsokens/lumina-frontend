@@ -14,7 +14,7 @@ import {
   ShoppingBag,
   CheckCircle2,
   ChevronDown,
-  Menu,
+  ScrollText,
   Sparkles,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
@@ -37,10 +37,9 @@ import {
   DialogTitle,
 } from "@/components/ui/dialog";
 import { useAuth } from "@/hooks/useAuth";
-import { useRouter, useParams, usePathname } from "next/navigation";
-import { navLinks } from "@/lib/navigation";
+import { useRouter, useParams } from "next/navigation";
+import { auditLink, navLinks } from "@/lib/navigation";
 import { useTenantSector } from "@/hooks/useTenantSector";
-import { Sheet, SheetContent, SheetHeader, SheetTitle } from "@/components/ui/sheet";
 import type { Role } from "@/lib/constants";
 
 const ROLE_LABELS: Record<Role, string> = {
@@ -64,8 +63,6 @@ export function DashboardHeader() {
   const [searchQuery, setSearchQuery] = useState("");
   const [showSearchDropdown, setShowSearchDropdown] = useState(false);
   const [logoutModalOpen, setLogoutModalOpen] = useState(false);
-  const [mobileNavOpen, setMobileNavOpen] = useState(false);
-  const pathname = usePathname();
 
   async function handleConfirmSignOut() {
     setLogoutModalOpen(false);
@@ -78,23 +75,16 @@ export function DashboardHeader() {
 
   // Recherche rapide parmi les écrans accessibles à ce rôle.
   const links = navLinks(sector ?? "event", user?.role);
-  const suggestions = links
+  // Journal d’audit (Propriétaire) : barre latérale sur ordinateur ; menu du
+  // profil et « Plus » sur téléphone.
+  const audit = auditLink(sector ?? "event", user?.role);
+  const suggestions = [...links, ...(audit ? [audit] : [])]
     .filter((l) => l.label.toLowerCase().includes(searchQuery.toLowerCase()))
     .map((l) => ({ title: l.label, type: "Écran", href: l.href }));
 
   return (
     <>
       <header className="sticky top-0 z-40 flex h-16 items-center justify-between border-b border-border/80 bg-background/90 px-4 backdrop-blur-md sm:px-6">
-        <Button
-          variant="ghost"
-          size="icon"
-          className="mr-2 size-9 sm:hidden"
-          aria-label="Ouvrir le menu"
-          onClick={() => setMobileNavOpen(true)}
-        >
-          <Menu className="size-5" />
-        </Button>
-
         {/* Global Search Bar */}
         <div className="relative flex-1 max-w-md">
           <div className="relative">
@@ -216,6 +206,15 @@ export function DashboardHeader() {
                   <span>Changer mon mot de passe</span>
                 </Link>
               </DropdownMenuItem>
+              {/* Téléphone seulement : sur ordinateur, il est dans la barre latérale. */}
+              {audit && (
+                <DropdownMenuItem asChild className="sm:hidden">
+                  <Link href={audit.href} className="flex items-center gap-2 rounded-xl text-xs font-medium cursor-pointer">
+                    <ScrollText className="size-4 text-muted-foreground" />
+                    <span>Journal d&apos;audit</span>
+                  </Link>
+                </DropdownMenuItem>
+              )}
 
               <DropdownMenuSeparator />
 
@@ -231,32 +230,6 @@ export function DashboardHeader() {
           </DropdownMenu>
         </div>
       </header>
-
-      <Sheet open={mobileNavOpen} onOpenChange={setMobileNavOpen}>
-        <SheetContent side="left" className="w-72 p-4">
-          <SheetHeader className="p-0">
-            <SheetTitle>Menu</SheetTitle>
-          </SheetHeader>
-          <nav className="mt-4 space-y-1">
-            {links.map(({ href, label, icon: Icon, exact }) => {
-              const active = exact ? pathname === href : pathname.startsWith(href);
-              return (
-                <Link
-                  key={href}
-                  href={href}
-                  onClick={() => setMobileNavOpen(false)}
-                  className={`flex items-center gap-3 rounded-xl px-3 py-2.5 text-sm ${
-                    active ? "bg-primary text-primary-foreground font-semibold" : "hover:bg-muted"
-                  }`}
-                >
-                  <Icon className="size-4" />
-                  {label}
-                </Link>
-              );
-            })}
-          </nav>
-        </SheetContent>
-      </Sheet>
 
       {/* Confirmation Logout Modal */}
       <Dialog open={logoutModalOpen} onOpenChange={setLogoutModalOpen}>

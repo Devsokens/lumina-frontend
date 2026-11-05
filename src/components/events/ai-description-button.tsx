@@ -20,11 +20,13 @@ const TONES: { id: NonNullable<DescriptionInput["tone"]>; label: string }[] = [
 type Props = {
   context: Omit<DescriptionInput, "tone" | "notes">;
   onApply: (text: string) => void;
+  // Bouton déclencheur personnalisé (refonte du module Événements).
+  trigger?: (open: () => void) => React.ReactNode;
 };
 
 // Rédaction assistée : l'organisateur relit le texte proposé avant de
 // remplacer sa description.
-export function AiDescriptionButton({ context, onApply }: Props) {
+export function AiDescriptionButton({ context, onApply, trigger }: Props) {
   const [open, setOpen] = useState(false);
   const [upgradeOpen, setUpgradeOpen] = useState(false);
   const [tone, setTone] = useState<DescriptionInput["tone"]>("festif");
@@ -53,9 +55,13 @@ export function AiDescriptionButton({ context, onApply }: Props) {
 
   return (
     <>
-      <Button type="button" variant="ghost" size="sm" className="h-6 gap-1 px-2 text-[11px] text-primary" onClick={openDialog}>
-        <Sparkles className="size-3" /> Rédiger avec l&apos;IA
-      </Button>
+      {trigger ? (
+        trigger(openDialog)
+      ) : (
+        <Button type="button" variant="ghost" size="sm" className="h-6 gap-1 px-2 text-[11px] text-primary" onClick={openDialog}>
+          <Sparkles className="size-3" /> Rédiger avec l&apos;IA
+        </Button>
+      )}
 
       <Dialog open={open} onOpenChange={setOpen}>
         <DialogContent>

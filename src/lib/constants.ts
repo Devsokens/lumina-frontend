@@ -2,8 +2,32 @@
 // (erreur de config fréquente → 404 sur /auth/register).
 const rawApiUrl = (process.env.NEXT_PUBLIC_API_URL ?? "http://localhost:3001/v1").replace(/\/+$/, "");
 export const API_URL = /\/v1$/.test(rawApiUrl) ? rawApiUrl : `${rawApiUrl}/v1`;
-export const APP_URL = process.env.NEXT_PUBLIC_APP_URL ?? "http://localhost:3000";
-export const ROOT_DOMAIN = process.env.NEXT_PUBLIC_ROOT_DOMAIN ?? "lumina.ga";
+export const APP_URL = (process.env.NEXT_PUBLIC_APP_URL ?? "http://localhost:3000").replace(/\/+$/, "");
+
+// Domaine racine des sites publics ({slug}.ROOT_DOMAIN). Sans variable : le
+// domaine où le frontend est servi (ex. giyax.vercel.app).
+function hostOf(url: string): string {
+  try {
+    return new URL(url).hostname;
+  } catch {
+    return "localhost";
+  }
+}
+export const ROOT_DOMAIN = (process.env.NEXT_PUBLIC_ROOT_DOMAIN || hostOf(APP_URL)).replace(/^www\./, "").toLowerCase();
+
+// Sous-domaines des sites publics : "true" / "false" pour forcer, sinon
+// automatique (voir lib/tenant-url.ts).
+export const TENANT_SUBDOMAINS = process.env.NEXT_PUBLIC_TENANT_SUBDOMAINS ?? "auto";
+
+// Adresses de site interdites : sous-domaines techniques et chemins déjà pris
+// par l'application (giyax.vercel.app/login ne peut pas être un site public).
+// À garder aligné avec la validation du slug côté backend.
+export const RESERVED_SLUGS = [
+  "www", "app", "api", "admin", "mail", "smtp", "ftp", "cdn", "static", "assets", "status",
+  "login", "signup", "auth", "change-password", "logout", "register",
+  "kitchen", "scan", "vision", "verify", "showcase", "pricing", "offline", "dashboard",
+  "brand", "icons", "images", "videos", "logos", "zxing", "manifest", "sw",
+] as const;
 
 // Rôles RBAC — voir LUMINA_Document_Maitre_v2.md section 12.
 export const ROLES = ["OWNER", "MANAGER", "STAFF", "KITCHEN", "CASHIER"] as const;

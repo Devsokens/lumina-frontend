@@ -1,0 +1,114 @@
+<template>
+  <style>
+    #root {
+      position: absolute;
+      inset: 0;
+      overflow: hidden;
+      font-family: "Montserrat", sans-serif;
+    }
+    #s5-world {
+      position: absolute;
+      inset: 0;
+    }
+    #s5-cam {
+      position: absolute;
+      inset: 0;
+    }
+    #s5-cam img {
+      width: 100%;
+      height: 100%;
+      object-fit: cover;
+    }
+    #s5-scrim {
+      position: absolute;
+      inset: 0;
+      background: linear-gradient(180deg, rgba(4, 8, 7, 0.35), rgba(4, 8, 7, 0.1) 50%, rgba(4, 8, 7, 0.4));
+    }
+    .s5-pt {
+      position: absolute;
+      width: 112px;
+      height: 112px;
+      margin: -56px 0 0 -56px;
+      border-radius: 50%;
+      background: #fff;
+      border: 6px solid #f4b942;
+      color: #0a4f3c;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      box-shadow: 0 16px 40px rgba(0, 0, 0, 0.45);
+    }
+    .s5-pt svg {
+      width: 52px;
+      height: 52px;
+    }
+    #s5-p1 { left: 700px; top: 500px; }
+    #s5-p2 { left: 960px; top: 420px; }
+    #s5-p3 { left: 1220px; top: 520px; }
+    #s5-flood {
+      position: absolute;
+      inset: 0;
+      background: #0a4f3c;
+    }
+    #s5-logo {
+      position: absolute;
+      left: 640px;
+      top: 330px;
+      width: 640px;
+      height: auto;
+    }
+    #s5-tag {
+      position: absolute;
+      left: 0;
+      right: 0;
+      top: 660px;
+      text-align: center;
+      color: #fff;
+      font-size: 50px;
+      font-weight: 600;
+      letter-spacing: -0.01em;
+    }
+    #s5-tag .w {
+      display: inline-block;
+    }
+    #s5-tag .gold {
+      color: #f4b942;
+    }
+  </style>
+  <div id="root" data-composition-id="s5" data-width="1920" data-height="1080">
+    <div id="s5-world">
+      <div id="s5-cam"><img src="assets/img/city.jpg" alt="" /></div>
+      <div id="s5-scrim"></div>
+      <div id="s5-p1" class="s5-pt">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M2 9a3 3 0 0 1 0 6v2a2 2 0 0 0 2 2h16a2 2 0 0 0 2-2v-2a3 3 0 0 1 0-6V7a2 2 0 0 0-2-2H4a2 2 0 0 0-2 2Z"></path><path d="M13 5v2"></path><path d="M13 17v2"></path><path d="M13 11v2"></path></svg>
+      </div>
+      <div id="s5-p2" class="s5-pt">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 2v7c0 1.1.9 2 2 2h4a2 2 0 0 0 2-2V2"></path><path d="M7 2v20"></path><path d="M21 15V2a5 5 0 0 0-5 5v6c0 1.1.9 2 2 2h3Zm0 0v7"></path></svg>
+      </div>
+      <div id="s5-p3" class="s5-pt">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M2.586 17.414A2 2 0 0 0 2 18.828V21a1 1 0 0 0 1 1h3a1 1 0 0 0 1-1v-1a1 1 0 0 1 1-1h1a1 1 0 0 0 1-1v-1a1 1 0 0 1 1-1h.172a2 2 0 0 0 1.414-.586l.814-.814a6.5 6.5 0 1 0-4-4z"></path><circle cx="16.5" cy="7.5" r=".5" fill="currentColor"></circle></svg>
+      </div>
+    </div>
+    <div id="s5-flood"></div>
+    <img id="s5-logo" src="assets/img/logo-white-src.png" alt="GiyaX" />
+    <div id="s5-tag">
+      <span class="w">La</span> <span class="w">digitalisation</span> <span class="w">qui</span> <span class="w gold">éclaire</span>
+    </div>
+  </div>
+  <script>
+    (function () {
+      const tl = gsap.timeline({ paused: true });
+      // Entrée : la ville apparaît pendant le recul du plan 4.
+      tl.fromTo("#s5-world", { opacity: 0, filter: "blur(10px)" }, { opacity: 1, filter: "blur(0px)", duration: 0.4, ease: "power2.out" }, 0);
+      tl.fromTo("#s5-cam", { scale: 1.14 }, { scale: 1.0, duration: 2.3, ease: "power2.out" }, 0);
+      // Trois lieux de la soirée s'allument.
+      tl.fromTo(".s5-pt", { opacity: 0, scale: 0.6 }, { opacity: 1, scale: 1, duration: 0.45, ease: "expo.out", stagger: 0.15 }, 0.5);
+      // Le vert GiyaX monte et recouvre la ville.
+      tl.fromTo("#s5-flood", { clipPath: "inset(100% 0% 0% 0%)" }, { clipPath: "inset(0% 0% 0% 0%)", duration: 0.55, ease: "power2.inOut" }, 1.6);
+      // Le logo se pose, puis la signature mot à mot.
+      tl.fromTo("#s5-logo", { opacity: 0, scale: 0.94, filter: "blur(10px)" }, { opacity: 1, scale: 1, filter: "blur(0px)", duration: 0.6, ease: "expo.out" }, 2.05);
+      tl.fromTo("#s5-tag .w", { opacity: 0, filter: "blur(6px)" }, { opacity: 1, filter: "blur(0px)", duration: 0.2, ease: "power2.out", stagger: 0.09 }, 2.6);
+      window.__timelines["s5"] = tl;
+    })();
+  </script>
+</template>

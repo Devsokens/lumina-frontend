@@ -5,7 +5,7 @@ import { QRCodeCanvas } from "qrcode.react";
 import { Card, CardContent, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Download, Trash2 } from "lucide-react";
-import { APP_URL } from "@/lib/constants";
+import { publicSiteUrl } from "@/lib/tenant-url";
 import type { Table } from "@/types/api";
 
 export function TableQrCard({
@@ -18,7 +18,7 @@ export function TableQrCard({
   onDelete?: () => void;
 }) {
   const wrapperRef = useRef<HTMLDivElement>(null);
-  const url = `${APP_URL}/${tenantSlug}?table=${table.id}`;
+  const url = publicSiteUrl(tenantSlug, `?table=${table.id}`);
 
   function handleDownload() {
     const canvas = wrapperRef.current?.querySelector("canvas");

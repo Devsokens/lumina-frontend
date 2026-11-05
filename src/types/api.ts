@@ -107,7 +107,12 @@ export type EventType =
   | "SHOW"
   | "WEDDING";
 
+// Modèles de la refonte (A · Classique, B · Moderne, C · Exécutif) ; les
+// anciens identifiants restent lisibles (components/events/certificates.tsx).
 export type CertificateTemplate =
+  | "CLASSIC"
+  | "MODERN"
+  | "EXECUTIVE"
   | "ACADEMIC_GOLD"
   | "CORPORATE_PRESTIGE"
   | "TECH_INNOVATION"
@@ -134,13 +139,19 @@ export type TicketTemplate =
   | "MINIMAL_MONO"
   | "PASTEL_BRUNCH";
 
+// Les quatre derniers ne sont acceptés par le serveur qu’avec le drapeau
+// event-extras (lib/features.ts).
 export type QuestionType =
   | "SINGLE_CHOICE"
   | "MULTIPLE_CHOICE"
   | "SHORT_TEXT"
   | "PARAGRAPH"
   | "RATING_SCALE"
-  | "DROPDOWN";
+  | "DROPDOWN"
+  | "YES_NO"
+  | "STAR_RATING"
+  | "NUMBER"
+  | "DATE";
 
 export type QuestionnaireQuestion = {
   id: string;
@@ -178,6 +189,8 @@ export type Event = {
   ticketTemplate?: TicketTemplate;
   questionnaireEnabled?: boolean;
   questionnaire?: QuestionnaireQuestion[];
+  settings?: import("@/lib/events").EventSettings;
+  notifyParticipants?: boolean;
   startDate: string;
   endDate: string | null;
   location: string | null;
@@ -203,6 +216,8 @@ export type TicketType = {
   ticketTemplate?: TicketTemplate;
   // Fin de vente de la formule (early bird). ISO 8601, null = jusqu'à l'événement.
   saleEndsAt?: string | null;
+  maxPerOrder?: number | null;
+  visible?: boolean;
 };
 
 export type Attendee = {
@@ -217,6 +232,8 @@ export type Attendee = {
   status: "VALID" | "USED" | "CANCELLED" | "REFUNDED";
   scannedAt: string | null;
   purchaseDate: string;
+  // Commande d’achat (remboursement depuis la liste des participants).
+  orderId?: string | null;
 };
 
 export type Ticket = {

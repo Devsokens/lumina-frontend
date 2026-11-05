@@ -1,0 +1,301 @@
+<template>
+  <style>
+    #root {
+      position: absolute;
+      inset: 0;
+      overflow: hidden;
+      font-family: "Montserrat", sans-serif;
+    }
+    #s2-world {
+      position: absolute;
+      inset: 0;
+    }
+    #s2-cam {
+      position: absolute;
+      inset: 0;
+    }
+    #s2-cam img {
+      width: 100%;
+      height: 100%;
+      object-fit: cover;
+      object-position: 50% 45%;
+    }
+    #s2-scrim {
+      position: absolute;
+      inset: 0;
+      background: radial-gradient(ellipse 40% 70% at 50% 50%, rgba(4, 10, 8, 0.55), rgba(4, 10, 8, 0.15) 70%);
+    }
+    /* Téléphone : 440 x 900, centré. */
+    #s2-phone {
+      position: absolute;
+      left: 740px;
+      top: 90px;
+      width: 440px;
+      height: 900px;
+      border-radius: 64px;
+      background: #0b0f0e;
+      padding: 14px;
+      box-shadow: 0 30px 80px rgba(0, 0, 0, 0.55);
+    }
+    #s2-screen {
+      position: relative;
+      width: 412px;
+      height: 872px;
+      border-radius: 52px;
+      overflow: hidden;
+      background: #fff;
+    }
+    /* Écran 1 : le billet du participant. */
+    #s2-ticket {
+      position: absolute;
+      inset: 0;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      gap: 10px;
+      padding: 40px 34px;
+      color: #0b1f1a;
+      text-align: center;
+    }
+    #s2-ticket .ev {
+      font-size: 42px;
+      font-weight: 800;
+      letter-spacing: -0.02em;
+      line-height: 1.05;
+    }
+    #s2-ticket .date {
+      font-size: 32px;
+      font-weight: 500;
+      color: #5b6b66;
+    }
+    #s2-qrbox {
+      position: relative;
+      margin: 26px 0 22px;
+      width: 300px;
+      height: 300px;
+    }
+    #s2-qrbox img {
+      width: 300px;
+      height: 300px;
+      display: block;
+    }
+    #s2-scanline {
+      position: absolute;
+      left: -14px;
+      right: -14px;
+      top: 0;
+      height: 6px;
+      border-radius: 3px;
+      background: #f4b942;
+    }
+    #s2-ticket .pass {
+      font-size: 44px;
+      font-weight: 800;
+      color: #0a4f3c;
+    }
+    #s2-ticket .holder {
+      font-size: 34px;
+      font-weight: 500;
+      color: #5b6b66;
+    }
+    /* Écran 2 : le scanner GiyaX (vue caméra + verdict). */
+    #s2-scanner {
+      position: absolute;
+      inset: 0;
+      background: #101614;
+    }
+    #s2-viewfinder {
+      position: absolute;
+      left: 76px;
+      top: 170px;
+      width: 260px;
+      height: 260px;
+      border: 5px solid rgba(255, 255, 255, 0.55);
+      border-radius: 36px;
+    }
+    #s2-counter {
+      position: absolute;
+      left: 22px;
+      right: 22px;
+      top: 40px;
+      border-radius: 22px;
+      background: rgba(0, 0, 0, 0.7);
+      color: #fff;
+      padding: 16px 22px 18px;
+    }
+    #s2-counter .row {
+      display: flex;
+      gap: 18px;
+      align-items: center;
+      justify-content: space-between;
+    }
+    #s2-counter .lbl {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      font-size: 32px;
+      font-weight: 500;
+    }
+    #s2-counter .lbl svg {
+      width: 36px;
+      height: 36px;
+    }
+    #s2-counter .num {
+      position: relative;
+      font-family: "JetBrains Mono", monospace;
+      font-size: 38px;
+      font-weight: 700;
+      white-space: nowrap;
+    }
+    #s2-counter .num .tot {
+      font-size: 28px;
+      opacity: 0.7;
+    }
+    #s2-n1,
+    #s2-n2 {
+      display: inline-block;
+    }
+    #s2-n2 {
+      position: absolute;
+      left: 0;
+      top: 0;
+    }
+    #s2-counter .bar {
+      margin-top: 12px;
+      height: 10px;
+      border-radius: 5px;
+      background: rgba(255, 255, 255, 0.2);
+      overflow: hidden;
+    }
+    #s2-counter .bar span {
+      display: block;
+      width: 62%;
+      height: 100%;
+      border-radius: 5px;
+      background: #10b981;
+    }
+    #s2-verdict {
+      position: absolute;
+      left: 0;
+      right: 0;
+      bottom: 0;
+      height: 440px;
+      border-radius: 40px 40px 0 0;
+      background: #10b981;
+      color: #fff;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      gap: 12px;
+      padding: 30px 30px 40px;
+      text-align: center;
+    }
+    #s2-verdict svg {
+      width: 92px;
+      height: 92px;
+    }
+    #s2-verdict .v {
+      font-size: 56px;
+      font-weight: 800;
+      letter-spacing: -0.02em;
+    }
+    #s2-verdict .d {
+      font-size: 34px;
+      font-weight: 500;
+      opacity: 0.92;
+    }
+    #s2-verdict .btn {
+      margin-top: 10px;
+      width: 100%;
+      height: 84px;
+      border-radius: 20px;
+      background: #eae8e1;
+      color: #1c1c1e;
+      font-size: 34px;
+      font-weight: 600;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    }
+    /* Le verdict devient le monde suivant (objet → monde). */
+    #s2-flood {
+      position: absolute;
+      inset: 0;
+      background: #10b981;
+    }
+  </style>
+  <div id="root" data-composition-id="s2" data-width="1920" data-height="1080">
+    <div id="s2-world">
+      <div id="s2-cam"><img src="assets/img/concert.jpg" alt="" /></div>
+      <div id="s2-scrim"></div>
+      <div id="s2-phone">
+        <div id="s2-screen">
+          <div id="s2-ticket">
+            <div class="ev">Nuit Afro Live</div>
+            <div class="date">Sam. 14 nov. · 20h00</div>
+            <div id="s2-qrbox">
+              <img src="assets/svg/qr.svg" alt="" />
+              <div id="s2-scanline"></div>
+            </div>
+            <div class="pass">Pass VIP</div>
+            <div class="holder">Awa N.</div>
+          </div>
+          <div id="s2-scanner">
+            <div id="s2-viewfinder"></div>
+            <div id="s2-counter">
+              <div class="row">
+                <span class="lbl">
+                  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2"></path><path d="M16 3.128a4 4 0 0 1 0 7.744"></path><path d="M22 21v-2a4 4 0 0 0-3-3.87"></path><circle cx="9" cy="7" r="4"></circle></svg>
+                  Entrées
+                </span>
+                <span class="num" data-layout-allow-overlap><span id="s2-n1">247</span><span id="s2-n2">248</span> <span class="tot">/ 400</span></span>
+              </div>
+              <div class="bar"><span id="s2-bar"></span></div>
+            </div>
+            <div id="s2-verdict">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"></circle><path d="m9 12 2 2 4-4"></path></svg>
+              <div class="v">Billet valide</div>
+              <div class="d">Pass VIP · Awa N.</div>
+              <div class="btn">Scanner suivant</div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+    <div id="s2-flood"></div>
+  </div>
+  <script>
+    (function () {
+      const tl = gsap.timeline({ paused: true });
+      // Entrée : whip depuis la droite (raccord sur la sortie du plan 1).
+      tl.fromTo("#s2-world", { x: 320, filter: "blur(18px)" }, { x: 0, filter: "blur(0px)", duration: 0.45, ease: "power3.out" }, 0);
+      tl.fromTo("#s2-cam", { scale: 1.1 }, { scale: 1.16, duration: 7.35, ease: "power2.inOut" }, 0);
+      // Le téléphone arrive, billet à l'écran.
+      tl.fromTo("#s2-phone", { y: 70, opacity: 0, filter: "blur(10px)" }, { y: 0, opacity: 1, filter: "blur(0px)", duration: 0.8, ease: "expo.out" }, 0.45);
+      // Ligne de scan sur le QR.
+      tl.fromTo("#s2-scanline", { y: 0, opacity: 0 }, { opacity: 1, duration: 0.1 }, 1.9);
+      tl.to("#s2-scanline", { y: 294, duration: 0.6, ease: "power1.inOut" }, 1.9);
+      tl.to("#s2-scanline", { opacity: 0, duration: 0.1 }, 2.5);
+      // Bascule sur l'écran du scanner (échange flou sur la même scène).
+      tl.fromTo("#s2-scanner", { opacity: 0, filter: "blur(8px)" }, { opacity: 1, filter: "blur(0px)", duration: 0.18, ease: "power2.out" }, 2.62);
+      tl.fromTo("#s2-ticket", { opacity: 1 }, { opacity: 0, duration: 0.15 }, 2.6);
+      // Verdict : le panneau vert monte du bas, comme dans l'app.
+      tl.fromTo("#s2-verdict", { y: 440 }, { y: 0, duration: 0.6, ease: "expo.out" }, 2.8);
+      // Compteur d'entrées : 247 → 248.
+      tl.fromTo("#s2-n2", { opacity: 0, y: 18 }, { opacity: 1, y: 0, duration: 0.2, ease: "power2.out" }, 3.4);
+      tl.fromTo("#s2-n1", { opacity: 1, y: 0 }, { opacity: 0, y: -18, duration: 0.2, ease: "power2.in" }, 3.4);
+      tl.fromTo("#s2-bar", { width: "61.75%" }, { width: "62%", duration: 0.3, ease: "power2.out" }, 3.4);
+      // Objet → monde : le vert du verdict s'étend à tout le cadre.
+      tl.fromTo(
+        "#s2-flood",
+        { opacity: 0, clipPath: "inset(536px 754px 104px 754px round 40px 40px 0px 0px)" },
+        { opacity: 1, duration: 0.01 },
+        6.45,
+      );
+      tl.to("#s2-flood", { clipPath: "inset(0px 0px 0px 0px round 0px 0px 0px 0px)", duration: 0.6, ease: "power2.inOut" }, 6.46);
+      window.__timelines["s2"] = tl;
+    })();
+  </script>
+</template>

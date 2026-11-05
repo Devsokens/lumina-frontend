@@ -1,1758 +1,1046 @@
 "use client";
 
-import { useState, useRef } from "react";
+import { useRef, useState, type CSSProperties, type ReactNode } from "react";
 import {
-  Calendar,
-  MapPin,
-  Clock,
-  Ticket,
-  ShieldCheck,
-  CheckCircle2,
-  Phone,
   ArrowRight,
-  Plus,
-  Minus,
-  QrCode,
-  Lock,
-  MessageCircle,
-  Share2,
-  Building,
-  Award,
-  Users,
-  ChevronRight,
-  HelpCircle,
-  Star,
-  ExternalLink,
-  ChevronDown,
-  ChevronUp,
-  Download,
+  Calendar,
   Camera,
-  Edit3,
-  Search,
-  SlidersHorizontal,
-  X,
-  Palette,
-  Check,
-  Sparkles,
+  ChevronDown,
+  ImagePlus,
+  Mail,
+  MapPin,
+  MessageCircle,
+  Phone,
+  Plus,
+  Star,
+  Ticket,
+  Trash2,
 } from "lucide-react";
-import {
-  useShowcaseStore,
-  type EventItem,
-  type TicketTier,
-  type ShowcaseTheme,
-} from "@/stores/useShowcaseStore";
-import { SHOWCASE_PRESETS, type ShowcaseSection } from "@/lib/showcase-layouts";
-import { Button } from "@/components/ui/button";
-import {
-  Dialog,
-  DialogContent,
-  DialogDescription,
-  DialogHeader,
-  DialogTitle,
-} from "@/components/ui/dialog";
 import { toast } from "sonner";
+import { useShowcaseStore, type EventItem, type ShowcaseSections } from "@/stores/useShowcaseStore";
+import { SHOWCASE_PRESETS, type ShowcaseSection } from "@/lib/showcase-layouts";
+import { showcaseFontStack, showcaseSectionShown, showcaseThemeVars } from "@/lib/showcase-theme";
+import { FEATURES } from "@/lib/features";
+import { siteFontVariables } from "@/lib/site-fonts";
 import { prepareImage } from "@/lib/image";
-import { ShowcaseAIGeneratorModal } from "./showcase-ai-generator-modal";
+import { cn } from "@/lib/utils";
+
+// Vitrine d'un organisateur d'événements. UN SEUL rendu pour l'éditeur et le
+// site public : l'aperçu de l'éditeur est exactement le site en ligne.
+// - Mise en page pilotée par la largeur de la vitrine (container queries
+//   @sm…@5xl), pas par celle de la fenêtre : l'aperçu « Mobile » de l'éditeur
+//   se comporte comme un vrai téléphone.
+// - Mêmes événements des deux côtés : ceux réellement en vente.
+// - Une section vide n'est pas affichée en ligne ; dans l'éditeur elle reste
+//   visible, estompée, pour pouvoir la remplir.
+// - Charte : le thème fixe le fond et une seule couleur d'accent (variables
+//   --sc-*, lib/showcase-theme.ts) ; la police choisie s'applique partout.
 
 interface ShowcaseCanvasProps {
   isEditorMode?: boolean;
-  // Vitrine publique : événements réels (GET /tenants/:slug/events) et
-  // redirection vers la page d'achat réelle. Sans ces props (éditeur), le
-  // contenu d'exemple de l'éditeur est affiché.
+  // Événements affichés (en vente). Sans cette prop (page de démonstration),
+  // les événements d'exemple du store.
   liveEvents?: EventItem[];
   onReserve?: (event: EventItem) => void;
+  // Page listant tous les événements du compte.
+  allEventsHref?: string;
+  // Éditeur : où créer un événement quand la liste est vide.
+  manageEventsHref?: string;
 }
 
-const THEMES: { id: ShowcaseTheme; name: string; gradient: string }[] = [
-  { id: "emerald", name: "Émeraude Royal (GiyaX)", gradient: "from-emerald-500 to-teal-700" },
-  { id: "indigo", name: "Bleu Nuit / Indigo", gradient: "from-blue-600 to-indigo-900" },
-  { id: "amber", name: "Ambre Solaire (Afro Vibes)", gradient: "from-amber-500 to-orange-600" },
-  { id: "electric", name: "Nuit Électrique & Cyber", gradient: "from-cyan-500 to-blue-600" },
-  { id: "ruby", name: "Rubis & Soirée Prestige", gradient: "from-rose-500 to-purple-600" },
-  { id: "dark", name: "Noir Onyx Minimaliste", gradient: "from-zinc-700 to-zinc-950" },
-];
+const ACCENT_BTN =
+  "inline-flex items-center justify-center gap-2 rounded-full bg-[var(--sc-accent)] font-semibold text-[var(--sc-on-accent)] transition hover:brightness-110 active:scale-[0.98]";
+const GHOST_BTN =
+  "inline-flex items-center justify-center gap-2 rounded-full border border-white/20 font-semibold text-white transition hover:border-white/40 hover:bg-white/5";
+const ACCENT_TEXT = "text-[var(--sc-accent-text)]";
+const EDIT_FIELD =
+  "w-full rounded-lg border border-dashed border-white/25 bg-transparent px-2 py-1 outline-none transition placeholder:text-white/35 hover:border-white/45 focus:border-solid focus:border-[var(--sc-accent)]";
 
-export function ShowcaseCanvas({ isEditorMode = false, liveEvents, onReserve }: ShowcaseCanvasProps) {
-  const [isAIGeneratorOpen, setIsAIGeneratorOpen] = useState(false);
-  const {
-    theme,
-    layout,
-    setTheme,
-    fontFamily,
-    deviceView,
-    visibleSections,
-    orgName,
-    orgTagline,
-    orgLogoUrl,
-    orgCoverUrl,
-    aboutTitle,
-    aboutText,
-    heroHeadline,
-    heroSubheadline,
-    heroCtaText,
-    statParticipants,
-    statEvents,
-    statSatisfaction,
-    statSecurity,
-    events: draftEvents,
-    galleryImages,
-    testimonials,
-    faqs,
-    whatsappNumber,
-    supportPhone,
-    contactEmail,
-    address,
-    rccm,
-    nif,
-    updateField,
-    updateEvent,
-    updateEventCover,
-    updateGalleryImage,
-  } = useShowcaseStore();
-  const events = liveEvents ?? draftEvents;
-  // Variante de mise en page : couverture, ordre des sections, présentation
-  // des événements, bouton billet fixe, animations (lib/showcase-layouts.ts).
-  const preset = SHOWCASE_PRESETS[layout];
-  const sectionOrder = (id: ShowcaseSection) => ({ order: preset.order.indexOf(id) + 1 });
-  const heroLeft = preset.hero === "left" || preset.hero === "poster";
-  const shownCount = preset.events === "posters" ? 7 : preset.events === "carousel" || preset.events === "agenda" ? 6 : 3;
+const SECTION_IDS: Record<ShowcaseSection, string> = {
+  events: "sc-evenements",
+  about: "sc-a-propos",
+  gallery: "sc-galerie",
+  testimonials: "sc-avis",
+  faq: "sc-faq",
+};
 
-  // Full Catalog Modal State (Opened by 4th card or button)
-  const [isCatalogOpen, setIsCatalogOpen] = useState(false);
-  const [catalogSearchQuery, setCatalogSearchQuery] = useState("");
-  const [catalogCategory, setCatalogCategory] = useState("Tous");
+const NAV_LABELS: Record<ShowcaseSection, string> = {
+  events: "Événements",
+  about: "À propos",
+  gallery: "Galerie",
+  testimonials: "Avis",
+  faq: "FAQ",
+};
 
-  // Event Details & Booking Modal State
-  const [activeEvent, setActiveEvent] = useState<EventItem | null>(null);
-  const [selectedTicket, setSelectedTicket] = useState<TicketTier | null>(null);
-  const [quantity, setQuantity] = useState(1);
-  const [phoneBuyer, setPhoneBuyer] = useState("077 12 34 56");
-  const [nameBuyer, setNameBuyer] = useState("Jean-Marc Obiang");
-  const [emailBuyer, setEmailBuyer] = useState("jm.obiang@gmail.com");
-  const [operator, setOperator] = useState<"AIRTEL" | "MOOV">("AIRTEL");
-  const [isCheckoutStep, setIsCheckoutStep] = useState(false);
-  const [isProcessing, setIsProcessing] = useState(false);
-  const [isPaymentSuccess, setIsPaymentSuccess] = useState(false);
-  const [generatedTicketRef, setGeneratedTicketRef] = useState("GA-LBV-9082");
+function scrollToId(id: string) {
+  document.getElementById(id)?.scrollIntoView({ behavior: "smooth", block: "start" });
+}
 
-  // FAQ open/close state
-  const [openFaqId, setOpenFaqId] = useState<string | null>("faq-1");
+function formatPrice(fcfa: number) {
+  return fcfa > 0 ? `Dès ${fcfa.toLocaleString("fr-FR")} FCFA` : "Gratuit";
+}
 
-  // Hidden File Input Refs for direct image uploads
-  const logoInputRef = useRef<HTMLInputElement>(null);
-  const heroCoverInputRef = useRef<HTMLInputElement>(null);
-  const aboutImageInputRef = useRef<HTMLInputElement>(null);
-  const eventCoverInputRef = useRef<HTMLInputElement>(null);
-  const [targetEventCoverId, setTargetEventCoverId] = useState<string | null>(null);
-  const galleryInputRef = useRef<HTMLInputElement>(null);
-  const [targetGalleryIdx, setTargetGalleryIdx] = useState<number | null>(null);
+// « 14 nov. » (ou la date texte des événements d'exemple).
+function shortDate(evt: EventItem) {
+  if (!evt.startsAt) return evt.date;
+  return new Date(evt.startsAt).toLocaleDateString("fr-FR", { day: "numeric", month: "short" });
+}
 
-  // File Upload Handlers
-  function handleImageUpload(
-    e: React.ChangeEvent<HTMLInputElement>,
-    onSuccess: (dataUrl: string) => void,
-    successMessage: string
-  ) {
+function dayAndMonth(evt: EventItem) {
+  if (!evt.startsAt) {
+    const [day = "", month = ""] = evt.date.split(" ");
+    return { day, month };
+  }
+  const d = new Date(evt.startsAt);
+  return {
+    day: String(d.getDate()),
+    month: d.toLocaleDateString("fr-FR", { month: "short" }).replace(".", ""),
+  };
+}
+
+// Texte modifiable : champ en pointillés dans l'éditeur, texte simple en ligne
+// (rien du tout s'il est vide).
+function EditableText({
+  editor,
+  value,
+  onChange,
+  placeholder,
+  className,
+  as: Tag = "p",
+  multiline = false,
+  maxLength,
+}: {
+  editor: boolean;
+  value: string;
+  onChange: (v: string) => void;
+  placeholder: string;
+  className?: string;
+  as?: "p" | "h1" | "h2" | "h3" | "span";
+  multiline?: boolean;
+  maxLength?: number;
+}) {
+  if (editor) {
+    return multiline ? (
+      <textarea
+        value={value}
+        placeholder={placeholder}
+        maxLength={maxLength}
+        onChange={(e) => onChange(e.target.value)}
+        rows={2}
+        className={cn(EDIT_FIELD, "resize-none [field-sizing:content]", className)}
+      />
+    ) : (
+      <input
+        value={value}
+        placeholder={placeholder}
+        maxLength={maxLength}
+        onChange={(e) => onChange(e.target.value)}
+        className={cn(EDIT_FIELD, className)}
+      />
+    );
+  }
+  if (!value.trim()) return null;
+  return <Tag className={cn("whitespace-pre-line", className)}>{value}</Tag>;
+}
+
+function SectionHead({ eyebrow, title, action, center }: { eyebrow: string; title: string; action?: ReactNode; center?: boolean }) {
+  return (
+    <div className={cn("mb-8 flex flex-col gap-3 @2xl:mb-10", center ? "items-center text-center" : "@2xl:flex-row @2xl:items-end @2xl:justify-between")}>
+      <div>
+        <p className={cn("text-xs font-semibold uppercase tracking-[0.18em]", ACCENT_TEXT)}>{eyebrow}</p>
+        <h2 className="mt-2 text-3xl font-bold tracking-tight text-white @3xl:text-4xl">{title}</h2>
+      </div>
+      {action}
+    </div>
+  );
+}
+
+// Section ordonnée par la variante ; « ghost » = vide, visible seulement dans l'éditeur.
+function Section({
+  id,
+  order,
+  alt,
+  ghost,
+  children,
+}: {
+  id: string;
+  order: number;
+  alt?: boolean;
+  ghost?: boolean;
+  children: ReactNode;
+}) {
+  return (
+    <section
+      id={id}
+      style={{ order }}
+      className={cn("relative scroll-mt-20 px-4 py-16 @3xl:px-8 @3xl:py-20", alt && "bg-[var(--sc-bg-alt)]")}
+    >
+      {ghost && (
+        <p className="mx-auto mb-6 w-fit rounded-full border border-dashed border-white/25 px-3 py-1 text-[11px] text-white/60">
+          Section vide : elle n&apos;apparaît pas sur le site en ligne
+        </p>
+      )}
+      <div className={cn("mx-auto max-w-6xl", ghost && "opacity-80")}>{children}</div>
+    </section>
+  );
+}
+
+export function ShowcaseCanvas({
+  isEditorMode = false,
+  liveEvents,
+  onReserve,
+  allEventsHref,
+  manageEventsHref,
+}: ShowcaseCanvasProps) {
+  const s = useShowcaseStore();
+  const editor = isEditorMode;
+  const events = liveEvents ?? s.events;
+  const preset = SHOWCASE_PRESETS[s.layout];
+  const set = s.updateField;
+
+  // Une seule entrée fichier pour toutes les images (logo, couverture, galerie).
+  const fileRef = useRef<HTMLInputElement>(null);
+  const onPicked = useRef<((dataUrl: string) => void) | null>(null);
+  function pickImage(done: (dataUrl: string) => void) {
+    onPicked.current = done;
+    fileRef.current?.click();
+  }
+  function handleFile(e: React.ChangeEvent<HTMLInputElement>) {
     const input = e.target;
     const file = input.files?.[0];
-    if (!file) return;
-    // Ré-encodée et compressée (EXIF retiré) : acceptée par le serveur à la
-    // publication. Le même fichier peut être ré-importé ensuite.
+    if (!file || !onPicked.current) return;
+    const done = onPicked.current;
+    // Ré-encodée et compressée (EXIF retiré) : acceptée par le serveur à la publication.
     prepareImage(file)
-      .then((dataUrl) => {
-        onSuccess(dataUrl);
-        toast.success(successMessage);
-      })
+      .then((dataUrl) => done(dataUrl))
       .catch((err: unknown) => toast.error(err instanceof Error ? err.message : "Image illisible."))
       .finally(() => {
         input.value = "";
       });
   }
 
-  // Theme styling helpers
-  const getThemeStyles = () => {
-    switch (theme) {
-      case "emerald":
-        return {
-          primary: "bg-emerald-600 hover:bg-emerald-500 text-white",
-          primaryText: "text-emerald-400",
-          primaryBorder: "border-emerald-500/40",
-          badge: "bg-emerald-500/20 text-emerald-300 border-emerald-500/30",
-          glow: "from-emerald-600/30 to-teal-900/40",
-          cardBg: "bg-emerald-950/20 border-emerald-500/20",
-          ring: "ring-emerald-500",
-        };
-      case "electric":
-        return {
-          primary: "bg-cyan-500 hover:bg-cyan-400 text-black font-bold",
-          primaryText: "text-cyan-400",
-          primaryBorder: "border-cyan-500/40",
-          badge: "bg-cyan-500/20 text-cyan-300 border-cyan-500/30",
-          glow: "from-cyan-600/30 to-blue-900/40",
-          cardBg: "bg-cyan-950/20 border-cyan-500/20",
-          ring: "ring-cyan-500",
-        };
-      case "ruby":
-        return {
-          primary: "bg-rose-600 hover:bg-rose-500 text-white",
-          primaryText: "text-rose-400",
-          primaryBorder: "border-rose-500/40",
-          badge: "bg-rose-500/20 text-rose-300 border-rose-500/30",
-          glow: "from-rose-600/30 to-purple-900/40",
-          cardBg: "bg-rose-950/20 border-rose-500/20",
-          ring: "ring-rose-500",
-        };
-      case "indigo":
-        return {
-          primary: "bg-blue-600 hover:bg-blue-500 text-white",
-          primaryText: "text-blue-400",
-          primaryBorder: "border-blue-500/40",
-          badge: "bg-blue-500/20 text-blue-300 border-blue-500/30",
-          glow: "from-blue-600/30 to-indigo-950/40",
-          cardBg: "bg-blue-950/20 border-blue-500/20",
-          ring: "ring-blue-500",
-        };
-      case "dark":
-        return {
-          primary: "bg-white hover:bg-zinc-200 text-black font-bold",
-          primaryText: "text-zinc-200",
-          primaryBorder: "border-zinc-700",
-          badge: "bg-zinc-800 text-zinc-300 border-zinc-700",
-          glow: "from-zinc-800/40 to-black/80",
-          cardBg: "bg-zinc-900/60 border-zinc-800",
-          ring: "ring-zinc-400",
-        };
-      case "amber":
-      default:
-        return {
-          primary: "bg-amber-500 hover:bg-amber-400 text-black font-bold",
-          primaryText: "text-amber-400",
-          primaryBorder: "border-amber-500/40",
-          badge: "bg-amber-500/20 text-amber-300 border-amber-500/30",
-          glow: "from-amber-600/30 to-orange-900/40",
-          cardBg: "bg-amber-950/20 border-amber-500/20",
-          ring: "ring-amber-500",
-        };
-    }
+  // Interrupteurs « masquer » : seulement s'ils sont enregistrés par le serveur.
+  const toggledOn = (k: keyof ShowcaseSections) => !FEATURES.showcaseSections || s.visibleSections[k] !== false;
+  // Affichée en ligne ? / affichée dans l'éditeur (estompée si vide) ?
+  const live = (k: keyof ShowcaseSections) => showcaseSectionShown(s, k);
+  const rendered = (k: keyof ShowcaseSections) => (editor ? toggledOn(k) : live(k));
+  const ghost = (k: keyof ShowcaseSections) => editor && !live(k);
+  const order = (k: ShowcaseSection) => preset.order.indexOf(k) + 1;
+
+  function reserve(evt: EventItem) {
+    if (onReserve) onReserve(evt);
+    else toast.info("Aperçu : sur le site, ce bouton ouvre la page d'achat de l'événement.");
+  }
+
+  const navSections = preset.order.filter((k) => (k === "events" ? true : live(k)));
+  const shownCount = preset.events === "posters" ? 8 : preset.events === "agenda" ? 6 : 6;
+  const visibleEvents = events.slice(0, shownCount);
+  const stickyBar = preset.sticky && events.length > 0;
+  const whatsapp = s.whatsappNumber.replace(/[^0-9]/g, "");
+
+  const frame = !editor
+    ? "min-h-svh w-full"
+    : s.deviceView === "mobile"
+      ? "mx-auto my-4 w-full max-w-[400px] rounded-[2.25rem] border-[6px] border-zinc-800 shadow-2xl"
+      : s.deviceView === "tablet"
+        ? "mx-auto my-4 w-full max-w-[820px] rounded-3xl border-[6px] border-zinc-800 shadow-2xl"
+        : "w-full rounded-2xl border border-white/10 shadow-2xl";
+
+  const rootStyle: CSSProperties = { ...showcaseThemeVars(s.theme), fontFamily: showcaseFontStack(s.fontFamily) };
+
+  // ---------------------------------------------------------------------------
+  // Couverture
+  // ---------------------------------------------------------------------------
+  const heroText = (align: "center" | "left") => (
+    <div className={cn("relative space-y-6", align === "center" ? "mx-auto max-w-3xl text-center" : "max-w-2xl text-left")}>
+      <EditableText
+        editor={editor}
+        value={s.heroBadge}
+        onChange={(v) => set("heroBadge", v)}
+        placeholder="Accroche courte (facultatif)"
+        maxLength={80}
+        className={cn("stay-intro text-xs font-semibold uppercase tracking-[0.18em]", ACCENT_TEXT, align === "center" && "text-center")}
+      />
+      <EditableText
+        editor={editor}
+        as="h1"
+        multiline
+        value={s.heroHeadline}
+        onChange={(v) => set("heroHeadline", v)}
+        placeholder="Votre grand titre"
+        maxLength={200}
+        className={cn(
+          "stay-intro font-bold leading-[1.05] tracking-tight text-white",
+          preset.hero === "compact" ? "text-3xl @3xl:text-4xl" : "text-4xl @2xl:text-5xl @4xl:text-6xl",
+          align === "center" && "text-center"
+        )}
+      />
+      <EditableText
+        editor={editor}
+        multiline
+        value={s.heroSubheadline}
+        onChange={(v) => set("heroSubheadline", v)}
+        placeholder="Une phrase pour présenter vos événements"
+        maxLength={500}
+        className={cn("stay-intro text-base leading-relaxed text-white/70 @3xl:text-lg", align === "center" && "mx-auto max-w-2xl text-center")}
+      />
+      <div className={cn("stay-intro flex flex-wrap gap-3 pt-1", align === "center" ? "justify-center" : "justify-start")} style={{ "--i": 2 } as CSSProperties}>
+        <button type="button" onClick={() => scrollToId(SECTION_IDS.events)} className={cn(ACCENT_BTN, "h-12 px-6 text-sm")}>
+          {editor ? (
+            <input
+              value={s.heroCtaText}
+              onChange={(e) => set("heroCtaText", e.target.value)}
+              onClick={(e) => e.stopPropagation()}
+              placeholder="Voir les événements"
+              maxLength={60}
+              className="w-44 bg-transparent text-center outline-none placeholder:text-[var(--sc-on-accent)]/60"
+            />
+          ) : (
+            s.heroCtaText.trim() || "Voir les événements"
+          )}
+          <ArrowRight className="size-4" />
+        </button>
+        {live("about") && (
+          <button type="button" onClick={() => scrollToId(SECTION_IDS.about)} className={cn(GHOST_BTN, "h-12 px-6 text-sm")}>
+            En savoir plus
+          </button>
+        )}
+      </div>
+    </div>
+  );
+
+  const stats = [
+    { key: "statParticipants" as const, label: "Participants", placeholder: "+5 000" },
+    { key: "statEvents" as const, label: "Événements", placeholder: "25" },
+    { key: "statSatisfaction" as const, label: "Satisfaction", placeholder: "4,8/5" },
+    { key: "statSecurity" as const, label: "Billets sécurisés", placeholder: "100 %" },
+  ].filter((st) => editor || s[st.key].trim());
+
+  const statsStrip =
+    preset.stats && rendered("stats") ? (
+      <div className={cn("relative mx-auto mt-12 grid max-w-4xl grid-cols-2 gap-3 @3xl:grid-cols-4", ghost("stats") && "opacity-80")}>
+        {stats.map((st) => (
+          <div key={st.key} className="rounded-2xl border border-white/10 bg-white/[0.04] p-4 text-center">
+            {editor ? (
+              <input
+                value={s[st.key]}
+                onChange={(e) => set(st.key, e.target.value)}
+                placeholder={st.placeholder}
+                maxLength={30}
+                className={cn(EDIT_FIELD, "text-center text-2xl font-bold", ACCENT_TEXT)}
+              />
+            ) : (
+              <p className={cn("text-2xl font-bold", ACCENT_TEXT)}>{s[st.key]}</p>
+            )}
+            <p className="mt-1 text-xs text-white/60">{st.label}</p>
+          </div>
+        ))}
+      </div>
+    ) : null;
+
+  const coverButton = editor && (
+    <button
+      type="button"
+      onClick={() => pickImage((url) => set("orgCoverUrl", url))}
+      className="absolute right-3 top-3 z-10 inline-flex items-center gap-1.5 rounded-full bg-black/70 px-3 py-1.5 text-xs font-semibold text-white backdrop-blur hover:bg-black"
+    >
+      <Camera className="size-3.5" /> Photo de couverture
+    </button>
+  );
+
+  const nextEvent = events[0];
+
+  const hero = rendered("hero") && (
+    <section
+      style={{ order: 0 }}
+      className={cn(
+        "relative overflow-hidden px-4 @3xl:px-8",
+        preset.hero === "fullbleed" ? "flex min-h-[560px] items-end pb-14 pt-28 @3xl:min-h-[640px]" : preset.hero === "compact" ? "py-12 @3xl:py-16" : "py-16 @3xl:py-24"
+      )}
+    >
+      {coverButton}
+      {/* Fond : photo + voile du thème */}
+      {s.orgCoverUrl && (preset.hero === "fullbleed" || preset.hero === "center" || preset.hero === "compact") && (
+        <>
+          {/* eslint-disable-next-line @next/next/no-img-element */}
+          <img
+            src={s.orgCoverUrl}
+            alt=""
+            className={cn("absolute inset-0 size-full object-cover", preset.hero === "fullbleed" ? "stay-kenburns" : "opacity-25")}
+          />
+          <div
+            className={cn(
+              "absolute inset-0",
+              preset.hero === "fullbleed"
+                ? "bg-gradient-to-t from-[var(--sc-bg)] via-[var(--sc-bg)]/55 to-black/30"
+                : "bg-gradient-to-b from-[var(--sc-bg)]/40 via-[var(--sc-bg)]/80 to-[var(--sc-bg)]"
+            )}
+          />
+        </>
+      )}
+      <div
+        aria-hidden
+        className="pointer-events-none absolute -top-40 left-1/2 size-[640px] -translate-x-1/2 rounded-full blur-[120px]"
+        style={{ background: "var(--sc-glow)" }}
+      />
+
+      <div className="relative mx-auto w-full max-w-6xl">
+        {preset.hero === "left" || preset.hero === "poster" ? (
+          <div className="grid items-center gap-10 @3xl:grid-cols-[1.1fr_0.9fr]">
+            {heroText("left")}
+            {preset.hero === "poster" && nextEvent ? (
+              <button
+                type="button"
+                onClick={() => reserve(nextEvent)}
+                className="stay-intro relative aspect-[3/4] w-full max-w-sm justify-self-center overflow-hidden rounded-3xl border border-white/10 text-left shadow-2xl"
+              >
+                {nextEvent.coverImageUrl ? (
+                  // eslint-disable-next-line @next/next/no-img-element
+                  <img src={nextEvent.coverImageUrl} alt={nextEvent.title} className="size-full object-cover" />
+                ) : (
+                  <span className="flex size-full items-center justify-center bg-white/5">
+                    <Ticket className="size-10 text-white/30" />
+                  </span>
+                )}
+                <span className="absolute inset-x-0 bottom-0 bg-gradient-to-t from-black via-black/70 to-transparent p-5">
+                  <span className={cn("block text-xs font-semibold uppercase tracking-wider", ACCENT_TEXT)}>Prochain événement</span>
+                  <span className="mt-1 block text-xl font-bold text-white">{nextEvent.title}</span>
+                  <span className="mt-1 block text-sm text-white/75">
+                    {nextEvent.date} · {nextEvent.location}
+                  </span>
+                </span>
+              </button>
+            ) : (
+              <div className="relative aspect-[4/3] w-full overflow-hidden rounded-3xl border border-white/10 bg-white/5">
+                {s.orgCoverUrl ? (
+                  // eslint-disable-next-line @next/next/no-img-element
+                  <img src={s.orgCoverUrl} alt="" className="size-full object-cover" />
+                ) : (
+                  editor && (
+                    <span className="flex size-full items-center justify-center text-sm text-white/50">Ajoutez une photo de couverture</span>
+                  )
+                )}
+              </div>
+            )}
+          </div>
+        ) : (
+          heroText(preset.hero === "compact" ? "left" : "center")
+        )}
+        {statsStrip}
+      </div>
+    </section>
+  );
+
+  // ---------------------------------------------------------------------------
+  // Événements
+  // ---------------------------------------------------------------------------
+  const cover = (evt: EventItem, className: string) =>
+    evt.coverImageUrl ? (
+      // eslint-disable-next-line @next/next/no-img-element
+      <img src={evt.coverImageUrl} alt={evt.title} className={cn("size-full object-cover transition duration-500 group-hover:scale-105", className)} />
+    ) : (
+      <span className={cn("flex size-full items-center justify-center bg-white/5", className)}>
+        <Ticket className="size-8 text-white/25" />
+      </span>
+    );
+
+  const dateChip = (evt: EventItem) => (
+    <span className="absolute left-3 top-3 rounded-full bg-[var(--sc-accent)] px-2.5 py-1 text-xs font-bold text-[var(--sc-on-accent)]">
+      {shortDate(evt)}
+    </span>
+  );
+
+  const eventCard = (evt: EventItem, big = false) => (
+    <article
+      key={evt.id}
+      className={cn(
+        "stay-lift group flex flex-col overflow-hidden rounded-2xl border border-white/10 bg-white/[0.04] transition hover:border-white/20",
+        big && "@3xl:col-span-2 @3xl:row-span-2"
+      )}
+    >
+      <div className={cn("relative overflow-hidden", big ? "aspect-[16/10] @3xl:aspect-auto @3xl:flex-1" : "aspect-[16/10]")}>
+        {cover(evt, "")}
+        {dateChip(evt)}
+      </div>
+      <div className="flex flex-1 flex-col gap-3 p-5">
+        <h3 className={cn("line-clamp-2 font-semibold text-white", big ? "text-xl @3xl:text-2xl" : "text-lg")}>{evt.title}</h3>
+        <div className="space-y-1 text-sm text-white/60">
+          <p className="flex items-center gap-2">
+            <Calendar className="size-4 shrink-0" />
+            <span className="truncate">
+              {evt.date}
+              {evt.time && ` · ${evt.time}`}
+            </span>
+          </p>
+          <p className="flex items-center gap-2">
+            <MapPin className="size-4 shrink-0" />
+            <span className="truncate">{evt.location}</span>
+          </p>
+        </div>
+        <div className="mt-auto flex items-center justify-between gap-3 pt-2">
+          <span className={cn("text-sm font-semibold", ACCENT_TEXT)}>{formatPrice(evt.startingPrice)}</span>
+          <button type="button" onClick={() => reserve(evt)} className={cn(ACCENT_BTN, "h-10 px-4 text-sm")}>
+            Réserver
+          </button>
+        </div>
+      </div>
+    </article>
+  );
+
+  const eventPoster = (evt: EventItem) => (
+    <button
+      key={evt.id}
+      type="button"
+      onClick={() => reserve(evt)}
+      className="stay-lift group relative aspect-[2/3] overflow-hidden rounded-2xl border border-white/10 text-left"
+    >
+      {cover(evt, "absolute inset-0")}
+      {dateChip(evt)}
+      <span className="absolute inset-x-0 bottom-0 bg-gradient-to-t from-black via-black/70 to-transparent p-4">
+        <span className="line-clamp-2 block font-semibold text-white">{evt.title}</span>
+        <span className={cn("mt-1 block text-sm font-semibold", ACCENT_TEXT)}>{formatPrice(evt.startingPrice)}</span>
+      </span>
+    </button>
+  );
+
+  const eventRow = (evt: EventItem) => {
+    const { day, month } = dayAndMonth(evt);
+    return (
+      <li key={evt.id} className="flex flex-wrap items-center gap-4 p-4 @2xl:flex-nowrap @2xl:p-5">
+        <div className="flex size-16 shrink-0 flex-col items-center justify-center rounded-2xl border border-[var(--sc-accent)]/40 bg-white/[0.03]">
+          <span className={cn("text-2xl font-bold leading-none", ACCENT_TEXT)}>{day}</span>
+          <span className="mt-1 text-xs uppercase text-white/60">{month}</span>
+        </div>
+        <div className="min-w-0 flex-1">
+          <h3 className="truncate text-lg font-semibold text-white">{evt.title}</h3>
+          <p className="truncate text-sm text-white/60">
+            {evt.time && `${evt.time} · `}
+            {evt.location}
+          </p>
+        </div>
+        <span className={cn("text-sm font-semibold", ACCENT_TEXT)}>{formatPrice(evt.startingPrice)}</span>
+        <button type="button" onClick={() => reserve(evt)} className={cn(ACCENT_BTN, "h-10 px-4 text-sm")}>
+          Réserver
+        </button>
+      </li>
+    );
   };
 
-  const themeStyle = getThemeStyles();
+  const moreLink =
+    allEventsHref && events.length > visibleEvents.length ? (
+      <a
+        href={allEventsHref}
+        target={editor ? "_blank" : undefined}
+        rel={editor ? "noreferrer" : undefined}
+        className={cn("inline-flex items-center gap-1.5 text-sm font-semibold hover:underline", ACCENT_TEXT)}
+      >
+        Tous les événements ({events.length}) <ArrowRight className="size-4" />
+      </a>
+    ) : null;
 
-  // Device simulation state helpers
-  const isMobile = deviceView === "mobile";
-  const isTablet = deviceView === "tablet";
-  const isDesktop = deviceView === "desktop";
+  const eventsList =
+    events.length === 0 ? (
+      <div className="rounded-3xl border border-dashed border-white/20 p-10 text-center">
+        <Ticket className="mx-auto size-8 text-white/40" />
+        {editor ? (
+          <>
+            <p className="mt-3 font-semibold text-white">Vos événements en vente apparaîtront ici</p>
+            <p className="mt-1 text-sm text-white/60">Publiez un événement : il s&apos;affiche automatiquement sur votre site.</p>
+            {manageEventsHref && (
+              <a href={manageEventsHref} className={cn(ACCENT_BTN, "mt-5 h-10 px-5 text-sm")}>
+                <Plus className="size-4" /> Créer un événement
+              </a>
+            )}
+          </>
+        ) : (
+          <p className="mt-3 text-sm text-white/70">Aucun événement en vente pour le moment. Revenez bientôt !</p>
+        )}
+      </div>
+    ) : preset.events === "agenda" ? (
+      <ol className="divide-y divide-white/10 overflow-hidden rounded-3xl border border-white/10 bg-white/[0.03]">
+        {visibleEvents.map(eventRow)}
+      </ol>
+    ) : preset.events === "posters" ? (
+      <div className="grid grid-cols-2 gap-3 @3xl:grid-cols-3 @5xl:grid-cols-4">{visibleEvents.map(eventPoster)}</div>
+    ) : preset.events === "carousel" ? (
+      <div className="-mx-4 flex snap-x snap-mandatory gap-4 overflow-x-auto px-4 pb-2 [scrollbar-width:none] @3xl:-mx-8 @3xl:px-8 [&::-webkit-scrollbar]:hidden">
+        {visibleEvents.map((evt) => (
+          <div key={evt.id} className="w-[min(300px,82%)] shrink-0 snap-start">
+            {eventCard(evt)}
+          </div>
+        ))}
+      </div>
+    ) : (
+      <div className="grid gap-4 @2xl:grid-cols-2 @4xl:grid-cols-3">
+        {visibleEvents.map((evt, i) => eventCard(evt, preset.events === "featured" && i === 0 && visibleEvents.length > 2))}
+      </div>
+    );
 
-  // Dynamic layout helper classes tied directly to deviceView simulator
-  const eventsContainerClass = isMobile
-    ? "flex overflow-x-auto snap-x snap-mandatory gap-4 pb-4 pt-1 -mx-2 px-2 [scrollbar-width:none] [&::-webkit-scrollbar]:hidden scroll-smooth"
-    : isTablet
-    ? "grid grid-cols-2 gap-4"
-    : "grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4";
-
-  const eventCardClass = isMobile
-    ? "w-[280px] shrink-0 snap-center"
-    : "w-full";
-
-  const statsGridClass = isMobile
-    ? "grid grid-cols-2 gap-2.5 pt-6 max-w-4xl mx-auto"
-    : isTablet
-    ? "grid grid-cols-2 sm:grid-cols-4 gap-3 pt-6 max-w-4xl mx-auto"
-    : "grid grid-cols-2 sm:grid-cols-4 gap-3 pt-8 max-w-4xl mx-auto";
-
-  const aboutGridClass = isMobile
-    ? "grid grid-cols-1 gap-6 items-center"
-    : isTablet
-    ? "grid grid-cols-1 gap-8 items-center"
-    : "grid grid-cols-1 md:grid-cols-2 gap-10 items-center";
-
-  const galleryGridClass = isMobile
-    ? "grid grid-cols-2 gap-2.5"
-    : isTablet
-    ? "grid grid-cols-2 sm:grid-cols-3 gap-3"
-    : "grid grid-cols-2 sm:grid-cols-3 gap-4";
-
-  const testimonialsGridClass = isMobile
-    ? "grid grid-cols-1 gap-3.5"
-    : isTablet
-    ? "grid grid-cols-2 gap-4"
-    : "grid grid-cols-1 md:grid-cols-3 gap-5";
-
-  const footerGridClass = isMobile
-    ? "grid grid-cols-1 gap-6"
-    : isTablet
-    ? "grid grid-cols-2 gap-6"
-    : "grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-8";
-
-  // Container width simulator based on deviceView
-  const getDeviceClass = () => {
-    switch (deviceView) {
-      case "mobile":
-        return "max-w-[420px] w-full mx-auto shadow-2xl rounded-[2.5rem] border-[6px] border-zinc-800 bg-[#090b0e] overflow-hidden my-6 ring-1 ring-white/10";
-      case "tablet":
-        return "max-w-[780px] w-full mx-auto shadow-2xl rounded-3xl border-[6px] border-zinc-800 bg-[#090b0e] overflow-hidden my-6 ring-1 ring-white/10";
-      case "desktop":
-      default:
-        return "w-full max-w-full rounded-2xl sm:rounded-3xl border border-white/10 bg-[#090b0e] overflow-hidden shadow-2xl";
-    }
-  };
-
-  function handleOpenEventDetails(evt: EventItem) {
-    // Vitrine publique : jamais le parcours d'achat simulé ci-dessous.
-    if (onReserve) {
-      onReserve(evt);
-      return;
-    }
-    setActiveEvent(evt);
-    setSelectedTicket(evt.tickets[0] || null);
-    setQuantity(1);
-    setIsCheckoutStep(false);
-    setIsPaymentSuccess(false);
-  }
-
-  function handleProceedToPayment() {
-    if (!nameBuyer.trim() || !phoneBuyer.trim()) {
-      toast.error("Veuillez renseigner votre nom et votre numéro de téléphone pour le pass.");
-      return;
-    }
-    setIsProcessing(true);
-    setTimeout(() => {
-      setIsProcessing(false);
-      setIsPaymentSuccess(true);
-      setGeneratedTicketRef(`GA-${Math.floor(100000 + Math.random() * 900000)}`);
-      toast.success("Paiement validé avec succès ! Votre pass officiel est généré.");
-    }, 1200);
-  }
-
-  function scrollToSection(id: string) {
-    const el = document.getElementById(id);
-    if (el) {
-      el.scrollIntoView({ behavior: "smooth" });
-    }
-  }
-
-  // Filtered Events in the Full Catalog Modal
-  const catalogFilteredEvents = events.filter((evt) => {
-    const matchesCategory =
-      catalogCategory === "Tous" || evt.category === catalogCategory;
-    const matchesQuery =
-      catalogSearchQuery.trim() === "" ||
-      evt.title.toLowerCase().includes(catalogSearchQuery.toLowerCase()) ||
-      evt.location.toLowerCase().includes(catalogSearchQuery.toLowerCase()) ||
-      evt.description.toLowerCase().includes(catalogSearchQuery.toLowerCase());
-    return matchesCategory && matchesQuery;
-  });
-
-  // Modal scrollbar class helper
-  const modalScrollClass =
-    "overflow-y-auto [scrollbar-width:thin] [scrollbar-color:rgba(255,255,255,0.2)_transparent] [&::-webkit-scrollbar]:w-1.5 [&::-webkit-scrollbar-thumb]:rounded-full [&::-webkit-scrollbar-thumb]:bg-white/20 [&::-webkit-scrollbar-track]:bg-transparent";
+  // ---------------------------------------------------------------------------
+  // Contenu
+  // ---------------------------------------------------------------------------
+  const removeAt = <T,>(list: T[], i: number) => list.filter((_, j) => j !== i);
 
   return (
     <div
-      className={`mx-auto bg-[#090b0e] text-white transition-all ${getDeviceClass()} relative flex flex-col`}
-      style={{ fontFamily }}
+      className={cn("@container relative flex flex-col overflow-clip text-white antialiased", siteFontVariables, frame)}
+      style={rootStyle}
       data-motion={preset.motion}
     >
-      {/* Mobile Device Notch Simulation */}
-      {isMobile && (
-        <div className="w-full bg-zinc-950 py-2 flex items-center justify-center border-b border-zinc-800">
-          <div className="h-4 w-28 rounded-full bg-black flex items-center justify-center gap-2 border border-zinc-800">
-            <span className="size-1.5 rounded-full bg-zinc-800" />
-            <span className="size-2 rounded-full bg-zinc-900 border border-zinc-700" />
-          </div>
-        </div>
-      )}
+      {editor && <input ref={fileRef} type="file" accept="image/*" className="hidden" onChange={handleFile} />}
 
-      {/* HIDDEN FILE INPUTS FOR DIRECT UPLOADS */}
-      <input
-        ref={logoInputRef}
-        type="file"
-        accept="image/*"
-        onChange={(e) =>
-          handleImageUpload(
-            e,
-            (url) => updateField("orgLogoUrl", url),
-            "Logo de l'organisation mis à jour !"
-          )
-        }
-        className="hidden"
-      />
-      <input
-        ref={heroCoverInputRef}
-        type="file"
-        accept="image/*"
-        onChange={(e) =>
-          handleImageUpload(
-            e,
-            (url) => updateField("orgCoverUrl", url),
-            "Image de couverture Hero mise à jour !"
-          )
-        }
-        className="hidden"
-      />
-      <input
-        ref={aboutImageInputRef}
-        type="file"
-        accept="image/*"
-        onChange={(e) =>
-          handleImageUpload(
-            e,
-            (url) => updateField("orgCoverUrl", url),
-            "Photo de la section À Propos mise à jour !"
-          )
-        }
-        className="hidden"
-      />
-      <input
-        ref={eventCoverInputRef}
-        type="file"
-        accept="image/*"
-        onChange={(e) => {
-          if (targetEventCoverId) {
-            handleImageUpload(
-              e,
-              (url) => updateEventCover(targetEventCoverId, url),
-              "Affiche de l'événement mise à jour !"
-            );
-          }
-        }}
-        className="hidden"
-      />
-      <input
-        ref={galleryInputRef}
-        type="file"
-        accept="image/*"
-        onChange={(e) => {
-          if (targetGalleryIdx !== null) {
-            handleImageUpload(
-              e,
-              (url) => updateGalleryImage(targetGalleryIdx, url),
-              "Photo de la galerie mise à jour !"
-            );
-          }
-        }}
-        className="hidden"
-      />
-
-      {/* MODAL GENERATEUR GiyaX AI */}
-      <ShowcaseAIGeneratorModal
-        open={isAIGeneratorOpen}
-        onOpenChange={setIsAIGeneratorOpen}
-      />
-
-      {/* 1. STICKY TOP NAVIGATION OF THE ORGANIZATION */}
-      <header className="sticky top-0 z-40 border-b border-white/10 bg-[#090b0e]/90 backdrop-blur-md px-4 py-3.5 sm:px-8">
-        <div className="mx-auto flex max-w-6xl items-center justify-between gap-3">
-          {/* Logo & Name (Directly Editable) */}
-          <div className="flex items-center gap-3 group relative">
-            <div
-              onClick={() => isEditorMode && logoInputRef.current?.click()}
-              className={`relative size-10 rounded-xl overflow-hidden bg-white/10 border border-white/20 flex items-center justify-center shrink-0 ${
-                isEditorMode ? "cursor-pointer hover:border-amber-400 transition-colors" : ""
-              }`}
-              title={isEditorMode ? "Cliquez pour changer le logo" : undefined}
-            >
-              {orgLogoUrl ? (
-                /* eslint-disable-next-line @next/next/no-img-element */
-                <img
-                  src={orgLogoUrl}
-                  alt={orgName}
-                  className="size-full object-contain p-0.5"
-                />
-              ) : (
-                <span className="font-extrabold text-sm text-white">{orgName.charAt(0)}</span>
-              )}
-              {isEditorMode && (
-                <div className="absolute inset-0 bg-black/80 backdrop-blur-xs opacity-0 group-hover:opacity-100 flex items-center justify-center transition-opacity text-amber-400">
-                  <Camera className="size-5 text-amber-400 drop-shadow-md" />
-                </div>
-              )}
-            </div>
-
-            <div className="min-w-0">
-              {isEditorMode ? (
-                <input
-                  type="text"
-                  value={orgName}
-                  onChange={(e) => updateField("orgName", e.target.value)}
-                  className="font-display font-extrabold text-sm sm:text-base tracking-tight text-white bg-transparent border-b border-dashed border-white/20 hover:border-amber-400 focus:outline-none focus:border-amber-400 w-full truncate"
-                  title="Modifier le nom de l'organisation"
-                />
-              ) : (
-                <span className="font-display font-extrabold text-sm sm:text-base tracking-tight text-white block truncate">
-                  {orgName}
-                </span>
-              )}
-              {isEditorMode ? (
-                <input
-                  type="text"
-                  value={orgTagline}
-                  onChange={(e) => updateField("orgTagline", e.target.value)}
-                  className="text-[10px] text-zinc-400 bg-transparent border-b border-dashed border-white/10 hover:border-amber-400 focus:outline-none focus:border-amber-400 w-full truncate"
-                  title="Modifier le slogan"
-                />
-              ) : (
-                <span className="text-[10px] text-white/60 font-medium hidden sm:block truncate">
-                  {orgTagline}
-                </span>
-              )}
-            </div>
-          </div>
-
-          {/* Nav Links (Visible uniquement sur Bureau) */}
-          {isDesktop && (
-            <nav className="hidden md:flex items-center gap-6 text-xs font-semibold text-white/80">
-              <button
-                type="button"
-                onClick={() => scrollToSection("events-section")}
-                className="hover:text-white transition-colors"
-              >
-                Événements
-              </button>
-              <button
-                type="button"
-                onClick={() => scrollToSection("about-section")}
-                className="hover:text-white transition-colors"
-              >
-                À Propos
-              </button>
-              <button
-                type="button"
-                onClick={() => scrollToSection("gallery-section")}
-                className="hover:text-white transition-colors"
-              >
-                Galerie
-              </button>
-              <button
-                type="button"
-                onClick={() => scrollToSection("testimonials-section")}
-                className="hover:text-white transition-colors"
-              >
-                Avis
-              </button>
-              <button
-                type="button"
-                onClick={() => scrollToSection("faq-section")}
-                className="hover:text-white transition-colors"
-              >
-                FAQ
-              </button>
-            </nav>
-          )}
-
-          {/* Top Action */}
-          <div className="flex items-center gap-2">
-            <Button
-              size="sm"
-              onClick={() => setIsCatalogOpen(true)}
-              className={`rounded-xl text-xs font-bold px-4 gap-1.5 shadow-lg ${themeStyle.primary}`}
-            >
-              <Ticket className="size-3.5" />
-              <span>Billetterie</span>
-            </Button>
-          </div>
-        </div>
-      </header>
-
-      {/* 2. HERO SECTION OF THE ORGANIZATION (NO ETIQUETTES / BADGES) */}
-      {visibleSections.hero && (
-        <section
-          className={`relative overflow-hidden px-4 sm:px-8 group ${preset.hero === "compact" ? "pt-8 pb-8" : "pt-12 pb-16"} ${preset.hero === "fullbleed" ? "min-h-[78svh] flex items-center" : ""}`}
-        >
-          {/* Ambient Glows */}
-          <div
-            className={`absolute -top-24 left-1/2 -translate-x-1/2 size-[600px] rounded-full bg-gradient-to-b ${themeStyle.glow} blur-[120px] pointer-events-none opacity-60`}
-          />
-          <div
-            className={`absolute inset-0 bg-cover bg-center pointer-events-none transition-all ${preset.hero === "fullbleed" ? "opacity-55 stay-kenburns" : "opacity-15 mix-blend-luminosity"}`}
-            style={{ backgroundImage: `url(${orgCoverUrl})` }}
-          />
-          {preset.hero === "fullbleed" && <div className="absolute inset-0 bg-gradient-to-t from-[#090b0e] via-black/30 to-black/40 pointer-events-none" />}
-
-          {/* Hero Cover Upload Trigger (Visible in Editor Mode) */}
-          {isEditorMode && (
-            <div className="absolute top-4 right-4 z-20">
-              <Button
-                type="button"
-                size="sm"
-                variant="secondary"
-                onClick={() => heroCoverInputRef.current?.click()}
-                className="rounded-xl text-xs font-bold bg-black/70 hover:bg-black text-white border border-white/20 gap-1.5 backdrop-blur-md shadow-lg"
-              >
-                <Camera className="size-3.5 text-amber-400" />
-                <span>Changer la Couverture Hero</span>
-              </Button>
-            </div>
-          )}
-
-          <div className={`relative mx-auto w-full ${preset.hero === "poster" ? "max-w-6xl grid gap-8 md:grid-cols-[1.1fr_0.9fr] items-center" : ""}`}>
-          <div className={`relative space-y-6 ${heroLeft ? "max-w-3xl text-left [&_h1]:mx-0 [&_p]:mx-0" : "mx-auto max-w-5xl text-center"}`}>
-            {/* Main Headline */}
-            {isEditorMode ? (
-              <textarea
-                value={heroHeadline}
-                onChange={(e) => updateField("heroHeadline", e.target.value)}
-                rows={2}
-                className="w-full font-display text-2xl sm:text-4xl md:text-5xl lg:text-6xl font-extrabold tracking-tight text-white leading-tight max-w-4xl mx-auto bg-transparent border border-dashed border-white/20 hover:border-amber-400 focus:outline-none focus:border-amber-400 text-center rounded-2xl p-2 resize-none"
-              />
-            ) : (
-              <h1 className={`stay-intro font-display font-extrabold tracking-tight text-white leading-tight max-w-4xl mx-auto break-words ${preset.hero === "compact" ? "text-2xl sm:text-4xl" : "text-2xl sm:text-4xl md:text-5xl lg:text-6xl"}`}>
-                {heroHeadline}
-              </h1>
-            )}
-
-            {/* Subheadline */}
-            {isEditorMode ? (
-              <textarea
-                value={heroSubheadline}
-                onChange={(e) => updateField("heroSubheadline", e.target.value)}
-                rows={2}
-                className="w-full mx-auto max-w-2xl text-xs sm:text-sm md:text-base text-zinc-300 leading-relaxed bg-transparent border border-dashed border-white/20 hover:border-amber-400 focus:outline-none focus:border-amber-400 text-center rounded-xl p-2 resize-none"
-              />
-            ) : (
-              <p className="mx-auto max-w-2xl text-xs sm:text-sm md:text-base text-zinc-300 leading-relaxed">
-                {heroSubheadline}
-              </p>
-            )}
-
-            {/* Action CTAs (Clean without emojis) */}
-            <div className={`stay-intro flex flex-wrap items-center gap-3 pt-2 ${heroLeft ? "justify-start" : "justify-center"}`} style={{ "--i": 2 } as React.CSSProperties}>
-              <Button
-                size="lg"
-                onClick={() => setIsCatalogOpen(true)}
-                className={`rounded-2xl text-sm font-bold px-7 py-6 gap-2 shadow-xl ${themeStyle.primary}`}
-              >
-                <span>{heroCtaText.replace(/[\u{1F300}-\u{1F9FF}]/gu, "").trim() || "Explorer la Programmation"}</span>
-                <ArrowRight className="size-4" />
-              </Button>
-            </div>
-
-            {/* Key Stats Strip (Directly Editable in Editor Mode) */}
-            {visibleSections.stats && preset.stats && (
-              <div className={statsGridClass}>
-                <div className="rounded-2xl border border-white/10 bg-white/5 p-4 backdrop-blur-md text-center space-y-1">
-                  {isEditorMode ? (
-                    <input
-                      type="text"
-                      value={statParticipants}
-                      onChange={(e) => updateField("statParticipants", e.target.value)}
-                      className={`w-full font-display text-2xl font-black ${themeStyle.primaryText} bg-transparent text-center focus:outline-none border-b border-dashed border-white/20`}
-                    />
-                  ) : (
-                    <p className={`font-display text-2xl font-black ${themeStyle.primaryText}`}>
-                      {statParticipants}
-                    </p>
-                  )}
-                  <p className="text-[11px] text-zinc-400 font-medium">Participants Accueillis</p>
-                </div>
-
-                <div className="rounded-2xl border border-white/10 bg-white/5 p-4 backdrop-blur-md text-center space-y-1">
-                  {isEditorMode ? (
-                    <input
-                      type="text"
-                      value={statEvents}
-                      onChange={(e) => updateField("statEvents", e.target.value)}
-                      className={`w-full font-display text-2xl font-black ${themeStyle.primaryText} bg-transparent text-center focus:outline-none border-b border-dashed border-white/20`}
-                    />
-                  ) : (
-                    <p className={`font-display text-2xl font-black ${themeStyle.primaryText}`}>
-                      {statEvents}
-                    </p>
-                  )}
-                  <p className="text-[11px] text-zinc-400 font-medium">Éditions & Événements</p>
-                </div>
-
-                <div className="rounded-2xl border border-white/10 bg-white/5 p-4 backdrop-blur-md text-center space-y-1">
-                  {isEditorMode ? (
-                    <input
-                      type="text"
-                      value={statSatisfaction}
-                      onChange={(e) => updateField("statSatisfaction", e.target.value)}
-                      className={`w-full font-display text-2xl font-black ${themeStyle.primaryText} bg-transparent text-center focus:outline-none border-b border-dashed border-white/20`}
-                    />
-                  ) : (
-                    <p className={`font-display text-2xl font-black ${themeStyle.primaryText}`}>
-                      {statSatisfaction}
-                    </p>
-                  )}
-                  <p className="text-[11px] text-zinc-400 font-medium">Avis & Satisfaction</p>
-                </div>
-
-                <div className="rounded-2xl border border-white/10 bg-white/5 p-4 backdrop-blur-md text-center space-y-1">
-                  {isEditorMode ? (
-                    <input
-                      type="text"
-                      value={statSecurity}
-                      onChange={(e) => updateField("statSecurity", e.target.value)}
-                      className={`w-full font-display text-2xl font-black ${themeStyle.primaryText} bg-transparent text-center focus:outline-none border-b border-dashed border-white/20`}
-                    />
-                  ) : (
-                    <p className={`font-display text-2xl font-black ${themeStyle.primaryText}`}>
-                      {statSecurity}
-                    </p>
-                  )}
-                  <p className="text-[11px] text-zinc-400 font-medium">Billets QR Anti-Fraude</p>
-                </div>
-              </div>
-            )}
-          </div>
-          {preset.hero === "poster" && events[0] && (
+      {/* Barre de navigation */}
+      <header className="sticky top-0 z-30 border-b border-white/10 bg-[var(--sc-glass)] backdrop-blur-md">
+        <div className="mx-auto flex max-w-6xl items-center justify-between gap-3 px-4 py-3 @3xl:px-8">
+          <div className="flex min-w-0 items-center gap-3">
             <button
               type="button"
-              onClick={() => handleOpenEventDetails(events[0])}
-              className="stay-intro relative aspect-[3/4] w-full overflow-hidden rounded-[2rem] border border-white/15 shadow-2xl text-left"
-              style={{ "--i": 2 } as React.CSSProperties}
+              disabled={!editor}
+              onClick={() => pickImage((url) => set("orgLogoUrl", url))}
+              title={editor ? "Changer le logo" : undefined}
+              className={cn(
+                "group/logo relative flex size-10 shrink-0 items-center justify-center overflow-hidden rounded-xl bg-white/10",
+                editor && "cursor-pointer outline-1 outline-dashed outline-white/40"
+              )}
             >
-              {/* eslint-disable-next-line @next/next/no-img-element */}
-              <img src={events[0].coverImageUrl} alt={events[0].title} className="size-full object-cover" />
-              <span className="absolute inset-x-0 bottom-0 bg-gradient-to-t from-black via-black/60 to-transparent p-5">
-                <span className="block text-[11px] font-bold uppercase tracking-wider text-white/70">Prochain événement</span>
-                <span className="mt-1 block font-display text-xl font-extrabold text-white">{events[0].title}</span>
-                <span className="mt-1 block text-xs text-white/80">{events[0].date} · {events[0].location}</span>
-              </span>
+              {s.orgLogoUrl ? (
+                // eslint-disable-next-line @next/next/no-img-element
+                <img src={s.orgLogoUrl} alt={s.orgName} className="size-full object-contain p-1" />
+              ) : (
+                <span className="text-sm font-bold">{s.orgName.charAt(0) || "G"}</span>
+              )}
+              {editor && (
+                <span className="absolute inset-0 flex items-center justify-center bg-black/70 opacity-0 transition group-hover/logo:opacity-100">
+                  <Camera className="size-4" />
+                </span>
+              )}
             </button>
-          )}
+            <div className="min-w-0">
+              {editor ? (
+                <input
+                  value={s.orgName}
+                  onChange={(e) => set("orgName", e.target.value)}
+                  maxLength={120}
+                  placeholder="Nom de l'organisation"
+                  className={cn(EDIT_FIELD, "py-0.5 font-bold")}
+                />
+              ) : (
+                <p className="truncate font-bold">{s.orgName}</p>
+              )}
+              {!editor && s.orgTagline && <p className="hidden truncate text-xs text-white/55 @xl:block">{s.orgTagline}</p>}
+            </div>
           </div>
-        </section>
-      )}
 
-      {/* 3. SECTION ÉVÉNEMENTS */}
-      {visibleSections.events && (
-        <section id="events-section" style={sectionOrder("events")} className="py-16 px-4 sm:px-8 border-t border-white/10 bg-[#06080a]">
-          <div className="mx-auto max-w-6xl space-y-7">
-            {/* Section Header */}
-            <div className="flex flex-col sm:flex-row sm:items-end justify-between gap-4">
-              <div>
-                <div className="inline-flex items-center gap-1.5 text-xs font-bold uppercase tracking-wider text-emerald-400 mb-1">
-                  <Ticket className="size-3.5" />
-                  <span>Programmation en Vedette</span>
-                </div>
-                <h2 className="font-display text-2xl sm:text-4xl font-extrabold text-white tracking-tight">
-                  Nos Grands Événements à la Une
-                </h2>
+          <nav className="hidden items-center gap-6 text-sm text-white/70 @4xl:flex">
+            {navSections.map((k) => (
+              <button key={k} type="button" onClick={() => scrollToId(SECTION_IDS[k])} className="transition hover:text-white">
+                {NAV_LABELS[k]}
+              </button>
+            ))}
+          </nav>
+
+          <button type="button" onClick={() => scrollToId(SECTION_IDS.events)} className={cn(ACCENT_BTN, "h-10 shrink-0 px-4 text-sm")}>
+            <Ticket className="size-4" /> Billets
+          </button>
+        </div>
+        {editor && (
+          <div className="mx-auto max-w-6xl px-4 pb-3 @3xl:px-8">
+            <input
+              value={s.orgTagline}
+              onChange={(e) => set("orgTagline", e.target.value)}
+              maxLength={200}
+              placeholder="Slogan (affiché sous le nom)"
+              className={cn(EDIT_FIELD, "text-xs text-white/70")}
+            />
+          </div>
+        )}
+      </header>
+
+      <main className="flex flex-col">
+        {hero}
+
+        {rendered("events") && (
+          <Section id={SECTION_IDS.events} order={order("events")} alt>
+            <SectionHead eyebrow="Billetterie" title="Prochains événements" action={moreLink} />
+            {eventsList}
+          </Section>
+        )}
+
+        {rendered("about") && (
+          <Section id={SECTION_IDS.about} order={order("about")} ghost={ghost("about")}>
+            <div className="grid items-center gap-10 @3xl:grid-cols-2">
+              <div className="space-y-4">
+                <p className={cn("text-xs font-semibold uppercase tracking-[0.18em]", ACCENT_TEXT)}>À propos</p>
+                <EditableText
+                  editor={editor}
+                  as="h2"
+                  value={s.aboutTitle}
+                  onChange={(v) => set("aboutTitle", v)}
+                  placeholder="Qui sommes-nous ?"
+                  maxLength={160}
+                  className="text-3xl font-bold tracking-tight @3xl:text-4xl"
+                />
+                <EditableText
+                  editor={editor}
+                  multiline
+                  value={s.aboutText}
+                  onChange={(v) => set("aboutText", v)}
+                  placeholder="Présentez votre organisation, votre histoire, ce qui rend vos événements uniques…"
+                  maxLength={3000}
+                  className="text-base leading-relaxed text-white/70"
+                />
               </div>
-
-              {/* Indicateur de défilement horizontal sur mobile */}
-              {isMobile && (
-                <div className="flex items-center gap-1 text-[11px] font-semibold text-emerald-400">
-                  <span>Glisser horizontalement</span>
-                  <ArrowRight className="size-3 animate-pulse" />
+              {(s.orgCoverUrl || editor) && (
+                <div className="relative aspect-[4/3] overflow-hidden rounded-3xl border border-white/10 bg-white/5">
+                  {s.orgCoverUrl && (
+                    // eslint-disable-next-line @next/next/no-img-element
+                    <img src={s.orgCoverUrl} alt={s.orgName} className="size-full object-cover" />
+                  )}
+                  {editor && (
+                    <button
+                      type="button"
+                      onClick={() => pickImage((url) => set("orgCoverUrl", url))}
+                      className="absolute inset-0 flex items-center justify-center gap-2 bg-black/50 text-sm font-semibold opacity-0 transition hover:opacity-100"
+                    >
+                      <Camera className="size-4" /> Changer la photo
+                    </button>
+                  )}
                 </div>
               )}
             </div>
+          </Section>
+        )}
 
-            {/* Variante « agenda » : liste chronologique compacte */}
-            {preset.events === "agenda" && (
-              <ol className="divide-y divide-white/10 rounded-3xl border border-white/10 bg-white/[0.03]">
-                {events.slice(0, shownCount).map((evt, i) => (
-                  <li key={evt.id} className="stay-reveal flex flex-wrap items-center gap-4 p-4 sm:flex-nowrap" data-shown="true" style={{ "--i": i } as React.CSSProperties}>
-                    <div className={`flex size-16 shrink-0 flex-col items-center justify-center rounded-2xl border border-white/15 ${themeStyle.primaryText}`}>
-                      <Calendar className="size-4" />
-                      <span className="mt-1 text-[10px] font-bold text-white/80">{evt.date.split(" ").slice(0, 2).join(" ")}</span>
-                    </div>
-                    <div className="min-w-0 flex-1">
-                      <p className="text-[11px] font-bold uppercase tracking-wider text-white/60">{evt.category}</p>
-                      <h3 className="truncate font-display text-lg font-extrabold text-white">{evt.title}</h3>
-                      <p className="truncate text-xs text-zinc-400">{evt.date} · {evt.location}</p>
-                    </div>
-                    <span className={`font-mono text-xs font-black ${themeStyle.primaryText}`}>Dès {evt.startingPrice.toLocaleString("fr-FR")} FCFA</span>
-                    <Button onClick={() => handleOpenEventDetails(evt)} className={`rounded-xl text-xs font-bold gap-1.5 ${themeStyle.primary}`}>
-                      <Ticket className="size-3.5" /> Billets
-                    </Button>
-                  </li>
-                ))}
-                {events.length === 0 && <li className="p-6 text-center text-sm text-zinc-400">Aucun événement pour le moment.</li>}
-              </ol>
-            )}
-
-            {/* Cards Row/Grid: Linear Horizontal Scroll on Mobile, 2 cols on Tablet, 4 cols on Desktop
-                (ou carrousel / mise en avant selon la variante de mise en page) */}
-            <div
-              className={
-                preset.events === "agenda"
-                  ? "hidden"
-                  : preset.events === "carousel" && !isMobile
-                    ? "-mx-4 flex snap-x snap-mandatory gap-4 overflow-x-auto px-4 pb-3 [&>*]:w-[280px] [&>*]:shrink-0 [&>*]:snap-start"
-                    : preset.events === "featured" && isDesktop
-                      ? "grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 [&>*:first-child]:sm:col-span-2 [&>*:first-child]:lg:row-span-2"
-                      : eventsContainerClass
-              }
-            >
-              {/* PREMIERS ÉVÉNEMENTS */}
-              {events.slice(0, shownCount).map((evt, i) => (
-                <div
-                  key={evt.id}
-                  className={`group rounded-3xl border border-white/10 bg-white/[0.03] hover:bg-white/[0.06] hover:border-white/20 transition-all duration-300 overflow-hidden flex flex-col justify-between shadow-xl relative stay-lift ${eventCardClass}`}
-                >
-                  {/* Event Image Banner */}
-                  <div
-                    className={`relative w-full overflow-hidden bg-zinc-900 ${
-                      preset.events === "posters" ? "h-72" : preset.events === "featured" && i === 0 ? "h-44 lg:h-80" : "h-44"
-                    }`}
-                  >
-                    {/* eslint-disable-next-line @next/next/no-img-element */}
-                    <img
-                      src={evt.coverImageUrl}
-                      alt={evt.title}
-                      className="h-full w-full object-cover group-hover:scale-105 transition-transform duration-500"
-                    />
-                    <div className="absolute inset-0 bg-gradient-to-t from-black via-black/40 to-transparent" />
-
-                    {/* Direct Poster Upload Button in Editor Mode */}
-                    {isEditorMode && (
+        {rendered("gallery") && (
+          <Section id={SECTION_IDS.gallery} order={order("gallery")} alt ghost={ghost("gallery")}>
+            <SectionHead eyebrow="Galerie" title="En images" />
+            <div className="grid grid-cols-2 gap-3 @3xl:grid-cols-3">
+              {s.galleryImages.map((img, i) => (
+                <div key={`${i}-${img.slice(-12)}`} className="group/img relative aspect-[4/3] overflow-hidden rounded-2xl bg-white/5">
+                  {/* eslint-disable-next-line @next/next/no-img-element */}
+                  <img src={img} alt={`Photo ${i + 1}`} className="size-full object-cover transition duration-500 group-hover/img:scale-105" />
+                  {editor && (
+                    <div className="absolute inset-0 flex items-center justify-center gap-2 bg-black/55 opacity-0 transition group-hover/img:opacity-100">
                       <button
                         type="button"
-                        onClick={() => {
-                          setTargetEventCoverId(evt.id);
-                          eventCoverInputRef.current?.click();
-                        }}
-                        className="absolute top-2.5 right-2.5 z-10 px-2.5 py-1.5 rounded-xl bg-black/90 hover:bg-black text-amber-300 hover:text-amber-200 border border-amber-500/40 text-xs font-bold flex items-center gap-1.5 backdrop-blur-md opacity-0 group-hover:opacity-100 transition-opacity shadow-lg shadow-black/60"
-                        title="Changer l'affiche"
+                        onClick={() => pickImage((url) => s.updateGalleryImage(i, url))}
+                        className="rounded-full bg-white/90 p-2 text-black"
+                        aria-label="Remplacer la photo"
                       >
-                        <Camera className="size-3.5 text-amber-400" />
-                        <span>Modifier</span>
+                        <Camera className="size-4" />
                       </button>
-                    )}
-
-                    {/* Badges on Banner */}
-                    <div className="absolute top-2.5 left-2.5 flex flex-wrap gap-1.5">
-                      <span className="rounded-full bg-black/70 backdrop-blur-md border border-white/20 px-2 py-0.5 text-[10px] font-bold text-white">
-                        {evt.category}
-                      </span>
-                    </div>
-
-                    {/* Starting Price Tag */}
-                    <div className="absolute bottom-2.5 right-2.5 rounded-lg bg-black/80 backdrop-blur-md border border-white/20 px-2 py-0.5">
-                      <span className={`font-mono font-black text-xs ${themeStyle.primaryText}`}>
-                        Dès {evt.startingPrice.toLocaleString("fr-FR")} FCFA
-                      </span>
-                    </div>
-                  </div>
-
-                  {/* Event Body Info */}
-                  <div className="p-4 space-y-3 flex-1 flex flex-col justify-between">
-                    <div className="space-y-2">
-                      {isEditorMode ? (
-                        <input
-                          type="text"
-                          value={evt.title}
-                          onChange={(e) => updateEvent(evt.id, { title: e.target.value })}
-                          className="w-full font-display font-extrabold text-sm text-white bg-transparent border-b border-dashed border-white/20 hover:border-amber-400 focus:outline-none focus:border-amber-400"
-                          title="Modifier le titre"
-                        />
-                      ) : (
-                        <h3 className="font-display font-extrabold text-sm text-white group-hover:text-amber-400 transition-colors line-clamp-1" title={evt.title}>
-                          {evt.title}
-                        </h3>
-                      )}
-
-                      <p className="text-[11px] text-zinc-400 line-clamp-2 leading-relaxed">
-                        {evt.description}
-                      </p>
-
-                      <div className="space-y-1 pt-1 text-[11px] text-zinc-300">
-                        <div className="flex items-center gap-1.5">
-                          <Calendar className="size-3 text-emerald-400 shrink-0" />
-                          <span className="truncate">{evt.date}</span>
-                        </div>
-                        <div className="flex items-center gap-1.5">
-                          <MapPin className="size-3 text-rose-400 shrink-0" />
-                          <span className="truncate">{evt.location}</span>
-                        </div>
-                      </div>
-                    </div>
-
-                    {/* Action Button */}
-                    <div className="pt-2 border-t border-white/10">
-                      <Button
-                        onClick={() => handleOpenEventDetails(evt)}
-                        className={`w-full rounded-xl text-xs font-bold py-2 gap-1.5 shadow-md ${themeStyle.primary}`}
+                      <button
+                        type="button"
+                        onClick={() => set("galleryImages", removeAt(s.galleryImages, i))}
+                        className="rounded-full bg-white/90 p-2 text-black"
+                        aria-label="Retirer la photo"
                       >
-                        <Ticket className="size-3.5" />
-                        <span>Réserver</span>
-                        <ChevronRight className="size-3.5" />
-                      </Button>
+                        <Trash2 className="size-4" />
+                      </button>
                     </div>
-                  </div>
+                  )}
                 </div>
               ))}
-
-              {/* 4TH CARD: INTERACTIVE "VOIR TOUT LE CATALOGUE" PORTAL CARD */}
-              <div
-                onClick={() => setIsCatalogOpen(true)}
-                className={`group rounded-3xl border-2 border-dashed border-white/20 hover:border-emerald-500 bg-gradient-to-br from-emerald-950/30 via-white/[0.02] to-teal-950/30 p-5 flex flex-col justify-between cursor-pointer transition-all duration-300 hover:scale-[1.01] shadow-2xl relative overflow-hidden min-h-[340px] ${eventCardClass}`}
-              >
-                <div className="space-y-3">
-                  <div className="flex items-center justify-between">
-                    <div className="flex size-10 items-center justify-center rounded-xl bg-emerald-500/20 text-emerald-400 border border-emerald-500/30 group-hover:scale-110 transition-transform">
-                      <Search className="size-5" />
-                    </div>
-                    <span className="rounded-full bg-emerald-500/15 border border-emerald-500/30 px-2.5 py-0.5 text-[10px] font-bold text-emerald-400">
-                      +{events.length - shownCount > 0 ? events.length - shownCount : "Tous"} Événements
-                    </span>
-                  </div>
-
-                  <div className="space-y-1.5">
-                    <h3 className="font-display font-extrabold text-lg text-white group-hover:text-emerald-400 transition-colors leading-tight">
-                      Voir Tout le Catalogue
-                    </h3>
-                    <p className="text-[11px] text-zinc-400 leading-relaxed">
-                      Accédez à la programmation complète, utilisez la recherche par mot-clé et réservez vos billets en ligne.
-                    </p>
-                  </div>
-
-                  <div className="space-y-1 pt-1 text-[10px] text-zinc-300">
-                    <div className="flex items-center gap-1.5">
-                      <CheckCircle2 className="size-3 text-emerald-400" />
-                      <span>Moteur de recherche direct</span>
-                    </div>
-                    <div className="flex items-center gap-1.5">
-                      <CheckCircle2 className="size-3 text-emerald-400" />
-                      <span>Filtres par catégorie & date</span>
-                    </div>
-                    <div className="flex items-center gap-1.5">
-                      <CheckCircle2 className="size-3 text-emerald-400" />
-                      <span>Paiement Airtel & Moov Money</span>
-                    </div>
-                  </div>
-                </div>
-
-                <div className="pt-4 border-t border-white/10 flex items-center justify-between">
-                  <span className="font-bold text-xs text-emerald-400 group-hover:underline">
-                    Ouvrir le catalogue
-                  </span>
-                  <div className="flex size-8 items-center justify-center rounded-xl bg-emerald-500 text-black group-hover:translate-x-1 transition-transform">
-                    <ArrowRight className="size-4" />
-                  </div>
-                </div>
-              </div>
-            </div>
-          </div>
-        </section>
-      )}
-
-      {/* 4. SECTION À PROPOS DE L'ORGANISATION & NOTRE VISION */}
-      {visibleSections.about && (
-        <section id="about-section" style={sectionOrder("about")} className="py-16 px-4 sm:px-8 border-t border-white/10 bg-[#090b0e]">
-          <div className={`mx-auto max-w-5xl ${aboutGridClass}`}>
-            <div className="space-y-5">
-              <div className="inline-flex items-center gap-1.5 text-xs font-bold uppercase tracking-wider text-amber-400">
-                <Award className="size-3.5" />
-                <span>Savoir-Faire & Vision</span>
-              </div>
-
-              {isEditorMode ? (
-                <input
-                  type="text"
-                  value={aboutTitle}
-                  onChange={(e) => updateField("aboutTitle", e.target.value)}
-                  className="w-full font-display text-2xl sm:text-4xl font-extrabold text-white tracking-tight leading-tight bg-transparent border-b border-dashed border-white/20 hover:border-amber-400 focus:outline-none"
-                />
-              ) : (
-                <h2 className="font-display text-2xl sm:text-4xl font-extrabold text-white tracking-tight leading-tight">
-                  {aboutTitle}
-                </h2>
-              )}
-
-              {isEditorMode ? (
-                <textarea
-                  value={aboutText}
-                  onChange={(e) => updateField("aboutText", e.target.value)}
-                  rows={5}
-                  className="w-full text-xs sm:text-sm text-zinc-300 leading-relaxed bg-transparent border border-dashed border-white/20 hover:border-amber-400 focus:outline-none rounded-xl p-2 resize-none"
-                />
-              ) : (
-                <p className="text-xs sm:text-sm text-zinc-300 leading-relaxed">
-                  {aboutText}
-                </p>
-              )}
-
-              <div className="space-y-3 pt-2">
-                <div className="flex items-start gap-3">
-                  <div className="flex size-6 shrink-0 items-center justify-center rounded-lg bg-emerald-500/20 text-emerald-400 mt-0.5">
-                    <CheckCircle2 className="size-4" />
-                  </div>
-                  <div>
-                    <h4 className="text-xs font-bold text-white">Scénographie & Régie Haute Définition</h4>
-                    <p className="text-[11px] text-zinc-400">Équipements son et lumière de niveau festival international.</p>
-                  </div>
-                </div>
-
-                <div className="flex items-start gap-3">
-                  <div className="flex size-6 shrink-0 items-center justify-center rounded-lg bg-emerald-500/20 text-emerald-400 mt-0.5">
-                    <CheckCircle2 className="size-4" />
-                  </div>
-                  <div>
-                    <h4 className="text-xs font-bold text-white">Billetterie & Paiement Mobile Money Instantané</h4>
-                    <p className="text-[11px] text-zinc-400">Achat direct par Airtel Money et Moov Money sans intermédiaire.</p>
-                  </div>
-                </div>
-
-                <div className="flex items-start gap-3">
-                  <div className="flex size-6 shrink-0 items-center justify-center rounded-lg bg-emerald-500/20 text-emerald-400 mt-0.5">
-                    <CheckCircle2 className="size-4" />
-                  </div>
-                  <div>
-                    <h4 className="text-xs font-bold text-white">Contrôle d&apos;Accès & Attestations Certifiées</h4>
-                    <p className="text-[11px] text-zinc-400">QR codes infalsifiables et diplômes numériques délivrés après présence.</p>
-                  </div>
-                </div>
-              </div>
-            </div>
-
-            <div className="group relative rounded-3xl border border-white/10 bg-white/5 p-2 shadow-2xl overflow-hidden">
-              {/* eslint-disable-next-line @next/next/no-img-element */}
-              <img
-                src={orgCoverUrl}
-                alt={orgName}
-                className="rounded-2xl w-full h-80 object-cover"
-              />
-              {isEditorMode && (
+              {editor && s.galleryImages.length < 12 && (
                 <button
                   type="button"
-                  onClick={() => aboutImageInputRef.current?.click()}
-                  className="absolute inset-0 bg-black/70 backdrop-blur-xs opacity-0 group-hover:opacity-100 flex items-center justify-center gap-2 text-white font-extrabold text-xs transition-opacity"
+                  onClick={() => pickImage((url) => set("galleryImages", [...useShowcaseStore.getState().galleryImages, url]))}
+                  className="flex aspect-[4/3] flex-col items-center justify-center gap-2 rounded-2xl border border-dashed border-white/25 text-sm text-white/60 transition hover:border-white/50 hover:text-white"
                 >
-                  <div className="flex items-center gap-2 rounded-xl bg-black/90 border border-amber-500/50 px-4 py-2 text-amber-300 shadow-xl">
-                    <Camera className="size-4.5 text-amber-400" />
-                    <span>Remplacer la Photo À Propos</span>
-                  </div>
+                  <ImagePlus className="size-6" /> Ajouter une photo
                 </button>
               )}
             </div>
-          </div>
-        </section>
-      )}
+          </Section>
+        )}
 
-      {/* 5. GALERIE & MOMENTS FORTS */}
-      {visibleSections.gallery && (
-        <section id="gallery-section" style={sectionOrder("gallery")} className="py-16 px-4 sm:px-8 border-t border-white/10 bg-[#06080a]">
-          <div className="mx-auto max-w-6xl space-y-8">
-            <div className="text-center space-y-2 max-w-2xl mx-auto">
-              <h2 className="font-display text-2xl sm:text-4xl font-extrabold text-white tracking-tight">
-                Galerie des Moments Forts
-              </h2>
-              <p className="text-xs sm:text-sm text-zinc-400">
-                Retour en images sur l&apos;énergie et la ferveur de nos dernières productions au Gabon.
-              </p>
-            </div>
-
-            <div className={galleryGridClass}>
-              {galleryImages.map((img, idx) => (
-                <div
-                  key={idx}
-                  className="group relative h-44 sm:h-60 rounded-2xl overflow-hidden bg-zinc-900 border border-white/10 shadow-lg"
-                >
-                  {/* eslint-disable-next-line @next/next/no-img-element */}
-                  <img
-                    src={img}
-                    alt={`Galerie ${idx + 1}`}
-                    className="h-full w-full object-cover group-hover:scale-105 transition-transform duration-500"
-                  />
-                  <div className="absolute inset-0 bg-black/30 group-hover:bg-black/60 transition-colors" />
-
-                  {/* Direct Image Upload on Hover in Editor Mode */}
-                  {isEditorMode && (
-                    <button
-                      type="button"
-                      onClick={() => {
-                        setTargetGalleryIdx(idx);
-                        galleryInputRef.current?.click();
-                      }}
-                      className="absolute inset-0 bg-black/70 backdrop-blur-xs opacity-0 group-hover:opacity-100 flex items-center justify-center gap-1.5 text-white font-extrabold text-xs transition-opacity"
-                    >
-                      <div className="flex items-center gap-1.5 rounded-xl bg-black/90 border border-amber-500/50 px-3 py-1.5 text-amber-300 shadow-xl">
-                        <Camera className="size-4 text-amber-400" />
-                        <span>Changer la Photo</span>
-                      </div>
-                    </button>
-                  )}
-                </div>
-              ))}
-            </div>
-          </div>
-        </section>
-      )}
-
-      {/* 6. AVIS DES PARTICIPANTS & TÉMOIGNAGES */}
-      {visibleSections.testimonials && (
-        <section id="testimonials-section" style={sectionOrder("testimonials")} className="py-16 px-4 sm:px-8 border-t border-white/10 bg-[#090b0e]">
-          <div className="mx-auto max-w-6xl space-y-8">
-            <div className="text-center space-y-2 max-w-2xl mx-auto">
-              <h2 className="font-display text-2xl sm:text-4xl font-extrabold text-white tracking-tight">
-                Ce que disent nos Participants
-              </h2>
-              <p className="text-xs sm:text-sm text-zinc-400">
-                Des milliers de festivaliers, congressistes et professionnels nous font confiance chaque année.
-              </p>
-            </div>
-
-            <div className={testimonialsGridClass}>
-              {testimonials.map((test) => (
-                <div
-                  key={test.id}
-                  className="rounded-3xl border border-white/10 bg-white/[0.03] p-6 space-y-4 flex flex-col justify-between shadow-xl"
-                >
-                  <div className="space-y-3">
-                    <div className="flex items-center gap-1">
-                      {[...Array(test.rating)].map((_, i) => (
-                        <Star key={i} className="size-4 fill-amber-400 text-amber-400" />
-                      ))}
-                    </div>
-                    <p className="text-xs text-zinc-300 leading-relaxed italic">
-                      &ldquo;{test.comment}&rdquo;
-                    </p>
+        {rendered("testimonials") && (
+          <Section id={SECTION_IDS.testimonials} order={order("testimonials")} ghost={ghost("testimonials")}>
+            <SectionHead eyebrow="Avis" title="Ils étaient là" />
+            <div className="grid gap-4 @2xl:grid-cols-2 @4xl:grid-cols-3">
+              {s.testimonials.map((t, i) => (
+                <figure key={t.id} className="relative flex flex-col gap-4 rounded-2xl border border-white/10 bg-white/[0.04] p-6">
+                  <div className="flex gap-0.5" aria-label={`${t.rating} sur 5`}>
+                    {Array.from({ length: 5 }, (_, n) => (
+                      <button
+                        key={n}
+                        type="button"
+                        disabled={!editor}
+                        onClick={() => set("testimonials", s.testimonials.map((x, j) => (j === i ? { ...x, rating: n + 1 } : x)))}
+                        aria-label={editor ? `${n + 1} étoile(s)` : undefined}
+                      >
+                        <Star className={cn("size-4", n < t.rating ? "fill-[var(--sc-accent)] text-[var(--sc-accent)]" : "text-white/20")} />
+                      </button>
+                    ))}
                   </div>
-
-                  <div className="pt-3 border-t border-white/10 flex items-center justify-between">
-                    <div>
-                      <h4 className="text-xs font-bold text-white">{test.name}</h4>
-                      <p className="text-[10px] text-zinc-400">{test.role}</p>
-                    </div>
-                    <span className="text-[9px] font-bold text-emerald-400 bg-emerald-500/10 px-2 py-0.5 rounded-full">
-                      {test.eventName}
-                    </span>
-                  </div>
-                </div>
-              ))}
-            </div>
-          </div>
-        </section>
-      )}
-
-      {/* 7. FOIRE AUX QUESTIONS (FAQ) */}
-      {visibleSections.faq && (
-        <section id="faq-section" style={sectionOrder("faq")} className="py-16 px-4 sm:px-8 border-t border-white/10 bg-[#06080a]">
-          <div className="mx-auto max-w-4xl space-y-6">
-            <div className="text-center space-y-2">
-              <div className="inline-flex items-center gap-1.5 text-xs font-bold uppercase tracking-wider text-emerald-400">
-                <HelpCircle className="size-3.5" />
-                <span>Assistance & Réponses</span>
-              </div>
-              <h2 className="font-display text-2xl sm:text-4xl font-extrabold text-white tracking-tight">
-                Foire Aux Questions Billetterie
-              </h2>
-            </div>
-
-            <div className="space-y-3 pt-4">
-              {faqs.map((faq) => {
-                const isOpen = openFaqId === faq.id;
-                return (
-                  <div
-                    key={faq.id}
-                    className="rounded-2xl border border-white/10 bg-white/[0.02] overflow-hidden transition-all"
-                  >
-                    <button
-                      type="button"
-                      onClick={() => setOpenFaqId(isOpen ? null : faq.id)}
-                      className="w-full p-4 text-left flex items-center justify-between gap-4 font-bold text-xs sm:text-sm text-white hover:bg-white/5 transition-colors"
-                    >
-                      <span>{faq.question}</span>
-                      {isOpen ? (
-                        <ChevronUp className="size-4 text-emerald-400 shrink-0" />
-                      ) : (
-                        <ChevronDown className="size-4 text-zinc-400 shrink-0" />
-                      )}
-                    </button>
-
-                    {isOpen && (
-                      <div className="px-4 pb-4 pt-1 text-xs text-zinc-400 leading-relaxed border-t border-white/5">
-                        {faq.answer}
-                      </div>
-                    )}
-                  </div>
-                );
-              })}
-            </div>
-          </div>
-        </section>
-      )}
-
-      {/* 8. FOOTER OFFICIEL & COORDONNÉES */}
-      {visibleSections.footer && (
-        <footer style={{ order: 90 }} className="border-t border-white/10 bg-[#040507] py-12 px-4 sm:px-8 text-xs text-zinc-400">
-          <div className="mx-auto max-w-6xl space-y-8">
-            <div className={footerGridClass}>
-              <div className="space-y-3 md:col-span-2">
-                <div className="flex items-center gap-2.5">
-                  {orgLogoUrl ? (
-                    // eslint-disable-next-line @next/next/no-img-element
-                    <img
-                      src={orgLogoUrl}
-                      alt={orgName}
-                      className="size-8 rounded-lg object-contain bg-white/10 p-0.5 border border-white/20"
-                    />
+                  {editor ? (
+                    <>
+                      <textarea
+                        value={t.comment}
+                        onChange={(e) => set("testimonials", s.testimonials.map((x, j) => (j === i ? { ...x, comment: e.target.value } : x)))}
+                        placeholder="Le témoignage"
+                        maxLength={600}
+                        rows={3}
+                        className={cn(EDIT_FIELD, "resize-none text-sm [field-sizing:content]")}
+                      />
+                      <input
+                        value={t.name}
+                        onChange={(e) => set("testimonials", s.testimonials.map((x, j) => (j === i ? { ...x, name: e.target.value } : x)))}
+                        placeholder="Nom"
+                        maxLength={80}
+                        className={cn(EDIT_FIELD, "text-sm font-semibold")}
+                      />
+                      <input
+                        value={t.role}
+                        onChange={(e) => set("testimonials", s.testimonials.map((x, j) => (j === i ? { ...x, role: e.target.value } : x)))}
+                        placeholder="Qualité (ex. participante, édition 2025)"
+                        maxLength={80}
+                        className={cn(EDIT_FIELD, "text-xs text-white/60")}
+                      />
+                      <button
+                        type="button"
+                        onClick={() => set("testimonials", removeAt(s.testimonials, i))}
+                        className="absolute right-3 top-3 rounded-full p-1.5 text-white/50 hover:bg-white/10 hover:text-white"
+                        aria-label="Supprimer l'avis"
+                      >
+                        <Trash2 className="size-4" />
+                      </button>
+                    </>
                   ) : (
-                    <div className="flex size-8 items-center justify-center rounded-lg bg-white/20 text-white font-extrabold text-xs">
-                      {orgName.charAt(0)}
-                    </div>
+                    <>
+                      <blockquote className="text-sm leading-relaxed text-white/80">« {t.comment} »</blockquote>
+                      <figcaption className="mt-auto">
+                        <p className="text-sm font-semibold">{t.name}</p>
+                        {t.role && <p className="text-xs text-white/55">{t.role}</p>}
+                      </figcaption>
+                    </>
                   )}
-                  <span className="font-display font-extrabold text-base text-white">
-                    {orgName}
-                  </span>
-                </div>
-                <p className="text-xs text-zinc-400 max-w-md">
-                  {orgTagline}. Billetterie officielle en ligne et organisation d&apos;événements de référence au Gabon.
-                </p>
-                <p className="text-[10px] font-mono text-zinc-500">
-                  NIF : {nif} • RCCM : {rccm}
-                </p>
-              </div>
+                </figure>
+              ))}
+              {editor && s.testimonials.length < 20 && (
+                <button
+                  type="button"
+                  onClick={() =>
+                    set("testimonials", [
+                      ...s.testimonials,
+                      { id: `t-${Date.now()}`, name: "", role: "", comment: "", rating: 5, eventName: "" },
+                    ])
+                  }
+                  className="flex min-h-40 flex-col items-center justify-center gap-2 rounded-2xl border border-dashed border-white/25 text-sm text-white/60 transition hover:border-white/50 hover:text-white"
+                >
+                  <Plus className="size-5" /> Ajouter un avis
+                </button>
+              )}
+            </div>
+          </Section>
+        )}
 
-              <div className="space-y-2">
-                <h4 className="font-bold text-white text-xs uppercase tracking-wider">Contact & Support</h4>
-                <p className="text-xs text-zinc-300">{address}</p>
-                <p className="text-xs text-emerald-400 font-mono">WhatsApp : {whatsappNumber}</p>
-                <p className="text-xs text-zinc-300 font-mono">Tél : {supportPhone}</p>
-                <p className="text-xs text-zinc-300">{contactEmail}</p>
-              </div>
-
-              <div className="space-y-2">
-                <h4 className="font-bold text-white text-xs uppercase tracking-wider">Moyens de Paiement</h4>
-                <div className="flex flex-wrap gap-2 pt-1">
-                  <span className="rounded-lg bg-red-600/20 border border-red-500/30 px-2.5 py-1 text-[11px] font-bold text-red-400">
-                    Airtel Money
-                  </span>
-                  <span className="rounded-lg bg-blue-600/20 border border-blue-500/30 px-2.5 py-1 text-[11px] font-bold text-blue-400">
-                    Moov Money
-                  </span>
-                </div>
-                <p className="text-[10px] text-zinc-500 pt-1">Paiements 100% sécurisés et billets instantanés.</p>
+        {rendered("faq") && (
+          <Section id={SECTION_IDS.faq} order={order("faq")} alt ghost={ghost("faq")}>
+            <div className="mx-auto max-w-3xl">
+              <SectionHead eyebrow="Questions fréquentes" title="Bon à savoir" center />
+              <div className="space-y-3">
+                {s.faqs.map((f, i) =>
+                  editor ? (
+                    <div key={f.id} className="relative space-y-2 rounded-2xl border border-white/10 bg-white/[0.04] p-4 pr-12">
+                      <input
+                        value={f.question}
+                        onChange={(e) => set("faqs", s.faqs.map((x, j) => (j === i ? { ...x, question: e.target.value } : x)))}
+                        placeholder="La question"
+                        maxLength={200}
+                        className={cn(EDIT_FIELD, "font-semibold")}
+                      />
+                      <textarea
+                        value={f.answer}
+                        onChange={(e) => set("faqs", s.faqs.map((x, j) => (j === i ? { ...x, answer: e.target.value } : x)))}
+                        placeholder="La réponse"
+                        maxLength={1500}
+                        rows={2}
+                        className={cn(EDIT_FIELD, "resize-none text-sm text-white/70 [field-sizing:content]")}
+                      />
+                      <button
+                        type="button"
+                        onClick={() => set("faqs", removeAt(s.faqs, i))}
+                        className="absolute right-3 top-3 rounded-full p-1.5 text-white/50 hover:bg-white/10 hover:text-white"
+                        aria-label="Supprimer la question"
+                      >
+                        <Trash2 className="size-4" />
+                      </button>
+                    </div>
+                  ) : (
+                    <FaqItem key={f.id} question={f.question} answer={f.answer} />
+                  )
+                )}
+                {editor && s.faqs.length < 30 && (
+                  <button
+                    type="button"
+                    onClick={() => set("faqs", [...s.faqs, { id: `faq-${Date.now()}`, question: "", answer: "" }])}
+                    className="flex w-full items-center justify-center gap-2 rounded-2xl border border-dashed border-white/25 p-4 text-sm text-white/60 transition hover:border-white/50 hover:text-white"
+                  >
+                    <Plus className="size-4" /> Ajouter une question
+                  </button>
+                )}
               </div>
             </div>
+          </Section>
+        )}
+      </main>
 
-            <div className="pt-6 border-t border-white/10 flex flex-col sm:flex-row items-center justify-between gap-3 text-[11px] text-zinc-500">
-              <p>© {new Date().getFullYear()} {orgName}. Tous droits réservés.</p>
-              <p className="flex items-center gap-1.5 text-zinc-400">
-                <span>Propulsé par la billetterie</span>
-                <strong className="text-white font-display">GiyaX</strong>
-              </p>
+      {/* Pied de page */}
+      {rendered("footer") && (
+        <footer className="border-t border-white/10 bg-black/30 px-4 py-12 text-sm @3xl:px-8">
+          <div className="mx-auto grid max-w-6xl gap-10 @3xl:grid-cols-[1.4fr_1fr_1fr]">
+            <div className="space-y-3">
+              <p className="text-lg font-bold">{s.orgName}</p>
+              {s.orgTagline && <p className="max-w-sm text-white/60">{s.orgTagline}</p>}
             </div>
+
+            <div className="space-y-2.5">
+              <p className="text-xs font-semibold uppercase tracking-[0.18em] text-white/50">Contact</p>
+              {editor ? (
+                <div className="space-y-2">
+                  {(
+                    [
+                      ["address", "Adresse", 300],
+                      ["supportPhone", "Téléphone", 30],
+                      ["whatsappNumber", "WhatsApp (ex. +241 77 12 34 56)", 30],
+                      ["contactEmail", "E-mail", 120],
+                      ["instagramHandle", "Instagram (ex. @monorganisation)", 60],
+                      ["facebookUrl", "Page Facebook (https://…)", 300],
+                    ] as const
+                  ).map(([key, label, max]) => (
+                    <input
+                      key={key}
+                      value={s[key]}
+                      onChange={(e) => set(key, e.target.value)}
+                      placeholder={label}
+                      maxLength={max}
+                      className={cn(EDIT_FIELD, "text-sm")}
+                    />
+                  ))}
+                </div>
+              ) : (
+                <ul className="space-y-2 text-white/70">
+                  {s.address && (
+                    <li className="flex items-start gap-2">
+                      <MapPin className="mt-0.5 size-4 shrink-0" /> {s.address}
+                    </li>
+                  )}
+                  {s.supportPhone && (
+                    <li>
+                      <a href={`tel:${s.supportPhone.replace(/\s/g, "")}`} className="flex items-center gap-2 hover:text-white">
+                        <Phone className="size-4 shrink-0" /> {s.supportPhone}
+                      </a>
+                    </li>
+                  )}
+                  {whatsapp && (
+                    <li>
+                      <a href={`https://wa.me/${whatsapp}`} target="_blank" rel="noreferrer" className="flex items-center gap-2 hover:text-white">
+                        <MessageCircle className="size-4 shrink-0" /> WhatsApp {s.whatsappNumber}
+                      </a>
+                    </li>
+                  )}
+                  {s.contactEmail && (
+                    <li>
+                      <a href={`mailto:${s.contactEmail}`} className="flex items-center gap-2 hover:text-white">
+                        <Mail className="size-4 shrink-0" /> {s.contactEmail}
+                      </a>
+                    </li>
+                  )}
+                  {(s.instagramHandle || s.facebookUrl) && (
+                    <li className="flex flex-wrap gap-x-4 gap-y-1 pt-1">
+                      {s.instagramHandle && (
+                        <a
+                          href={`https://instagram.com/${s.instagramHandle.replace(/^@/, "")}`}
+                          target="_blank"
+                          rel="noreferrer"
+                          className="hover:text-white"
+                        >
+                          Instagram
+                        </a>
+                      )}
+                      {/^https:\/\//.test(s.facebookUrl) && (
+                        <a href={s.facebookUrl} target="_blank" rel="noreferrer" className="hover:text-white">
+                          Facebook
+                        </a>
+                      )}
+                    </li>
+                  )}
+                </ul>
+              )}
+            </div>
+
+            <div className="space-y-2.5">
+              <p className="text-xs font-semibold uppercase tracking-[0.18em] text-white/50">Paiement</p>
+              <p className="text-white/70">Airtel Money · Moov Money</p>
+              <p className="text-xs text-white/50">Billet avec QR code envoyé dès le paiement.</p>
+            </div>
+          </div>
+
+          <div className="mx-auto mt-10 flex max-w-6xl flex-col gap-3 border-t border-white/10 pt-6 text-xs text-white/45 @3xl:flex-row @3xl:items-center @3xl:justify-between">
+            <p>
+              © {new Date().getFullYear()} {s.orgName}
+              {!editor && (s.nif || s.rccm) && ` · ${[s.nif && `NIF ${s.nif}`, s.rccm && `RCCM ${s.rccm}`].filter(Boolean).join(" · ")}`}
+            </p>
+            {editor && (
+              <div className="flex gap-2">
+                <input value={s.nif} onChange={(e) => set("nif", e.target.value)} placeholder="NIF" maxLength={60} className={cn(EDIT_FIELD, "text-xs")} />
+                <input value={s.rccm} onChange={(e) => set("rccm", e.target.value)} placeholder="RCCM" maxLength={60} className={cn(EDIT_FIELD, "text-xs")} />
+              </div>
+            )}
+            <p>
+              Billetterie propulsée par <span className="font-semibold text-white/70">GiyaX</span>
+            </p>
           </div>
         </footer>
       )}
 
-      {/* Bouton billets toujours visible sur mobile (variantes « sticky ») */}
-      {preset.sticky && !isEditorMode && (
-        <div className="fixed inset-x-0 bottom-0 z-40 border-t border-white/10 bg-[#090b0e]/95 p-3 backdrop-blur md:hidden">
-          <Button onClick={() => setIsCatalogOpen(true)} className={`h-12 w-full rounded-2xl text-sm font-bold gap-2 ${themeStyle.primary}`}>
-            <Ticket className="size-4" /> Acheter mes billets
-          </Button>
+      {/* Bouton billets (mobile, variantes « sticky ») et WhatsApp, toujours
+          visibles en bas de la vitrine (fenêtre ou zone d'aperçu). */}
+      {(stickyBar || whatsapp) && (
+        <div className="pointer-events-none sticky bottom-0 z-30 h-0">
+          {whatsapp && (
+            <a
+              href={`https://wa.me/${whatsapp}`}
+              target="_blank"
+              rel="noreferrer"
+              aria-label="Nous écrire sur WhatsApp"
+              className={cn(
+                "pointer-events-auto absolute right-4 flex size-12 items-center justify-center rounded-full bg-[#25D366] text-white shadow-xl transition hover:scale-105",
+                stickyBar ? "bottom-20 @3xl:bottom-5" : "bottom-5"
+              )}
+            >
+              <MessageCircle className="size-6" />
+            </a>
+          )}
+          {stickyBar && (
+            <div className="pointer-events-auto absolute inset-x-0 bottom-0 border-t border-white/10 bg-[var(--sc-glass)] p-3 backdrop-blur @3xl:hidden">
+              <button type="button" onClick={() => scrollToId(SECTION_IDS.events)} className={cn(ACCENT_BTN, "h-12 w-full text-sm")}>
+                <Ticket className="size-4" /> Acheter des billets
+              </button>
+            </div>
+          )}
         </div>
       )}
+    </div>
+  );
+}
 
-      {/* FLOATING WHATSAPP BUTTON (MASQUÉ LORSQU'UNE MODAL EST OUVERTE) */}
-      {!isAIGeneratorOpen && !isCatalogOpen && !activeEvent && (
-        <a
-          href={`https://wa.me/${whatsappNumber.replace(/[^0-9]/g, "")}`}
-          target="_blank"
-          rel="noreferrer"
-          className="fixed bottom-6 right-6 z-40 flex items-center gap-2.5 bg-[#25D366] hover:bg-[#20ba59] text-white px-4 py-3 rounded-full shadow-2xl shadow-emerald-950/60 transition-all hover:scale-105 active:scale-95 group font-bold text-xs"
-          title="Discuter sur WhatsApp"
-        >
-          <MessageCircle className="size-5 fill-white text-[#25D366]" />
-          <span className="hidden sm:inline font-semibold">Besoin d&apos;aide ? WhatsApp</span>
-        </a>
-      )}
-
-      {/* 10. MODAL DÉDIÉE : CATALOGUE COMPLET DES ÉVÉNEMENTS (OUVERTE PAR LA 4E CARTE) */}
-      <Dialog open={isCatalogOpen} onOpenChange={setIsCatalogOpen}>
-        <DialogContent
-          className={`rounded-3xl border border-white/20 bg-[#0d1117] text-white p-6 sm:max-w-4xl max-h-[85vh] shadow-2xl space-y-6 ${modalScrollClass}`}
-        >
-          <DialogHeader className="space-y-2 text-left">
-            <div className="flex items-center justify-between">
-              <div className="inline-flex items-center gap-1.5 text-xs font-bold uppercase tracking-wider text-emerald-400">
-                <Ticket className="size-3.5" />
-                <span>Billetterie & Programmation Officielle</span>
-              </div>
-              <span className="text-xs font-bold text-zinc-400 font-mono">
-                {catalogFilteredEvents.length} Événement(s) trouvé(s)
-              </span>
-            </div>
-            <DialogTitle className="font-display text-2xl sm:text-3xl font-extrabold text-white">
-              Catalogue Complet des Événements — {orgName}
-            </DialogTitle>
-          </DialogHeader>
-
-          {/* Search Bar & Filters */}
-          <div className="space-y-3">
-            <div className="relative">
-              <Search className="absolute left-3.5 top-1/2 -translate-y-1/2 size-4 text-zinc-400" />
-              <input
-                type="text"
-                value={catalogSearchQuery}
-                onChange={(e) => setCatalogSearchQuery(e.target.value)}
-                placeholder="Rechercher un festival, concert, conférence, lieu (Libreville)..."
-                className="w-full h-11 rounded-2xl bg-white/5 border border-white/15 pl-10 pr-4 text-xs sm:text-sm text-white focus:outline-none focus:border-emerald-500 transition-colors"
-              />
-              {catalogSearchQuery && (
-                <button
-                  type="button"
-                  onClick={() => setCatalogSearchQuery("")}
-                  className="absolute right-3.5 top-1/2 -translate-y-1/2 text-zinc-400 hover:text-white"
-                >
-                  <X className="size-4" />
-                </button>
-              )}
-            </div>
-
-            {/* Category Filter Pills */}
-            <div className="flex flex-wrap gap-1.5 p-1 rounded-2xl bg-white/5 border border-white/10">
-              {["Tous", "Concert & Festival", "Conférence & Gala", "Mariage & Célébration", "Formation & Masterclass", "Soirée VIP"].map(
-                (cat) => (
-                  <button
-                    key={cat}
-                    type="button"
-                    onClick={() => setCatalogCategory(cat)}
-                    className={`rounded-xl px-3 py-1.5 text-xs font-bold transition-all ${
-                      catalogCategory === cat
-                        ? `${themeStyle.primary} shadow-md`
-                        : "text-zinc-400 hover:text-white hover:bg-white/5"
-                    }`}
-                  >
-                    {cat}
-                  </button>
-                )
-              )}
-            </div>
-          </div>
-
-          {/* Catalog Grid */}
-          <div className="grid grid-cols-1 sm:grid-cols-2 gap-5 pt-2">
-            {catalogFilteredEvents.length > 0 ? (
-              catalogFilteredEvents.map((evt) => (
-                <div
-                  key={evt.id}
-                  className="group rounded-3xl border border-white/10 bg-white/[0.03] hover:bg-white/[0.08] hover:border-emerald-500/40 transition-all overflow-hidden flex flex-col justify-between shadow-lg"
-                >
-                  <div className="relative h-44 w-full bg-zinc-900 overflow-hidden">
-                    {/* eslint-disable-next-line @next/next/no-img-element */}
-                    <img
-                      src={evt.coverImageUrl}
-                      alt={evt.title}
-                      className="h-full w-full object-cover group-hover:scale-105 transition-transform duration-500"
-                    />
-                    <div className="absolute inset-0 bg-gradient-to-t from-black via-black/40 to-transparent" />
-                    <div className="absolute top-2.5 left-2.5">
-                      <span className="rounded-full bg-black/70 backdrop-blur-md border border-white/20 px-2.5 py-0.5 text-[10px] font-bold text-white">
-                        {evt.category}
-                      </span>
-                    </div>
-                    <div className="absolute bottom-2.5 right-2.5 rounded-lg bg-black/80 backdrop-blur-md border border-white/20 px-2.5 py-1">
-                      <span className="font-mono font-black text-xs text-emerald-400">
-                        Dès {evt.startingPrice.toLocaleString("fr-FR")} FCFA
-                      </span>
-                    </div>
-                  </div>
-
-                  <div className="p-4 space-y-3 flex-1 flex flex-col justify-between">
-                    <div className="space-y-1.5">
-                      <h4 className="font-display font-bold text-sm text-white group-hover:text-emerald-400 transition-colors line-clamp-1">
-                        {evt.title}
-                      </h4>
-                      <p className="text-[11px] text-zinc-400 line-clamp-2 leading-relaxed">
-                        {evt.description}
-                      </p>
-                      <div className="space-y-1 pt-1 text-[11px] text-zinc-300">
-                        <div className="flex items-center gap-1.5">
-                          <Calendar className="size-3 text-emerald-400 shrink-0" />
-                          <span className="truncate">{evt.date} • {evt.time}</span>
-                        </div>
-                        <div className="flex items-center gap-1.5">
-                          <MapPin className="size-3 text-rose-400 shrink-0" />
-                          <span className="truncate">{evt.location}</span>
-                        </div>
-                      </div>
-                    </div>
-
-                    <Button
-                      onClick={() => {
-                        setIsCatalogOpen(false);
-                        handleOpenEventDetails(evt);
-                      }}
-                      className={`w-full rounded-xl text-xs font-bold py-2 gap-1.5 shadow-md ${themeStyle.primary}`}
-                    >
-                      <Ticket className="size-3.5" />
-                      <span>Réserver mon Pass</span>
-                      <ChevronRight className="size-3.5" />
-                    </Button>
-                  </div>
-                </div>
-              ))
-            ) : (
-              <div className="col-span-2 text-center py-12 space-y-2 border border-dashed border-white/15 rounded-3xl bg-white/[0.02]">
-                <Search className="size-8 text-zinc-500 mx-auto" />
-                <p className="text-xs font-bold text-white">Aucun événement ne correspond à votre recherche</p>
-                <p className="text-[11px] text-zinc-400">Essayez un autre mot-clé ou réinitialisez les filtres.</p>
-                <Button
-                  variant="outline"
-                  size="sm"
-                  onClick={() => {
-                    setCatalogSearchQuery("");
-                    setCatalogCategory("Tous");
-                  }}
-                  className="rounded-xl text-xs mt-2 border-white/20"
-                >
-                  Réinitialiser la recherche
-                </Button>
-              </div>
-            )}
-          </div>
-        </DialogContent>
-      </Dialog>
-
-      {/* 10. MODAL DÉTAILS DE L'ÉVÉNEMENT & TUNNEL DE RÉSERVATION MOBILE MONEY */}
-      {activeEvent && (
-        <Dialog open={Boolean(activeEvent)} onOpenChange={(open) => !open && setActiveEvent(null)}>
-          <DialogContent
-            className={`rounded-3xl border border-white/20 bg-[#0d1117] text-white p-0 sm:max-w-xl max-h-[85vh] shadow-2xl ${modalScrollClass}`}
-          >
-            {/* Header Image */}
-            <div className="relative h-44 w-full bg-zinc-900">
-              {/* eslint-disable-next-line @next/next/no-img-element */}
-              <img
-                src={activeEvent.coverImageUrl}
-                alt={activeEvent.title}
-                className="h-full w-full object-cover"
-              />
-              <div className="absolute inset-0 bg-gradient-to-t from-[#0d1117] via-[#0d1117]/50 to-transparent" />
-              <div className="absolute top-3 left-3">
-                <span className="rounded-full bg-black/60 backdrop-blur-md border border-white/20 px-3 py-1 text-[11px] font-bold text-white">
-                  {activeEvent.category}
-                </span>
-              </div>
-            </div>
-
-            <div className="p-6 space-y-5">
-              {!isCheckoutStep ? (
-                /* STEP 1: EVENT DETAILS & TICKET SELECTION */
-                <div className="space-y-4">
-                  <DialogHeader className="space-y-1 text-left">
-                    <DialogTitle className="font-display text-xl sm:text-2xl font-extrabold text-white">
-                      {activeEvent.title}
-                    </DialogTitle>
-                    <DialogDescription className="text-xs text-zinc-300">
-                      {activeEvent.description}
-                    </DialogDescription>
-                  </DialogHeader>
-
-                  {/* Practical Details */}
-                  <div className="rounded-2xl border border-white/10 bg-white/5 p-3.5 grid grid-cols-2 gap-2.5 text-xs text-zinc-300">
-                    <div className="flex items-center gap-2">
-                      <Calendar className="size-3.5 text-emerald-400" />
-                      <span>{activeEvent.date}</span>
-                    </div>
-                    <div className="flex items-center gap-2">
-                      <Clock className="size-3.5 text-amber-400" />
-                      <span>{activeEvent.time}</span>
-                    </div>
-                    <div className="flex items-center gap-2 col-span-2">
-                      <MapPin className="size-3.5 text-rose-400" />
-                      <span>{activeEvent.location}</span>
-                    </div>
-                  </div>
-
-                  {/* Lineup / Intervenants if any */}
-                  {activeEvent.lineup && activeEvent.lineup.length > 0 && (
-                    <div className="space-y-2">
-                      <h4 className="text-xs font-bold text-white flex items-center gap-1.5">
-                        <Users className="size-3.5 text-amber-400" />
-                        <span>Artistes & Intervenants</span>
-                      </h4>
-                      <div className="flex flex-wrap gap-2">
-                        {activeEvent.lineup.map((art) => (
-                          <div
-                            key={art.id}
-                            className="rounded-xl border border-white/10 bg-white/5 px-2.5 py-1 text-xs"
-                          >
-                            <span className="font-bold text-white">{art.name}</span>
-                            <span className="text-[10px] text-zinc-400 ml-1.5">({art.role})</span>
-                          </div>
-                        ))}
-                      </div>
-                    </div>
-                  )}
-
-                  {/* Ticket Tiers Selection */}
-                  <div className="space-y-2.5 pt-2">
-                    <h4 className="text-xs font-bold text-white flex items-center gap-1.5">
-                      <Ticket className="size-3.5 text-emerald-400" />
-                      <span>Choisissez votre formule de Pass</span>
-                    </h4>
-
-                    <div className="space-y-2">
-                      {activeEvent.tickets.map((tkt) => {
-                        const isSelected = selectedTicket?.id === tkt.id;
-                        return (
-                          <div
-                            key={tkt.id}
-                            onClick={() => setSelectedTicket(tkt)}
-                            className={`rounded-2xl border p-3.5 cursor-pointer transition-all ${
-                              isSelected
-                                ? "border-emerald-500 bg-emerald-500/10 ring-1 ring-emerald-500"
-                                : "border-white/10 bg-white/5 hover:bg-white/10"
-                            }`}
-                          >
-                            <div className="flex items-center justify-between">
-                              <div className="flex items-center gap-2">
-                                <span className="font-bold text-xs text-white">{tkt.name}</span>
-                                {tkt.badge && (
-                                  <span className="text-[9px] font-bold text-amber-400 bg-amber-400/10 px-2 py-0.5 rounded-full border border-amber-400/20">
-                                    {tkt.badge}
-                                  </span>
-                                )}
-                              </div>
-                              <span className="font-mono font-extrabold text-sm text-emerald-400">
-                                {tkt.price.toLocaleString("fr-FR")} FCFA
-                              </span>
-                            </div>
-                            <p className="text-[11px] text-zinc-400 mt-1">{tkt.description}</p>
-                            <div className="flex flex-wrap gap-2 mt-2">
-                              {tkt.benefits.map((b, idx) => (
-                                <span key={idx} className="text-[10px] text-zinc-300 flex items-center gap-1">
-                                  <CheckCircle2 className="size-2.5 text-emerald-400" />
-                                  {b}
-                                </span>
-                              ))}
-                            </div>
-                          </div>
-                        );
-                      })}
-                    </div>
-                  </div>
-
-                  {/* Quantity & Total */}
-                  {selectedTicket && (
-                    <div className="rounded-2xl border border-white/10 bg-white/5 p-3.5 flex items-center justify-between">
-                      <div>
-                        <p className="text-xs font-bold text-white">Nombre de Pass</p>
-                        <p className="text-[11px] text-zinc-400">
-                          Total : {(selectedTicket.price * quantity).toLocaleString("fr-FR")} FCFA
-                        </p>
-                      </div>
-                      <div className="flex items-center gap-3">
-                        <button
-                          type="button"
-                          onClick={() => setQuantity(Math.max(1, quantity - 1))}
-                          className="size-8 rounded-xl bg-white/10 hover:bg-white/20 flex items-center justify-center text-white"
-                        >
-                          <Minus className="size-3.5" />
-                        </button>
-                        <span className="font-mono font-bold text-sm text-white w-4 text-center">
-                          {quantity}
-                        </span>
-                        <button
-                          type="button"
-                          onClick={() => setQuantity(quantity + 1)}
-                          className="size-8 rounded-xl bg-white/10 hover:bg-white/20 flex items-center justify-center text-white"
-                        >
-                          <Plus className="size-3.5" />
-                        </button>
-                      </div>
-                    </div>
-                  )}
-
-                  <Button
-                    onClick={() => setIsCheckoutStep(true)}
-                    disabled={!selectedTicket}
-                    className={`w-full rounded-2xl py-6 text-sm font-bold shadow-xl ${themeStyle.primary}`}
-                  >
-                    <span>Continuer vers le Paiement</span>
-                    <ArrowRight className="size-4 ml-1" />
-                  </Button>
-                </div>
-              ) : !isPaymentSuccess ? (
-                /* STEP 2: BUYER FORM & MOBILE MONEY PAYMENT */
-                <div className="space-y-4">
-                  <DialogHeader className="space-y-1 text-left">
-                    <DialogTitle className="font-display text-xl font-extrabold text-white flex items-center gap-2">
-                      <Lock className="size-5 text-emerald-400" />
-                      <span>Paiement Sécurisé Mobile Money</span>
-                    </DialogTitle>
-                    <DialogDescription className="text-xs text-zinc-300">
-                      Renseignez vos coordonnées pour recevoir votre billet avec QR code sécurisé.
-                    </DialogDescription>
-                  </DialogHeader>
-
-                  {/* Summary Card */}
-                  <div className="rounded-2xl border border-white/10 bg-white/5 p-3.5 space-y-1 text-xs">
-                    <div className="flex justify-between">
-                      <span className="text-zinc-400">Événement :</span>
-                      <span className="font-bold text-white">{activeEvent.title}</span>
-                    </div>
-                    <div className="flex justify-between">
-                      <span className="text-zinc-400">Formule :</span>
-                      <span className="font-bold text-emerald-400">
-                        {quantity}x {selectedTicket?.name}
-                      </span>
-                    </div>
-                    <div className="flex justify-between border-t border-white/10 pt-1.5 font-bold text-sm">
-                      <span className="text-white">Montant Total :</span>
-                      <span className="font-mono text-emerald-400">
-                        {((selectedTicket?.price || 0) * quantity).toLocaleString("fr-FR")} FCFA
-                      </span>
-                    </div>
-                  </div>
-
-                  {/* Buyer Fields */}
-                  <div className="space-y-3">
-                    <div className="space-y-1">
-                      <label className="text-xs font-semibold text-zinc-300">
-                        Nom & Prénom du Participant
-                      </label>
-                      <input
-                        type="text"
-                        value={nameBuyer}
-                        onChange={(e) => setNameBuyer(e.target.value)}
-                        className="w-full h-10 rounded-xl bg-white/5 border border-white/15 px-3 text-xs text-white focus:outline-none focus:border-emerald-500"
-                        placeholder="Ex: Jean-Marc Obiang"
-                      />
-                    </div>
-
-                    <div className="space-y-1">
-                      <label className="text-xs font-semibold text-zinc-300">
-                        Numéro Téléphone (WhatsApp pour le Billet)
-                      </label>
-                      <input
-                        type="tel"
-                        value={phoneBuyer}
-                        onChange={(e) => setPhoneBuyer(e.target.value)}
-                        className="w-full h-10 rounded-xl bg-white/5 border border-white/15 px-3 text-xs font-mono text-white focus:outline-none focus:border-emerald-500"
-                        placeholder="077 12 34 56"
-                      />
-                    </div>
-
-                    <div className="space-y-1">
-                      <label className="text-xs font-semibold text-zinc-300">
-                        Email de Réception
-                      </label>
-                      <input
-                        type="email"
-                        value={emailBuyer}
-                        onChange={(e) => setEmailBuyer(e.target.value)}
-                        className="w-full h-10 rounded-xl bg-white/5 border border-white/15 px-3 text-xs text-white focus:outline-none focus:border-emerald-500"
-                        placeholder="votre.email@gmail.com"
-                      />
-                    </div>
-                  </div>
-
-                  {/* Mobile Money Operator Selection */}
-                  <div className="space-y-1.5 pt-1">
-                    <label className="text-xs font-semibold text-zinc-300">
-                      Moyen de Paiement Gabon
-                    </label>
-                    <div className="grid grid-cols-2 gap-2.5">
-                      <button
-                        type="button"
-                        onClick={() => setOperator("AIRTEL")}
-                        className={`rounded-2xl border p-3 text-center transition-all ${
-                          operator === "AIRTEL"
-                            ? "border-red-500 bg-red-500/20 ring-1 ring-red-500"
-                            : "border-white/10 bg-white/5"
-                        }`}
-                      >
-                        <span className="font-bold text-xs text-red-400 block">Airtel Money</span>
-                        <span className="text-[10px] text-zinc-400">Push direct USSD</span>
-                      </button>
-
-                      <button
-                        type="button"
-                        onClick={() => setOperator("MOOV")}
-                        className={`rounded-2xl border p-3 text-center transition-all ${
-                          operator === "MOOV"
-                            ? "border-blue-500 bg-blue-500/20 ring-1 ring-blue-500"
-                            : "border-white/10 bg-white/5"
-                        }`}
-                      >
-                        <span className="font-bold text-xs text-blue-400 block">Moov Money</span>
-                        <span className="text-[10px] text-zinc-400">Push direct USSD</span>
-                      </button>
-                    </div>
-                  </div>
-
-                  <div className="flex gap-2 pt-2">
-                    <Button
-                      variant="outline"
-                      onClick={() => setIsCheckoutStep(false)}
-                      className="rounded-xl border-white/20 bg-white/5 text-white hover:bg-white/10 hover:text-white text-xs"
-                    >
-                      Retour
-                    </Button>
-                    <Button
-                      onClick={handleProceedToPayment}
-                      disabled={isProcessing}
-                      className={`flex-1 rounded-2xl py-6 text-xs sm:text-sm font-bold shadow-xl ${themeStyle.primary}`}
-                    >
-                      {isProcessing ? (
-                        <span>Validation en cours...</span>
-                      ) : (
-                        <span>
-                          Payer {((selectedTicket?.price || 0) * quantity).toLocaleString("fr-FR")} FCFA
-                        </span>
-                      )}
-                    </Button>
-                  </div>
-                </div>
-              ) : (
-                /* STEP 3: PAYMENT SUCCESS & GENERATED TICKET PASS */
-                <div className="text-center space-y-4 py-2">
-                  <div className="flex size-14 items-center justify-center rounded-2xl bg-emerald-500/20 text-emerald-400 mx-auto border border-emerald-500/30">
-                    <CheckCircle2 className="size-8" />
-                  </div>
-
-                  <div className="space-y-1">
-                    <h3 className="font-display text-xl font-extrabold text-white">
-                      Réservation & Billet Validés !
-                    </h3>
-                    <p className="text-xs text-zinc-300">
-                      Votre pass sécurisé a été généré et envoyé à <strong className="text-white">{phoneBuyer}</strong>.
-                    </p>
-                  </div>
-
-                  {/* Generated QR Pass Preview */}
-                  <div className="rounded-2xl border border-emerald-500/30 bg-emerald-950/20 p-5 space-y-3 max-w-sm mx-auto text-center shadow-2xl">
-                    <div className="flex items-center justify-between border-b border-white/10 pb-2 text-[11px]">
-                      <span className="font-bold text-white">{activeEvent.title}</span>
-                      <span className="font-mono text-emerald-400 font-bold">{generatedTicketRef}</span>
-                    </div>
-
-                    <div className="size-36 bg-white p-2 rounded-xl mx-auto flex items-center justify-center shadow-inner">
-                      <QrCode className="size-32 text-zinc-900" />
-                    </div>
-
-                    <div className="space-y-0.5 text-xs">
-                      <p className="font-bold text-white">{nameBuyer}</p>
-                      <p className="text-[11px] text-emerald-400 font-semibold">{selectedTicket?.name} (x{quantity})</p>
-                      <p className="text-[10px] text-zinc-400">{activeEvent.date} • {activeEvent.location}</p>
-                    </div>
-                  </div>
-
-                  <div className="flex flex-col sm:flex-row gap-2 pt-2">
-                    <Button
-                      onClick={() => {
-                        toast.success("Pass officiel téléchargé avec succès.");
-                      }}
-                      className="flex-1 rounded-2xl py-5 text-xs font-bold bg-white text-zinc-900 hover:bg-zinc-200 gap-1.5"
-                    >
-                      <Download className="size-4" />
-                      <span>Télécharger mon Billet PDF</span>
-                    </Button>
-
-                    <Button
-                      variant="outline"
-                      onClick={() => setActiveEvent(null)}
-                      className="rounded-2xl border-white/20 bg-white/5 text-white hover:bg-white/10 hover:text-white text-xs"
-                    >
-                      Fermer
-                    </Button>
-                  </div>
-                </div>
-              )}
-            </div>
-          </DialogContent>
-        </Dialog>
-      )}
+function FaqItem({ question, answer }: { question: string; answer: string }) {
+  const [open, setOpen] = useState(false);
+  if (!question.trim()) return null;
+  return (
+    <div className="overflow-hidden rounded-2xl border border-white/10 bg-white/[0.04]">
+      <button
+        type="button"
+        onClick={() => setOpen(!open)}
+        aria-expanded={open}
+        className="flex w-full items-center justify-between gap-4 p-4 text-left font-semibold transition hover:bg-white/[0.03]"
+      >
+        {question}
+        <ChevronDown className={cn("size-4 shrink-0 transition", open && "rotate-180 text-[var(--sc-accent-text)]")} />
+      </button>
+      {open && <p className="whitespace-pre-line px-4 pb-4 text-sm leading-relaxed text-white/70">{answer}</p>}
     </div>
   );
 }

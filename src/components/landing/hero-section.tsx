@@ -13,10 +13,11 @@ import {
 import { ArrowRight, CheckCircle2, ChevronDown } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { BrandVideo } from "@/components/shared/brand-video";
+import { siteAddressOffer } from "@/lib/tenant-url";
 
 const GUARANTEES = [
   "0 FCFA pour démarrer",
-  "Sous-domaine offert (nom.giya.ga)",
+  siteAddressOffer(),
   "Aucune application à installer pour vos clients",
 ];
 

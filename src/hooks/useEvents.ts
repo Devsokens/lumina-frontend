@@ -1,19 +1,22 @@
 "use client";
 
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
+import { isAxiosError } from "axios";
 import { api, type ApiResponse } from "@/lib/api";
 import { FEATURES } from "@/lib/features";
-import { toEventPayload, ticketTypeBody } from "@/lib/events";
+import { toEventPayload, ticketTypeBody, type EventSettings } from "@/lib/events";
 import type { Event, EventStatus, Tenant } from "@/types/api";
 import type {
   ApiEvent,
   ApiTicket,
   ApiTicketType,
   AuditEntry,
+  CertificateDispatchItem,
   EventOrder,
   EventStats,
   Paginated,
   RefundResult,
+  SendCertificatesPayload,
 } from "@/types/events";
 
 // Back-office événementiel — routes /admin/* (docs/API_CONTRACT.md §6, §13, §14).
@@ -32,6 +35,7 @@ const keys = {
   stats: (id?: string) => ["admin-event-stats", id ?? "all"] as const,
   tickets: (id: string) => ["admin-event-tickets", id] as const,
   orders: (id: string, page: number) => ["admin-event-orders", id, page] as const,
+  certificates: (id: string) => ["admin-event-certificates", id] as const,
 };
 
 export function useAdminTenant() {
@@ -110,7 +114,43 @@ function useInvalidateEvents() {
       void qc.invalidateQueries({ queryKey: keys.event(eventId) });
       void qc.invalidateQueries({ queryKey: keys.tickets(eventId) });
       void qc.invalidateQueries({ queryKey: ["admin-event-orders", eventId] });
+      void qc.invalidateQueries({ queryKey: keys.certificates(eventId) });
     }
+  };
+}
+
+// Repli automatique si le serveur n'a pas encore déployé les nouveaux champs DTO (400).
+const BASE_EVENT_TYPES = new Set(["CONCERT", "CONFERENCE", "NIGHTLIFE", "EXHIBITION", "SPORTS", "SHOW"]);
+const BASE_QUESTION_TYPES = new Set([
+  "SHORT_TEXT",
+  "PARAGRAPH",
+  "SINGLE_CHOICE",
+  "MULTIPLE_CHOICE",
+  "DROPDOWN",
+  "RATING_SCALE",
+]);
+
+function stripToBaseEventPayload(body: ReturnType<typeof toEventPayload>) {
+  const s = body.settings ?? {};
+  const baseSettings: EventSettings = {
+    questionnaireEnabled: s.questionnaireEnabled ?? false,
+    questionnaire: (s.questionnaire ?? []).map((q) => ({
+      id: q.id,
+      title: q.title,
+      type: BASE_QUESTION_TYPES.has(q.type) ? q.type : "SHORT_TEXT",
+      isRequired: q.isRequired,
+      ...(q.options ? { options: q.options } : {}),
+    })),
+    hasCertificate: s.hasCertificate ?? false,
+    ...(s.certificateTemplate ? { certificateTemplate: s.certificateTemplate } : {}),
+    ...(s.ticketTemplate ? { ticketTemplate: s.ticketTemplate } : {}),
+  };
+  const { notifyParticipants: _unused, eventType, ...rest } = body;
+  void _unused;
+  return {
+    ...rest,
+    ...(eventType && BASE_EVENT_TYPES.has(eventType) ? { eventType } : {}),
+    settings: baseSettings,
   };
 }
 
@@ -124,11 +164,41 @@ export function useSaveEvent() {
       const body = toEventPayload(form);
       const formulas = form.ticketTypes ?? [];
 
+      const postTicketType = async (eventId: string, f: (typeof formulas)[number]) => {
+        const full = ticketTypeBody(f);
+        try {
+          await api.post(`/admin/events/${eventId}/ticket-types`, full);
+        } catch (err) {
+          if (isAxiosError(err) && err.response?.status === 400) {
+            await api.post(`/admin/events/${eventId}/ticket-types`, {
+              name: f.name,
+              price: f.price,
+              quantity: f.quantity,
+              ...(f.description ? { description: f.description } : {}),
+            });
+          } else {
+            throw err;
+          }
+        }
+      };
+
       if (!existing) {
-        const created = await api.post<ApiResponse<ApiEvent>>("/admin/events", body);
+        let created;
+        try {
+          created = await api.post<ApiResponse<ApiEvent>>("/admin/events", body);
+        } catch (err) {
+          if (isAxiosError(err) && err.response?.status === 400) {
+            created = await api.post<ApiResponse<ApiEvent>>(
+              "/admin/events",
+              stripToBaseEventPayload(body)
+            );
+          } else {
+            throw err;
+          }
+        }
         const event = created.data.data as ApiEvent;
         for (const f of formulas) {
-          await api.post(`/admin/events/${event.id}/ticket-types`, ticketTypeBody(f));
+          await postTicketType(event.id, f);
         }
         if (form.status === "PUBLISHED") {
           await api.patch(`/admin/events/${event.id}`, { status: "PUBLISHED" });
@@ -159,22 +229,58 @@ export function useSaveEvent() {
             ...(FEATURES.ticketExtras && (f.ticketTemplate ?? null) !== (before.template ?? null)
               ? { template: f.ticketTemplate ?? null }
               : {}),
+            ...(FEATURES.ticketExtras && (f.maxPerOrder ?? null) !== (before.maxPerOrder ?? null)
+              ? { maxPerOrder: f.maxPerOrder ?? null }
+              : {}),
+            ...(FEATURES.ticketExtras && (f.visible ?? true) !== (before.visible ?? true)
+              ? { visible: f.visible ?? true }
+              : {}),
           };
           if (Object.keys(patch).length > 0) {
-            await api.patch(`/admin/ticket-types/${f.id}`, patch);
+            try {
+              await api.patch(`/admin/ticket-types/${f.id}`, patch);
+            } catch (err) {
+              if (isAxiosError(err) && err.response?.status === 400) {
+                const basePatch = {
+                  ...(f.name !== before.name ? { name: f.name } : {}),
+                  ...(f.price !== before.price ? { price: f.price } : {}),
+                  ...(f.quantity !== before.quantity ? { quantity: f.quantity } : {}),
+                  ...((f.description ?? null) !== before.description
+                    ? { description: f.description ?? "" }
+                    : {}),
+                };
+                if (Object.keys(basePatch).length > 0) {
+                  await api.patch(`/admin/ticket-types/${f.id}`, basePatch);
+                }
+              } else {
+                throw err;
+              }
+            }
           }
         }
         for (const f of added) {
-          await api.post(`/admin/events/${existing.id}/ticket-types`, ticketTypeBody(f));
+          await postTicketType(existing.id, f);
+        }
+      };
+
+      const patchEvent = async () => {
+        try {
+          await api.patch(`/admin/events/${existing.id}`, body);
+        } catch (err) {
+          if (isAxiosError(err) && err.response?.status === 400) {
+            await api.patch(`/admin/events/${existing.id}`, stripToBaseEventPayload(body));
+          } else {
+            throw err;
+          }
         }
       };
 
       const shrinking = (body.capacity ?? Infinity) < (existing.capacity ?? Infinity);
       if (shrinking) {
         await syncTypes();
-        await api.patch(`/admin/events/${existing.id}`, body);
+        await patchEvent();
       } else {
-        await api.patch(`/admin/events/${existing.id}`, body);
+        await patchEvent();
         await syncTypes();
       }
       return existing.id;
@@ -189,6 +295,76 @@ export function useSetEventStatus() {
     mutationFn: ({ id, status }: { id: string; status: EventStatus }) =>
       api.patch(`/admin/events/${id}`, { status }),
     onSettled: (_r, _e, { id }) => invalidate(id),
+  });
+}
+
+export function usePatchEventSettings() {
+  const invalidate = useInvalidateEvents();
+  return useMutation({
+    mutationFn: async ({ id, settings }: { id: string; settings: EventSettings }) => {
+      try {
+        return await api.patch(`/admin/events/${id}`, { settings });
+      } catch (err) {
+        if (isAxiosError(err) && err.response?.status === 400) {
+          const fallback: EventSettings = {
+            questionnaireEnabled: settings.questionnaireEnabled,
+            questionnaire: settings.questionnaire,
+            hasCertificate: settings.hasCertificate,
+            certificateTemplate: settings.certificateTemplate,
+            ticketTemplate: settings.ticketTemplate,
+          };
+          return await api.patch(`/admin/events/${id}`, { settings: fallback });
+        }
+        throw err;
+      }
+    },
+    onSettled: (_r, _e, { id }) => invalidate(id),
+  });
+}
+
+// Liste des envois d'attestations (GET /admin/events/:id/certificates).
+export function useEventCertificates(eventId: string | null) {
+  return useQuery({
+    queryKey: keys.certificates(eventId ?? ""),
+    queryFn: async () => {
+      try {
+        return await get<CertificateDispatchItem[]>(`/admin/events/${eventId}/certificates`);
+      } catch (err) {
+        if (isAxiosError(err) && (err.response?.status === 404 || err.response?.status === 501)) {
+          return [];
+        }
+        throw err;
+      }
+    },
+    enabled: !!eventId,
+    retry: false,
+  });
+}
+
+// Envoi d'un aperçu de test de l'attestation à l'organisateur (POST /admin/events/:id/certificates/test).
+export function useSendTestCertificate(eventId: string) {
+  return useMutation({
+    mutationFn: async (payload: SendCertificatesPayload) => {
+      const { data } = await api.post<ApiResponse<{ sentTo: string; previewCode: string }>>(
+        `/admin/events/${eventId}/certificates/test`,
+        payload
+      );
+      return data.data;
+    },
+  });
+}
+
+// Envoi groupé des attestations aux participants éligibles (POST /admin/events/:id/certificates/send).
+export function useSendCertificatesBatch(eventId: string) {
+  const invalidate = useInvalidateEvents();
+  return useMutation({
+    mutationFn: async (payload: SendCertificatesPayload) => {
+      const { data } = await api.post<
+        ApiResponse<{ count: number; dispatches: CertificateDispatchItem[] }>
+      >(`/admin/events/${eventId}/certificates/send`, payload);
+      return data.data;
+    },
+    onSettled: () => invalidate(eventId),
   });
 }
 

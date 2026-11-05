@@ -1,0 +1,104 @@
+<template>
+  <style>
+    #root {
+      position: absolute;
+      inset: 0;
+      overflow: hidden;
+      font-family: "Montserrat", sans-serif;
+      background: #0b0f0e;
+    }
+    #s4-world {
+      position: absolute;
+      inset: 0;
+    }
+    #s4-keycam,
+    #s4-livingcam {
+      position: absolute;
+      inset: 0;
+    }
+    #s4-keycam img,
+    #s4-livingcam img {
+      width: 100%;
+      height: 100%;
+      object-fit: cover;
+    }
+    #s4-keycam {
+      transform-origin: 55% 50%;
+    }
+    #s4-living {
+      position: absolute;
+      inset: 0;
+    }
+    #s4-scrim {
+      position: absolute;
+      inset: 0;
+      background: linear-gradient(180deg, rgba(6, 8, 7, 0.45) 0%, rgba(6, 8, 7, 0.15) 55%, rgba(6, 8, 7, 0.35) 100%);
+    }
+    /* Confirmation de séjour (écran /stays/confirmation de l'app). */
+    #s4-note {
+      position: absolute;
+      left: 560px;
+      top: 250px;
+      width: 800px;
+      padding: 48px 52px 52px;
+      border-radius: 40px;
+      background: #fff;
+      color: #0b1f1a;
+      box-shadow: 0 30px 90px rgba(0, 0, 0, 0.5);
+    }
+    #s4-note svg {
+      width: 88px;
+      height: 88px;
+      color: #10b981;
+    }
+    #s4-note .t {
+      margin-top: 18px;
+      font-size: 60px;
+      font-weight: 800;
+      letter-spacing: -0.02em;
+    }
+    #s4-note .r {
+      margin-top: 10px;
+      font-size: 38px;
+      font-weight: 600;
+    }
+    #s4-note .p {
+      margin-top: 8px;
+      font-size: 34px;
+      font-weight: 500;
+      color: #5b6b66;
+    }
+  </style>
+  <div id="root" data-composition-id="s4" data-width="1920" data-height="1080">
+    <div id="s4-world">
+      <div id="s4-keycam"><img src="assets/img/key.jpg" alt="" /></div>
+      <div id="s4-living">
+        <div id="s4-livingcam"><img src="assets/img/living.jpg" alt="" /></div>
+        <div id="s4-scrim"></div>
+        <div id="s4-note">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"></circle><path d="m9 12 2 2 4-4"></path></svg>
+          <div class="t">Séjour réservé !</div>
+          <div class="r">Réservation R-2048 · 135 000 FCFA</div>
+          <div class="p">Appartement Batterie IV · 3 nuits</div>
+        </div>
+      </div>
+    </div>
+  </div>
+  <script>
+    (function () {
+      const tl = gsap.timeline({ paused: true });
+      // Entrée : raccord de vitesse avec la poussée du plan 3.
+      tl.fromTo("#s4-world", { scale: 1.25, filter: "blur(14px)" }, { scale: 1, filter: "blur(0px)", duration: 0.45, ease: "power3.out" }, 0);
+      // Gros plan sur la clé dans la serrure.
+      tl.fromTo("#s4-keycam", { scale: 1.05 }, { scale: 1.22, duration: 2.1, ease: "power2.inOut" }, 0);
+      // Iris depuis la clé vers le salon.
+      tl.fromTo("#s4-living", { clipPath: "circle(0% at 55% 50%)" }, { clipPath: "circle(120% at 55% 50%)", duration: 0.6, ease: "power2.inOut" }, 1.75);
+      tl.fromTo("#s4-livingcam", { scale: 1.14 }, { scale: 1.04, duration: 5.4, ease: "power2.out" }, 1.75);
+      // La confirmation arrive.
+      tl.fromTo("#s4-note", { y: 30, opacity: 0, filter: "blur(10px)" }, { y: 0, opacity: 1, filter: "blur(0px)", duration: 0.7, ease: "expo.out" }, 2.6);
+      // Sortie : la caméra recule et monte.
+      tl.to("#s4-world", { scale: 0.9, y: -60, filter: "blur(10px)", opacity: 0.6, duration: 0.5, ease: "power3.in" }, 6.7);
+      window.__timelines["s4"] = tl;
+    })();
+  </script>
+</template>

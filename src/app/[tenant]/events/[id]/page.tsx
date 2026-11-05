@@ -7,6 +7,7 @@ import { useTenant } from "@/hooks/useTenant";
 import { usePublicEvent } from "@/hooks/usePublicEvents";
 import { TicketPurchase } from "@/components/vitrine/ticket-purchase";
 import { PublicTopBar } from "@/components/vitrine/public-top-bar";
+import { RichText } from "@/components/shared/rich-text";
 
 export default function PublicEventPage({ params }: { params: Promise<{ id: string }> }) {
   const { id } = use(params);
@@ -56,9 +57,7 @@ export default function PublicEventPage({ params }: { params: Promise<{ id: stri
           </header>
 
           {event.description && (
-            <p className="whitespace-pre-line text-sm leading-relaxed text-foreground/90">
-              {event.description}
-            </p>
+            <RichText text={event.description} className="text-sm leading-relaxed text-foreground/90" />
           )}
 
           <section className="rounded-3xl border border-border bg-card p-4 sm:p-6">

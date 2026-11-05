@@ -5,6 +5,8 @@ import {
   DM_Serif_Display,
   Fraunces,
   Manrope,
+  Outfit,
+  Plus_Jakarta_Sans,
   Playfair_Display,
   Space_Grotesk,
   Syne,
@@ -23,7 +25,10 @@ const grotesk = Space_Grotesk({ variable: "--font-stay-grotesk", subsets: ["lati
 const syne = Syne({ variable: "--font-stay-syne", subsets: ["latin"], preload: false });
 const dmSerif = DM_Serif_Display({ variable: "--font-stay-dmserif", subsets: ["latin"], preload: false, weight: "400" });
 const bricolage = Bricolage_Grotesque({ variable: "--font-stay-bricolage", subsets: ["latin"], preload: false });
+// Polices de la vitrine événementielle (lib/showcase-theme.ts).
+const outfit = Outfit({ variable: "--font-showcase-outfit", subsets: ["latin"], preload: false });
+const jakarta = Plus_Jakarta_Sans({ variable: "--font-showcase-jakarta", subsets: ["latin"], preload: false });
 
-export const siteFontVariables = [serif, sans, bold, fraunces, dmSans, grotesk, syne, dmSerif, bricolage]
+export const siteFontVariables = [serif, sans, bold, fraunces, dmSans, grotesk, syne, dmSerif, bricolage, outfit, jakarta]
   .map((f) => f.variable)
   .join(" ");

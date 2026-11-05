@@ -13,10 +13,17 @@ import { Label } from "@/components/ui/label";
 import { Skeleton } from "@/components/ui/skeleton";
 import { homePathFor, useAuth } from "@/hooks/useAuth";
 import { api, apiError, type ApiResponse } from "@/lib/api";
-import { SECTOR_LABELS, SECTORS, type Sector } from "@/lib/constants";
+import { APP_URL, ROOT_DOMAIN, SECTOR_LABELS, type Sector } from "@/lib/constants";
+import { publicSiteLabel, subdomainActive } from "@/lib/tenant-url";
+import { slugSchema } from "@/lib/validations";
 import { cn } from "@/lib/utils";
 
 type Pending = { email: string; fullName: string; avatarUrl: string | null };
+
+// Secteurs proposés à l'inscription (l'e-commerce n'est plus commercialisé).
+const PUBLIC_SECTORS: Sector[] = ["EVENT", "RESTAURANT", "ACCOMMODATION"];
+const APP_HOST = APP_URL.replace(/^https?:\/\//, "");
+const hasSubdomain = subdomainActive();
 
 // Inscription Google, 2e étape : l'identité vient de Google (e-mail vérifié,
 // nom, photo) et est affichée telle quelle ; on ne demande que ce qui
@@ -60,10 +67,17 @@ function CompleteSignup() {
   const cleanPhone = phone.replace(/[\s.()-]/g, "");
   const phoneOk = !cleanPhone || /^\+?[0-9]{8,15}$/.test(cleanPhone);
 
+  const slugCheck = slugSchema.safeParse(slug);
+  const slugError = slug && !slugCheck.success ? slugCheck.error.issues[0]?.message : undefined;
+
   async function submit(e: React.FormEvent) {
     e.preventDefault();
-    if (businessName.trim().length < 2 || !/^[a-z0-9-]{3,50}$/.test(slug) || !accepted || !phoneOk) {
-      toast.error("Complétez le nom, l'adresse du site (3 à 50 caractères a-z, 0-9, -), un téléphone valide et acceptez les CGU.");
+    if (!slugCheck.success) {
+      toast.error(slugCheck.error.issues[0]?.message ?? "Adresse du site invalide.");
+      return;
+    }
+    if (businessName.trim().length < 2 || !accepted || !phoneOk) {
+      toast.error("Complétez le nom de l'activité, un téléphone valide et acceptez les CGU.");
       return;
     }
     setBusy(true);
@@ -113,7 +127,7 @@ function CompleteSignup() {
       <div className="space-y-1.5">
         <Label>Secteur d&apos;activité</Label>
         <div className="grid grid-cols-2 gap-2">
-          {SECTORS.map((s) => (
+          {PUBLIC_SECTORS.map((s) => (
             <button
               key={s}
               type="button"
@@ -140,25 +154,30 @@ function CompleteSignup() {
           maxLength={120}
           onChange={(e) => {
             setBusinessName(e.target.value);
-            if (!slugEdited) setSlug(slugify(e.target.value, { lower: true, strict: true }).slice(0, 50));
+            if (!slugEdited) setSlug(slugify(e.target.value, { lower: true, strict: true }).slice(0, 50).replace(/-+$/, ""));
           }}
         />
       </div>
       <div className="space-y-1.5">
         <Label htmlFor="slug">Adresse de votre site</Label>
         <div className="flex items-center overflow-hidden rounded-xl border border-input focus-within:ring-2 focus-within:ring-ring/40">
-          <span className="bg-muted px-3 py-2.5 text-sm text-muted-foreground">giyax/</span>
+          {!hasSubdomain && <span className="bg-muted px-3 py-2.5 text-sm text-muted-foreground">{APP_HOST}/</span>}
           <input
             id="slug"
-            className="h-11 flex-1 bg-transparent px-2 font-mono text-sm outline-none"
+            className="h-11 min-w-0 flex-1 bg-transparent px-2 font-mono text-sm outline-none"
             value={slug}
             maxLength={50}
+            aria-invalid={slugError ? true : undefined}
             onChange={(e) => {
               setSlugEdited(true);
               setSlug(e.target.value.toLowerCase().replace(/[^a-z0-9-]/g, ""));
             }}
           />
+          {hasSubdomain && <span className="bg-muted px-3 py-2.5 text-sm text-muted-foreground">.{ROOT_DOMAIN}</span>}
         </div>
+        <p className={cn("text-xs", slugError ? "text-destructive" : "text-muted-foreground")}>
+          {slugError ?? <>Votre site : <strong>{publicSiteLabel(slug || "votre-activite")}</strong></>}
+        </p>
       </div>
       <div className="space-y-1.5">
         <Label htmlFor="phone">Téléphone (facultatif)</Label>

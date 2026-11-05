@@ -5,12 +5,13 @@ import Image from "next/image";
 import { AnimatePresence, motion } from "framer-motion";
 import { ChevronDown } from "lucide-react";
 import { cn } from "@/lib/utils";
+import { publicSiteLabel } from "@/lib/tenant-url";
 
 const FAQS = [
   {
     question: "Comment mes clients accèdent-ils à mes services ?",
     answer:
-      "Vos clients n'ont aucune application à télécharger. Ils scannent votre QR code ou ouvrent votre lien (monactivite.giya.ga) : vos billets, votre menu ou vos logements s'affichent aussitôt sur leur téléphone.",
+      `Vos clients n'ont aucune application à télécharger. Ils scannent votre QR code ou ouvrent votre lien (${publicSiteLabel("monactivite")}) : vos billets, votre menu ou vos logements s'affichent aussitôt sur leur téléphone.`,
   },
   {
     question: "Comment s'effectue l'encaissement via Airtel Money et Moov Money ?",

@@ -61,6 +61,11 @@ export function toShowcasePayload(content: ShowcaseContent): ShowcaseContent {
     rating: Math.min(5, Math.max(1, Math.round(Number(t.rating) || 5))),
     eventName: text(t.eventName, 120),
   }));
+  if (content.visibleSections) {
+    out.visibleSections = Object.fromEntries(
+      Object.entries(content.visibleSections).map(([k, v]) => [k, v !== false]),
+    );
+  }
   out.faqs = (content.faqs ?? []).slice(0, 30).map((f) => ({
     id: text(f.id, 40),
     question: text(f.question, 200),

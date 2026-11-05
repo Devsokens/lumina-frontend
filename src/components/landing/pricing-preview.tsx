@@ -5,6 +5,7 @@ import { motion } from "framer-motion";
 import { Check, ArrowRight } from "lucide-react";
 import Link from "next/link";
 import { Button } from "@/components/ui/button";
+import { siteAddressOffer } from "@/lib/tenant-url";
 
 
 const PLANS = [
@@ -15,7 +16,7 @@ const PLANS = [
     priceAnnual: 0,
     desc: "Idéal pour lancer son restaurant, tester son premier événement ou mettre en ligne son premier logement.",
     features: [
-      "Sous-domaine offert (nom.giya.ga)",
+      siteAddressOffer(),
       "Jusqu'à 50 commandes / billets / réservations par mois",
       "Génération illimitée de Menus, QR Codes & Reçus",
       "Paiement au comptoir & Mobile Money",

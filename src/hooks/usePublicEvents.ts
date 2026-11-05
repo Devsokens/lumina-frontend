@@ -18,6 +18,7 @@ export function usePublicEvents(slug: string) {
       const { data } = await api.get<ApiResponse<PublicEvent[]>>(`/tenants/${slug}/events`);
       return data.data ?? [];
     },
+    enabled: !!slug,
   });
 }
 

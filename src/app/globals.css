@@ -53,6 +53,35 @@
   --radius-2xl: calc(var(--radius) * 1.8);
   --radius-3xl: calc(var(--radius) * 2.2);
   --radius-4xl: calc(var(--radius) * 2.6);
+
+  /* Module Événements (refonte 2026-11) : utilitaires bg-ev-*, text-ev-*… */
+  --font-ev: var(--font-ev), ui-sans-serif, system-ui, sans-serif;
+  --font-ev-mono: var(--font-ev-mono), ui-monospace, monospace;
+  --font-ev-serif: var(--font-ev-serif), Georgia, serif;
+  --color-ev-bg: var(--ev-bg);
+  --color-ev-surface: var(--ev-surface);
+  --color-ev-soft: var(--ev-soft);
+  --color-ev-border: var(--ev-border);
+  --color-ev-line: var(--ev-line);
+  --color-ev-dash: var(--ev-dash);
+  --color-ev-ink: var(--ev-ink);
+  --color-ev-ink2: var(--ev-ink2);
+  --color-ev-ink3: var(--ev-ink3);
+  --color-ev-muted: var(--ev-muted);
+  --color-ev-primary: var(--ev-primary);
+  --color-ev-primary-hover: var(--ev-primary-hover);
+  --color-ev-link: var(--ev-link);
+  --color-ev-mint: var(--ev-mint);
+  --color-ev-selected: var(--ev-selected);
+  --color-ev-ok-bg: var(--ev-ok-bg);
+  --color-ev-ok: var(--ev-ok);
+  --color-ev-dot: var(--ev-dot);
+  --color-ev-bar: var(--ev-bar);
+  --color-ev-amber: var(--ev-amber);
+  --color-ev-gold: var(--ev-gold);
+  --color-ev-gold-text: var(--ev-gold-text);
+  --color-ev-warn-bg: var(--ev-warn-bg);
+  --color-ev-danger: var(--ev-danger);
 }
 
 :root {
@@ -90,6 +119,62 @@
   --sidebar-accent-foreground: #1c1c1e;
   --sidebar-border: #eae8e1;
   --sidebar-ring: #2e6baa;
+}
+
+/* Module Événements — palette de la refonte (Claude Design, 2026-11). */
+.ev {
+  --ev-bg: #f7f6f2;
+  --ev-surface: #ffffff;
+  --ev-soft: #fafaf7;
+  --ev-border: #e7e5de;
+  --ev-line: #efede6;
+  --ev-dash: #cfcbc0;
+  --ev-ink: #16211c;
+  --ev-ink2: #3f4a45;
+  --ev-ink3: #4a5550;
+  --ev-muted: #5e6a64;
+  --ev-primary: #0c4a3a;
+  --ev-primary-hover: #08382b;
+  --ev-link: #0c4a3a;
+  --ev-mint: #e6f0ec;
+  --ev-selected: #f2f7f5;
+  --ev-ok-bg: #e6f4ee;
+  --ev-ok: #0b6b4c;
+  --ev-dot: #12a06f;
+  --ev-bar: #0f8a64;
+  --ev-amber: #e39a1f;
+  --ev-gold: #c79a3b;
+  --ev-gold-text: #8a5a0b;
+  --ev-warn-bg: #fbf1df;
+  --ev-danger: #b42318;
+  font-family: var(--font-ev), ui-sans-serif, system-ui, sans-serif;
+  color: var(--ev-ink);
+}
+.dark .ev {
+  --ev-bg: #101613;
+  --ev-surface: #18201c;
+  --ev-soft: #1c2521;
+  --ev-border: #2b3530;
+  --ev-line: #232c28;
+  --ev-dash: #3b4641;
+  --ev-ink: #edf1ee;
+  --ev-ink2: #c6cec9;
+  --ev-ink3: #b3bcb7;
+  --ev-muted: #8f9a95;
+  --ev-primary: #157a5c;
+  --ev-primary-hover: #1a8f6b;
+  --ev-link: #5fd3a8;
+  --ev-mint: #1b3128;
+  --ev-selected: #1a2a23;
+  --ev-ok-bg: #173a2d;
+  --ev-ok: #5fd3a8;
+  --ev-dot: #2fbf8a;
+  --ev-bar: #2fae86;
+  --ev-amber: #e9a83a;
+  --ev-gold: #c79a3b;
+  --ev-gold-text: #e3b866;
+  --ev-warn-bg: #3a2f18;
+  --ev-danger: #f87171;
 }
 
 .dark {

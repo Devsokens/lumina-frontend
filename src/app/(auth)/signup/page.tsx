@@ -60,7 +60,7 @@ export default function SignupPage() {
 
   function onBusinessNameChange(value: string) {
     setValue("businessName", value);
-    setValue("slug", slugify(value, { lower: true, strict: true }));
+    setValue("slug", slugify(value, { lower: true, strict: true }).slice(0, 50).replace(/-+$/, ""));
   }
 
   async function onSubmit(values: SignupInput) {

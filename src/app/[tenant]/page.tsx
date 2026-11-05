@@ -10,7 +10,7 @@ export default function TenantHomePage() {
 
   if (tenant.sector === "EVENT") {
     return (
-      <main className="min-h-screen bg-[#090b0e]">
+      <main className="min-h-screen">
         <LiveShowcase />
       </main>
     );
