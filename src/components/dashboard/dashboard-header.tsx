@@ -53,6 +53,8 @@ const ROLE_LABELS: Record<Role, string> = {
 import Link from "next/link";
 import { toast } from "sonner";
 
+import { EventHeader } from "@/components/dashboard/event-shell/event-header";
+
 export function DashboardHeader() {
   const { user, signOut } = useAuth();
   const router = useRouter();
@@ -60,9 +62,11 @@ export function DashboardHeader() {
   const { sector: tenantSector } = useTenantSector();
   const sector = tenantSector ?? urlSector;
   const currentSector = (sector ?? "event").toLowerCase();
-  // Événementiel : en-tête de la refonte (recherche + notifications ; le
-  // profil est dans la barre latérale, sauf sur téléphone).
   const isEvent = currentSector === "event";
+
+  if (isEvent) {
+    return <EventHeader />;
+  }
 
   const [searchQuery, setSearchQuery] = useState("");
   const [showSearchDropdown, setShowSearchDropdown] = useState(false);

@@ -120,6 +120,10 @@ corps limité à 3 Mo sur cette seule route (100 ko ailleurs). Les événements 
 |---|---|---|---|
 | PUT | `/admin/tenant/emails` | Bearer (OWNER) | `{ senderName, replyTo ("" possible), templates: { ticket?, certificate?, reminder?, survey?: { subject, body, cta, enabled } } }` → `settings.emails` |
 | POST | `/admin/tenant/emails/test` | Bearer (OWNER), 5/15 min | `{ kind: "ticket" \| "certificate" \| "reminder" \| "survey" }` → `{ sentTo }` (e-mail du compte connecté) |
+| GET | `/admin/tenant/emails/gmail` | Bearer (OWNER) | → `{ connected, email, status: "ACTIVE" \| "ERROR" \| null, lastError, connectedAt, available, platformReady, sentToday, dailyLimit }` (Gmail de l'organisateur ; jamais de jeton) |
+| POST | `/admin/tenant/emails/gmail/connect` | Bearer (OWNER), 10/15 min | → `{ url }` : écran Google (scopes `openid email gmail.send`). Retour : `GET /mail/google/callback`, puis redirection vers `/admin/{secteur}/settings?rubrique=messages&gmail=connected \| denied \| scope \| error` |
+| DELETE | `/admin/tenant/emails/gmail` | Bearer (OWNER) | → `{ disconnected }` (autorisation révoquée chez Google ; audit `MAIL_ACCOUNT_DISCONNECTED`) |
+| GET | `/mail/google/callback?code&state` | public (le `state` aléatoire, 10 min, usage unique, authentifie la demande), 20/min/IP | Redirection 302 vers le frontend (organisateur ou `/vision/emails`) |
 | PUT | `/admin/tenant/payouts` | Bearer (OWNER) | `{ frequency: "AFTER_EVENT" \| "WEEKLY", accounts: [{ operator: "AIRTEL" \| "MOOV", phone, holderName }] }` → `settings.payouts` (vérification conservée si le numéro ne change pas) |
 | POST | `/admin/tenant/payouts/verify` | Bearer (OWNER), 5/15 min | `{ operator }` → `{ sentTo }` (numéro masqué) : code SMS à 6 chiffres, 10 min |
 | POST | `/admin/tenant/payouts/confirm` | Bearer (OWNER), 10/15 min | `{ operator, code }` → `settings.payouts` (`verifiedAt` renseigné) |
@@ -332,6 +336,10 @@ audit `REFUND_PARTIAL_REVIEW` pour revue manuelle. `refund.pending` / `refund.pr
 | Méthode | Route | Auth | Body → Réponse |
 |---|---|---|---|
 | POST | `/ai/generate` | Bearer (OWNER, MANAGER), 10/min/tenant | `{ prompt (≤ 500), language?: "fr" | "en" }` → `{ text, cached? }` |
+| POST | `/admin/ai/event-description` | Bearer (OWNER, MANAGER), 10/min | `{ title (2-200), eventType?, venueName? (≤ 200), startDate? (ISO), tone?: "festif" \| "professionnel" \| "premium", notes? (≤ 1000) }` → `{ description }` (texte brut, 2-3 paragraphes) |
+| POST | `/admin/ai/event-visual` | Bearer (OWNER, MANAGER), 5/min | `{ title (2-200), eventType?, style: "photo" \| "affiche-concert" \| "elegant" \| "afro-moderne" \| "corporate" \| "neon" \| "minimal", prompt? (≤ 400, ambiance) }` → `{ url }` : data URL JPEG 1080 × 1350 (≤ 450 000 caractères). Cloudflare Workers AI (FLUX.1 schnell) ; **429** au-delà de `AI_IMAGE_DAILY_PER_TENANT` (défaut 10/jour/organisateur) ou `AI_IMAGE_DAILY_TOTAL` (140/jour), **503** si non configuré |
+
+Fournisseur : `GROQ_API_KEY` seul (Groq, `llama-3.3-70b-versatile`) ou `OPENAI_API_KEY` (+ `OPENAI_BASE_URL`). Erreurs : **429** si le fournisseur limite (Groq gratuit), **503** si l'IA n'est pas configurée ou ne répond pas.
 
 Utilisé par l'éditeur du site vitrine (`src/components/site-editor`, hook `useAiText`) :
 variantes d'un texte, réécriture, présentation « À propos », question de FAQ, traduction.
@@ -547,6 +555,10 @@ Administrateurs du SaaS (table `PlatformAdmin`, distincte de `User`). Jeton Bear
 | GET | `/vision/traffic?days=1\|7\|30` | Vision | — | `{ granularity: hour\|day, totals: { requests, errors4xx, errors5xx, errorRate, avgMs }, series: [{ at, … }], routes: [{ route, … }] }` |
 | GET | `/vision/costs` | Vision | — | `{ lines: [{ label, amount, kind }], total, mrr, margin, assumptions }` — FCFA, estimation 30 j |
 | GET | `/vision/domains` | Vision | — | `{ rootDomain, customDomains, items: [{ slug, name, sector, status, customDomain, subdomain }] }` |
+| GET | `/vision/mail` | Vision | — | `{ platform: { connected, email, status, lastError, connectedAt }, available, redirectUri, sentToday, tenantAccounts: { active, error } }` |
+| POST | `/vision/mail/connect` | Vision, 10/15 min | — | `{ url }` : écran Google pour l'adresse d'envoi GiyaX (retour : `/vision/emails?gmail=…`) |
+| DELETE | `/vision/mail` | Vision | — | `{ disconnected }` (journal `MAIL_ACCOUNT_DISCONNECTED`) |
+| POST | `/vision/mail/test` | Vision, 5/15 min | `{ to }` | `{ sentTo }` (e-mail d'essai depuis l'adresse GiyaX) |
 | GET | `/vision/tenants` | Vision | `?page&limit&search&sector&status&plan` | `{ data: [{ …tenant, users, revenue30d, orders30d, lastLoginAt }], meta }` |
 | GET | `/vision/tenants/:id` | Vision | — | tenant + `users[]` (sans mot de passe) + `stats` |
 | PATCH | `/vision/tenants/:id` | Vision | `{ status?: ACTIVE\|SUSPENDED, plan?, reason? }` | `{ id, status, plan }` |
@@ -579,6 +591,14 @@ coordonnée client renvoyée.
 
 ## Historique
 
+- **2026-11-07** — Affiches IA : `POST /admin/ai/event-visual` (Cloudflare Workers AI). Frontend :
+  pages `/confidentialite` et `/conditions` (alias `/privacy`, `/terms`, `/cgu`), slugs réservés
+  côté backend (`confidentialite`, `conditions`, `privacy`, `terms`, `cgu`, `legal`, `pricing`…).
+- **2026-11-07** — E-mails par l'API Gmail (OAuth2), Resend retiré : adresse d'envoi GiyaX connectée
+  depuis `/vision/emails`, Gmail de chaque organisateur (Paramètres › E-mails, §2). Ordre d'envoi :
+  Gmail de l'organisateur (quota `MAIL_TENANT_DAILY_LIMIT`, défaut 450/jour), puis adresse GiyaX
+  (« Nom via GiyaX »). Table `MailAccount` (jetons chiffrés, RLS). IA : Groq via `GROQ_API_KEY`,
+  nouvelle route `POST /admin/ai/event-description` (§9).
 - **2026-11-07** — Refonte événementielle (cohérence frontend / backend) : paramètres de
   l'organisation (e-mail de contact, identité légale, messages aux participants personnalisables avec
   expéditeur et rappel la veille, comptes de versement Mobile Money vérifiés par SMS) ; équipe

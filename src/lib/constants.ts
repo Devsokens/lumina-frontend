@@ -27,6 +27,7 @@ export const RESERVED_SLUGS = [
   "login", "signup", "auth", "change-password", "logout", "register", "invitation",
   "kitchen", "scan", "vision", "verify", "showcase", "pricing", "offline", "dashboard",
   "brand", "icons", "images", "videos", "logos", "zxing", "manifest", "sw",
+  "confidentialite", "conditions", "privacy", "privacy-policy", "terms", "cgu", "legal", "mentions-legales",
 ] as const;
 
 // Rôles RBAC — voir LUMINA_Document_Maitre_v2.md section 12.

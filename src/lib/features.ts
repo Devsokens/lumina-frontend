@@ -13,6 +13,10 @@
 //   n’enregistre pas encore (types Mariage / Autre, questions Oui-Non, étoiles,
 //   nombre, date, logos, format, contenu et envoi du certificat…). Sans le
 //   drapeau, ces réglages sont affichés mais inactifs (« Bientôt »).
+// - ai-poster : affiche générée par l'IA (image, POST /admin/ai/event-visual,
+//   Cloudflare Workers AI côté serveur). Active par défaut ; « no-ai-poster »
+//   la coupe (seules restent les affiches « Graphique » et « Typographique »,
+//   dessinées dans le navigateur).
 const flags = new Set((process.env.NEXT_PUBLIC_FEATURES ?? "").split(/[\s,]+/).filter(Boolean));
 
 export const FEATURES = {
@@ -20,4 +24,5 @@ export const FEATURES = {
   tableOccupancy: flags.has("table-occupancy"),
   showcaseSections: !flags.has("no-showcase-sections"),
   eventExtras: !flags.has("no-event-extras"),
+  aiPoster: !flags.has("no-ai-poster"),
 };

@@ -1,129 +1,225 @@
 "use client";
 
 import Link from "next/link";
-import { usePathname, useRouter } from "next/navigation";
-import { toast } from "sonner";
-import { KeyRound, LogOut } from "lucide-react";
-import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuSeparator, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
+import { useEffect } from "react";
+import { usePathname } from "next/navigation";
+import { ChevronDown, PanelLeftClose, PanelLeftOpen, Plus } from "lucide-react";
+import { DropdownMenu, DropdownMenuContent, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
+import { initialsOf, EV_PORTAL } from "@/components/events/ev-ui";
 import { sidebarLinks } from "@/lib/navigation";
+import { BASE, GO_KEYS, NAV_ICON, PLAN_NAME, keyOf, useActiveEventsCount, useSetupSteps } from "@/components/dashboard/event-shell/shell-model";
+import { OrgAvatar, OrgMenuContent, SetupMenuContent, UserMenuContent } from "@/components/dashboard/event-shell/shell-menus";
 import { useAuth } from "@/hooks/useAuth";
 import { useTenantSector } from "@/hooks/useTenantSector";
-import { initialsOf } from "@/components/events/ev-ui";
-import { tenantLogo } from "@/components/events/settings/settings-general";
+import { useShellStore } from "@/stores/useShellStore";
 import { eventFontVariables } from "@/lib/event-fonts";
 import { cn } from "@/lib/utils";
 
-// Barre latérale du back-office événementiel (refonte Claude Design 2026-11) :
-// vert profond #0B3B2E, élément actif en pilule blanche, carte de
-// l'utilisateur en bas (menu : mot de passe, déconnexion).
+// Barre latérale du back-office événementiel (refonte Claude Design 2026-11,
+// 2e version) : sélecteur d'organisation, « Créer un événement », modules
+// groupés (noms de l'app inchangés), configuration, compte, mode replié.
 
-// Icônes du design (tracés 24 × 24, trait 2), par destination.
-const ICONS: { match: RegExp; d: string }[] = [
-  { match: /\/events$/, d: "M3 5h18v16H3zM3 10h18M8 3v4M16 3v4" },
-  { match: /^\/scan$/, d: "M3 7V5a2 2 0 0 1 2-2h2M17 3h2a2 2 0 0 1 2 2v2M21 17v2a2 2 0 0 1-2 2h-2M7 21H5a2 2 0 0 1-2-2v-2M7 12h10" },
-  { match: /\/showcase$/, d: "M12 3a9 9 0 1 0 0 18 9 9 0 0 0 0-18zM3 12h18M12 3c2.5 2.5 3.5 5.5 3.5 9s-1 6.5-3.5 9c-2.5-2.5-3.5-5.5-3.5-9S9.5 5.5 12 3z" },
-  { match: /\/users$/, d: "M16 20v-1a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v1M9 11a4 4 0 1 0 0-8 4 4 0 0 0 0 8zM22 20v-1a4 4 0 0 0-3-3.9M16 3.1a4 4 0 0 1 0 7.8" },
-  { match: /\/audit$/, d: "M8 6h13M8 12h13M8 18h13M3 6h.01M3 12h.01M3 18h.01" },
-  { match: /\/settings$/, d: "M12 15a3 3 0 1 0 0-6 3 3 0 0 0 0 6zM12 2v3M12 19v3M4.2 4.2l2.1 2.1M17.7 17.7l2.1 2.1M2 12h3M19 12h3M4.2 19.8l2.1-2.1M17.7 6.3l2.1-2.1" },
-];
-const DASH = "M3 3h7v7H3zM14 3h7v7h-7zM3 14h7v7H3zM14 14h7v7h-7z";
+const ROLE_LABELS: Record<string, string> = { OWNER: "Propriétaire", MANAGER: "Manager", STAFF: "Scanner", KITCHEN: "Cuisine", CASHIER: "Caisse" };
 
-const ROLE_LABELS: Record<string, string> = {
-  OWNER: "Propriétaire",
-  MANAGER: "Manager",
-  STAFF: "Scanner",
-  KITCHEN: "Cuisine",
-  CASHIER: "Caisse",
-};
-
-function NavIcon({ d }: { d: string }) {
+export function NavIcon({ d, size = 18 }: { d: string; size?: number }) {
   return (
-    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2} strokeLinecap="round" strokeLinejoin="round" aria-hidden className="shrink-0">
+    <svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2} strokeLinecap="round" strokeLinejoin="round" aria-hidden className="shrink-0">
       <path d={d} />
     </svg>
   );
 }
 
+function GiyaxMark() {
+  return (
+    // eslint-disable-next-line @next/next/no-img-element
+    <img
+      src="/brand/giyax-logo-white.png"
+      alt="GiyaX"
+      width={120}
+      height={51}
+      className="h-5 w-auto object-contain select-none"
+      draggable={false}
+    />
+  );
+}
+
 export function EventSidebar() {
   const pathname = usePathname();
-  const router = useRouter();
   const { tenant } = useTenantSector();
-  const { user, signOut } = useAuth();
+  const { user } = useAuth();
+  const collapsed = useShellStore((s) => s.collapsed);
+  const setCollapsed = useShellStore((s) => s.setCollapsed);
+  const hydrate = useShellStore((s) => s.hydrate);
+  const setCreateEventOpen = useShellStore((s) => s.setCreateEventOpen);
   const links = sidebarLinks("event", user?.role);
-  // Nom et logo du serveur uniquement (Paramètres · Général) : une ancienne
-  // copie locale ferait réapparaître un logo retiré.
+  const { steps, done } = useSetupSteps();
+  const activeEvents = useActiveEventsCount();
+  const isOwner = user?.role === "OWNER";
+  const canCreate = isOwner || user?.role === "MANAGER";
   const orgName = tenant?.name || "Mon espace";
-  const logo = tenantLogo(tenant);
   const userName = user?.fullName || user?.email || "Administrateur";
+  const plan = PLAN_NAME[tenant?.plan ?? "FREE"] ?? "Gratuite";
 
-  async function logout() {
-    await signOut();
-    toast.success("Vous avez été déconnecté.");
-    router.push("/login");
-  }
+  useEffect(() => hydrate(), [hydrate]);
+
+  const isActive = (href: string) => (href === BASE ? pathname === BASE : pathname.startsWith(href));
 
   return (
     <aside
       aria-label="Menu principal"
-      className={cn("ev sticky top-0 z-30 hidden h-screen w-[248px] shrink-0 flex-col bg-[#0B3B2E] px-3.5 py-[18px] text-[#DCE8E1] sm:flex", eventFontVariables)}
+      className={cn(
+        "ev sticky top-0 z-30 hidden h-screen shrink-0 flex-col bg-[#0B3B2E] text-[#DCE8E1] transition-[width] duration-200 sm:flex",
+        collapsed ? "w-[76px] items-center px-3 py-4" : "w-[264px] px-3.5 pb-0 pt-3.5",
+        eventFontVariables
+      )}
     >
-      <div className="flex items-center gap-2.5 px-2 pb-5 pt-1">
-        <span className="flex size-9 shrink-0 items-center justify-center overflow-hidden rounded-[10px] bg-white text-[13px] font-bold text-[#0B3B2E]">
-          {logo ? (
-            // eslint-disable-next-line @next/next/no-img-element
-            <img src={logo} alt="" className="size-full object-contain p-0.5" />
+      {/* Organisation */}
+      <DropdownMenu>
+        <DropdownMenuTrigger asChild>
+          {collapsed ? (
+            <button type="button" aria-label={`Organisation : ${orgName}`} className="rounded-[12px] transition-opacity hover:opacity-90">
+              <OrgAvatar tenant={tenant} name={orgName} className="size-11" />
+            </button>
           ) : (
-            initialsOf(orgName)
+            <button type="button" className="flex items-center gap-2.5 rounded-[12px] bg-white/[0.06] p-2 text-left transition-colors hover:bg-white/10">
+              <OrgAvatar tenant={tenant} name={orgName} className="size-9" />
+              <span className="flex min-w-0 flex-1 flex-col leading-[1.25]">
+                <span className="truncate text-[15px] font-semibold text-white">{orgName}</span>
+                <span className="truncate text-xs text-[#9FBDB0]">Formule {plan}</span>
+              </span>
+              <ChevronDown className="size-4 shrink-0 text-[#9FBDB0]" />
+            </button>
           )}
-        </span>
-        <span className="truncate text-[15px] font-semibold text-white" title={orgName}>
-          {orgName}
-        </span>
-      </div>
+        </DropdownMenuTrigger>
+        <DropdownMenuContent side={collapsed ? "right" : "bottom"} align="start" className={cn(EV_PORTAL, "w-[320px] rounded-[14px] p-0")}>
+          <OrgMenuContent tenant={tenant} isOwner={isOwner} />
+        </DropdownMenuContent>
+      </DropdownMenu>
 
-      <nav className="flex flex-col gap-0.5 text-sm">
-        {links.map(({ href, label, exact }) => {
-          const active = exact ? pathname === href : pathname.startsWith(href);
-          const d = exact ? DASH : (ICONS.find((i) => i.match.test(href))?.d ?? DASH);
-          return (
+      {/* Créer un événement */}
+      {canCreate &&
+        (collapsed ? (
+          <button
+            type="button"
+            aria-label="Créer un événement"
+            title="Créer un événement (C)"
+            onClick={() => setCreateEventOpen(true)}
+            className="mt-4 flex size-11 items-center justify-center rounded-[10px] bg-white/10 text-white transition-colors hover:bg-white/15"
+          >
+            <Plus className="size-5" />
+          </button>
+        ) : (
+          <button
+            type="button"
+            onClick={() => setCreateEventOpen(true)}
+            className="mt-3.5 flex h-[42px] items-center justify-center gap-2 rounded-[10px] bg-white text-sm font-semibold text-[#0B3B2E] transition-colors hover:bg-[#F2F7F5]"
+          >
+            <Plus className="size-4" /> Créer un événement
+          </button>
+        ))}
+
+      {/* Modules */}
+      <nav className={cn("flex min-h-0 flex-1 flex-col overflow-y-auto [scrollbar-width:none]", collapsed ? "mt-4 items-center gap-1.5" : "mt-2.5 gap-0.5")}>
+        {links.map((l) => {
+          const key = keyOf(l.href);
+          const active = isActive(l.href);
+          const badge = key === "events" && activeEvents > 0 ? activeEvents : null;
+          const dot = key === "settings" && done < steps.length;
+          return collapsed ? (
             <Link
-              key={href}
-              href={href}
+              key={l.href}
+              href={l.href}
+              aria-label={l.label}
               aria-current={active ? "page" : undefined}
               className={cn(
-                "flex h-10 items-center gap-3 rounded-[10px] px-3 transition-colors",
-                active ? "bg-white font-semibold text-[#0B3B2E]" : "font-medium text-[#DCE8E1] hover:bg-white/[0.08] hover:text-white"
+                "group relative flex size-11 items-center justify-center rounded-[10px] transition-colors",
+                active ? "bg-white/[0.14] text-white" : "text-[#DCE8E1] hover:bg-white/[0.08] hover:text-white"
               )}
             >
-              <NavIcon d={d} />
-              {label}
+              <NavIcon d={NAV_ICON[key]} />
+              {dot && <span className="absolute right-2 top-2 size-1.5 rounded-full bg-[#F5B83D]" />}
+              <span className="pointer-events-none absolute left-[calc(100%+10px)] z-50 hidden items-center gap-2 whitespace-nowrap rounded-[8px] bg-[#16211C] px-2.5 py-1.5 text-[13px] font-medium text-white shadow-lg group-hover:flex group-focus-visible:flex">
+                {l.label}
+                <span className="font-ev-mono text-[11px] text-white/60">G puis {GO_KEYS[key]}</span>
+              </span>
+            </Link>
+          ) : (
+            <Link
+              key={l.href}
+              href={l.href}
+              aria-current={active ? "page" : undefined}
+              className={cn(
+                "flex h-10 items-center gap-3 rounded-[10px] px-3 text-sm transition-colors",
+                active ? "bg-white/[0.14] font-semibold text-white" : "font-medium text-[#DCE8E1] hover:bg-white/[0.08] hover:text-white"
+              )}
+            >
+              <NavIcon d={NAV_ICON[key]} />
+              <span className="flex-1 truncate">{l.label}</span>
+              {badge !== null && (
+                <span className="flex h-5 min-w-5 items-center justify-center rounded-full bg-white/15 px-1.5 text-[11px] font-semibold text-white">
+                  {badge}
+                </span>
+              )}
+              {dot && <span className="size-2 rounded-full bg-[#F5B83D]" aria-label="Configuration à terminer" />}
             </Link>
           );
         })}
       </nav>
 
-      <DropdownMenu>
-        <DropdownMenuTrigger asChild>
-          <button type="button" className="mt-auto flex items-center gap-2.5 rounded-[12px] bg-white/[0.06] p-2.5 text-left transition-colors hover:bg-white/10">
-            <span className="flex size-8 shrink-0 items-center justify-center rounded-full bg-[#12A06F] text-xs font-semibold text-white">{initialsOf(userName)}</span>
-            <span className="flex min-w-0 flex-col leading-[1.3]">
-              <span className="truncate text-[13px] font-semibold text-white">{userName}</span>
-              <span className="text-[11px] text-[#9FBDB0]">{ROLE_LABELS[user?.role ?? ""] ?? ""}</span>
+      {collapsed ? (
+        <button type="button" aria-label="Déplier le menu" title="Déplier le menu" onClick={() => setCollapsed(false)} className="mt-3 flex size-10 items-center justify-center rounded-[10px] text-[#9FBDB0] hover:bg-white/[0.08] hover:text-white">
+          <PanelLeftOpen className="size-[18px]" />
+        </button>
+      ) : (
+        <div className="flex flex-col gap-2 pt-3">
+          {isOwner && done < steps.length && (
+            <DropdownMenu>
+              <DropdownMenuTrigger asChild>
+                <button type="button" className="flex flex-col gap-2 rounded-[12px] bg-white/[0.06] px-3 py-2.5 text-left transition-colors hover:bg-white/10">
+                  <span className="flex items-center justify-between text-[13px]">
+                    <span className="font-semibold text-white">Configuration</span>
+                    <span className="text-[#9FBDB0]">
+                      {done} / {steps.length}
+                    </span>
+                  </span>
+                  <span className="h-1.5 overflow-hidden rounded-full bg-white/15">
+                    <span className="block h-full rounded-full bg-[#F5B83D]" style={{ width: `${(done / steps.length) * 100}%` }} />
+                  </span>
+                </button>
+              </DropdownMenuTrigger>
+              <DropdownMenuContent side="right" align="end" className={cn(EV_PORTAL, "w-72 rounded-[14px] p-0")}>
+                <SetupMenuContent steps={steps} />
+              </DropdownMenuContent>
+            </DropdownMenu>
+          )}
+          <DropdownMenu>
+            <DropdownMenuTrigger asChild>
+              <button type="button" className="flex items-center gap-2.5 rounded-[12px] p-2 text-left transition-colors hover:bg-white/[0.08]">
+                <span className="relative flex size-9 shrink-0 items-center justify-center rounded-full bg-[#12A06F] text-xs font-semibold text-white">
+                  {initialsOf(userName)}
+                  <span className="absolute -bottom-0.5 -right-0.5 size-3 rounded-full border-2 border-[#0B3B2E] bg-[#3DD68C]" aria-hidden />
+                </span>
+                <span className="flex min-w-0 flex-1 flex-col leading-[1.3]">
+                  <span className="truncate text-[13px] font-semibold text-white">{userName}</span>
+                  <span className="text-xs text-[#9FBDB0]">{ROLE_LABELS[user?.role ?? ""] ?? ""}</span>
+                </span>
+                <ChevronDown className="size-4 shrink-0 text-[#9FBDB0]" />
+              </button>
+            </DropdownMenuTrigger>
+            <DropdownMenuContent side="top" align="start" className={cn(EV_PORTAL, "w-[300px] rounded-[14px] p-0")}>
+              <UserMenuContent name={userName} contact={user?.email ?? user?.phone ?? ""} />
+            </DropdownMenuContent>
+          </DropdownMenu>
+          <div className="-mx-3.5 flex items-center justify-between border-t border-white/10 px-[22px] py-3">
+            <span className="flex items-center gap-2 text-xs text-[#9FBDB0]">
+              Propulsé par <GiyaxMark />
             </span>
-          </button>
-        </DropdownMenuTrigger>
-        <DropdownMenuContent side="top" align="start" className={cn("ev w-56 rounded-xl", eventFontVariables)}>
-          <DropdownMenuItem asChild>
-            <Link href="/change-password" className="gap-2">
-              <KeyRound className="size-4" /> Changer mon mot de passe
-            </Link>
-          </DropdownMenuItem>
-          <DropdownMenuSeparator />
-          <DropdownMenuItem className="gap-2 text-ev-danger focus:text-ev-danger" onClick={() => void logout()}>
-            <LogOut className="size-4" /> Se déconnecter
-          </DropdownMenuItem>
-        </DropdownMenuContent>
-      </DropdownMenu>
+            <button type="button" aria-label="Replier le menu" title="Replier le menu" onClick={() => setCollapsed(true)} className="flex size-8 items-center justify-center rounded-[8px] text-[#9FBDB0] hover:bg-white/[0.08] hover:text-white">
+              <PanelLeftClose className="size-[18px]" />
+            </button>
+          </div>
+        </div>
+      )}
     </aside>
   );
 }

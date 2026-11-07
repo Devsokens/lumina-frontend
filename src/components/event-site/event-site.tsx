@@ -3,6 +3,8 @@
 import Link from "next/link";
 import type { ReactNode } from "react";
 import { useTenant } from "@/hooks/useTenant";
+import { useSiteBase } from "@/hooks/useSiteBase";
+import { homeHref } from "@/components/event-site/parts";
 import { usePastEvents, usePublicEvent, usePublicEvents } from "@/hooks/usePublicEvents";
 import { showcaseFromConfig, type ShowcaseContent } from "@/stores/useShowcaseStore";
 import { lookOf, siteStyle, type SiteLook } from "@/lib/event-site-theme";
@@ -37,13 +39,14 @@ export function SiteEventPage({ site, event, look, preview }: { site: SiteData; 
 
 function usePublishedSite(): { site: SiteData; look: SiteLook; content: ShowcaseContent; loading: boolean } {
   const tenant = useTenant();
+  const base = useSiteBase(tenant.slug);
   const { data, isLoading } = usePublicEvents(tenant.slug);
   const { data: past } = usePastEvents(tenant.slug);
   const config = (tenant.config ?? {}) as Record<string, unknown>;
   const saved = !!config.showcase;
   const content = showcaseFromConfig(tenant.config, tenant.name);
   return {
-    site: buildSite(tenant, content, data ?? [], saved, past ?? []),
+    site: { ...buildSite(tenant, content, data ?? [], saved, past ?? []), base },
     look: saved ? lookOf(content) : DEFAULT_LOOK,
     content,
     loading: isLoading,
@@ -80,7 +83,7 @@ export function PublicEventSiteEvent({ id }: { id: string }) {
         <div className="mx-auto flex max-w-[640px] flex-col items-start gap-5 px-5 py-28">
           <h1 className="m-0 font-(family-name:--s-font-display) text-4xl font-extrabold tracking-[-0.03em]">Événement introuvable</h1>
           <p className="m-0 text-(--s-body)">Cet événement n&apos;est pas (ou plus) en vente.</p>
-          <Link href={`/${site.slug}#evenements`} className="flex h-12 items-center rounded-full bg-(--s-accent) px-6 font-semibold text-(--s-accent-ink)">
+          <Link href={homeHref(site, "#evenements")} className="flex h-12 items-center rounded-full bg-(--s-accent) px-6 font-semibold text-(--s-accent-ink)">
             Voir les autres événements
           </Link>
         </div>

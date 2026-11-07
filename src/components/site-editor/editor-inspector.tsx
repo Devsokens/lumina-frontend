@@ -14,11 +14,11 @@ import type { SiteEvent } from "@/components/event-site/site-data";
 import { cn } from "@/lib/utils";
 
 // Panneau de droite de l'éditeur (écran 19) : l'élément choisi sur le site,
-// ses réglages et les suggestions de l'IA (POST /ai/generate).
+// ses réglages et les suggestions de l'IA (POST /ai/generate). Les
+// propositions de la barre IA s'affichent sur l'aperçu, pas ici.
 
 type Update = (patch: Partial<ShowcaseContent>, key?: string) => void;
 export type Selection = { section: SectionKey | null; field: TextField | null };
-export type AiProposal = { field: TextField | "faq"; text: string; question?: string } | null;
 
 const INPUT =
   "w-full rounded-[10px] border border-ev-border bg-ev-surface px-3 text-sm text-ev-ink outline-none transition-[border,box-shadow] placeholder:text-ev-muted focus:border-ev-primary focus:shadow-[0_0_0_3px_var(--ev-mint)]";
@@ -217,8 +217,6 @@ export function Inspector({
   update,
   events,
   pageEvent,
-  proposal,
-  setProposal,
 }: {
   selection: Selection;
   setSelection: (s: Selection) => void;
@@ -226,8 +224,6 @@ export function Inspector({
   update: Update;
   events: SiteEvent[];
   pageEvent: SiteEvent | null;
-  proposal: AiProposal;
-  setProposal: (p: AiProposal) => void;
 }) {
   const [tab, setTab] = useState<"content" | "style" | "section">("content");
   const { section, field } = selection;
@@ -254,36 +250,6 @@ export function Inspector({
   return (
     <div className="flex h-full flex-col">
       <div className="flex flex-col gap-1 border-b border-ev-line px-4 py-3.5">{header}</div>
-
-      {proposal && (
-        <div className="m-4 mb-0 flex flex-col gap-2.5 rounded-[12px] border border-[#D5E6DE] bg-ev-selected p-3.5 dark:border-ev-border">
-          <span className="flex items-center gap-2 text-[13px] font-semibold text-ev-primary">
-            <Sparkles className="size-4" /> Proposition de l&apos;IA · {proposal.field === "faq" ? "FAQ" : FIELDS[proposal.field].label}
-          </span>
-          {proposal.question && <span className="text-[13px] font-semibold">{proposal.question}</span>}
-          <span className="max-h-48 overflow-y-auto whitespace-pre-line text-[13px] leading-relaxed text-ev-ink2">{proposal.text}</span>
-          <div className="flex gap-2">
-            <button
-              type="button"
-              onClick={() => {
-                if (proposal.field === "faq") {
-                  update({ faqs: [...content.faqs, { id: `faq-${Date.now().toString(36)}`, question: (proposal.question ?? "").slice(0, 200), answer: proposal.text.slice(0, 1500) }] }, "faqs-ai");
-                  setSelection({ section: "faq", field: null });
-                } else {
-                  update({ [proposal.field]: proposal.text.slice(0, FIELDS[proposal.field].max) }, `${proposal.field}-ai`);
-                }
-                setProposal(null);
-              }}
-              className="h-8 rounded-[8px] bg-ev-primary px-3 text-xs font-semibold text-white"
-            >
-              Appliquer
-            </button>
-            <button type="button" onClick={() => setProposal(null)} className="h-8 rounded-[8px] border border-ev-border bg-ev-surface px-3 text-xs">
-              Ignorer
-            </button>
-          </div>
-        </div>
-      )}
 
       {!section && !field ? (
         <div className="flex flex-col gap-3 p-4 text-[13px] text-ev-ink2">

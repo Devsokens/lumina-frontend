@@ -17,6 +17,7 @@ import { useListings } from "@/hooks/useStays";
 import { useSaveStaySite } from "@/hooks/useAdmin";
 import { apiError } from "@/lib/api";
 import { siteFontVariables } from "@/lib/site-fonts";
+import { publicSiteUrl } from "@/lib/tenant-url";
 import {
   STAY_LAYOUTS,
   STAY_LAYOUT_INFO,
@@ -72,9 +73,9 @@ export function StaySiteEditor({ tenant }: { tenant: Tenant }) {
           </div>
           <div className="flex gap-2">
             <Button asChild variant="outline" size="sm">
-              <Link href={`/${tenant.slug}`} target="_blank">
+              <a href={publicSiteUrl(tenant.slug)} target="_blank" rel="noreferrer">
                 <ExternalLink className="size-4" /> Voir le site
-              </Link>
+              </a>
             </Button>
             <Button size="sm" onClick={publish} disabled={save.isPending}>
               {save.isPending ? <Loader2 className="size-4 animate-spin" /> : <Check className="size-4" />}

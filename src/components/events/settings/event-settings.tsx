@@ -38,7 +38,7 @@ function groups(tenant: Tenant | undefined): { title: string; items: Item[] }[] 
       title: "COMPTE",
       items: [
         { key: "profil", label: "Mon profil" },
-        { key: "equipe", label: "Équipe" },
+        { key: "equipe", label: "Mon équipe" },
         { key: "abonnement", label: "Abonnement", badge: PLAN_LABELS[tenant?.plan ?? "FREE"]?.label },
       ],
     },

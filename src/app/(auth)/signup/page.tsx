@@ -1,265 +1,543 @@
 "use client";
 
-import { useEffect, useState } from "react";
-import { useRouter } from "next/navigation";
+import { Suspense, useState } from "react";
+import { useRouter, useSearchParams } from "next/navigation";
 import Link from "next/link";
-import { useForm } from "react-hook-form";
-import { zodResolver } from "@hookform/resolvers/zod";
 import slugify from "slugify";
 import { toast } from "sonner";
-import { Eye, EyeOff, PartyPopper, UtensilsCrossed, Building2 } from "lucide-react";
-import { signupSchema, type SignupInput } from "@/lib/validations";
+import {
+  ArrowLeft,
+  Building2,
+  Check,
+  ChevronRight,
+  Eye,
+  EyeOff,
+  PartyPopper,
+  Plus,
+  Trash2,
+  Users,
+  UtensilsCrossed,
+} from "lucide-react";
 import { homePathFor, useAuth } from "@/hooks/useAuth";
 import { apiError } from "@/lib/api";
-import { API_URL, ROOT_DOMAIN } from "@/lib/constants";
-import { publicSiteLabel, subdomainActive } from "@/lib/tenant-url";
-import { SECTORS } from "@/lib/constants";
+import { API_URL, type Sector } from "@/lib/constants";
+import { publicSiteLabel } from "@/lib/tenant-url";
+import { LEGAL_LINKS } from "@/lib/legal";
 import { Button } from "@/components/ui/button";
-import { FloatingField } from "@/components/shared/floating-field";
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from "@/components/ui/select";
+import { cn } from "@/lib/utils";
 
-const SECTOR_LABELS: Record<(typeof SECTORS)[number], string> = {
-  EVENT: "Événementiel",
-  RESTAURANT: "Restauration",
-  SHOP: "Commerce",
-  ACCOMMODATION: "RBNB",
-};
+const SECTOR_OPTIONS: { id: Sector; label: string; icon: React.ComponentType<{ className?: string }> }[] = [
+  { id: "EVENT", label: "Événementiel", icon: PartyPopper },
+  { id: "RESTAURANT", label: "Restauration", icon: UtensilsCrossed },
+  { id: "ACCOMMODATION", label: "RBNB / Séjours", icon: Building2 },
+];
+
+function checkPasswordStrength(p: string) {
+  let score = 0;
+  if (p.length >= 8) score++;
+  if (/[A-Z]/.test(p)) score++;
+  if (/[0-9]/.test(p)) score++;
+  return score;
+}
 
 export default function SignupPage() {
+  return (
+    <Suspense>
+      <SignupContent />
+    </Suspense>
+  );
+}
+
+function SignupContent() {
   const router = useRouter();
+  const searchParams = useSearchParams();
   const { signup } = useAuth();
+
+  const sectorParam = searchParams.get("sector");
+  const initialSector: Sector =
+    sectorParam === "EVENT" || sectorParam === "RESTAURANT" || sectorParam === "ACCOMMODATION"
+      ? sectorParam
+      : "EVENT";
+
+  const [step, setStep] = useState<1 | 2 | 3>(1);
   const [submitting, setSubmitting] = useState(false);
+  const [googleLoading, setGoogleLoading] = useState(false);
   const [showPassword, setShowPassword] = useState(false);
-  const {
-    register,
-    handleSubmit,
-    setValue,
-    watch,
-    formState: { errors },
-  } = useForm<SignupInput>({
-    resolver: zodResolver(signupSchema),
-    defaultValues: { sector: "EVENT", acceptedTerms: undefined },
-  });
 
-  // Secteur choisi depuis la landing (/signup?sector=RESTAURANT…).
-  useEffect(() => {
-    const fromUrl = new URLSearchParams(window.location.search).get("sector");
-    if (fromUrl === "EVENT" || fromUrl === "RESTAURANT" || fromUrl === "ACCOMMODATION") {
-      setValue("sector", fromUrl, { shouldValidate: true });
+  // Étape 1 : Compte
+  const [fullName, setFullName] = useState("");
+  const [email, setEmail] = useState("");
+  const [phone, setPhone] = useState("");
+  const [password, setPassword] = useState("");
+
+  // Étape 2 : Organisation
+  const [businessName, setBusinessName] = useState("");
+  const [slug, setSlug] = useState("");
+  const [sector, setSector] = useState<Sector>(initialSector);
+
+  // Étape 3 : Équipe & CGU
+  const [teamMembers, setTeamMembers] = useState<Array<{ id: string; contact: string; role: "MANAGER" | "STAFF" }>>([]);
+  const [inviteContact, setInviteContact] = useState("");
+  const [inviteRole, setInviteRole] = useState<"MANAGER" | "STAFF">("STAFF");
+  const [acceptedTerms, setAcceptedTerms] = useState(false);
+
+  const handleBusinessNameChange = (val: string) => {
+    setBusinessName(val);
+    if (!slug || slug === slugify(businessName, { lower: true, strict: true })) {
+      setSlug(slugify(val, { lower: true, strict: true }).slice(0, 50).replace(/-+$/, ""));
     }
-  }, [setValue]);
+  };
 
-  const businessName = watch("businessName");
-  const sector = watch("sector");
+  const handleAddTeamMember = () => {
+    const trimmed = inviteContact.trim();
+    if (!trimmed) return;
+    setTeamMembers((prev) => [...prev, { id: Math.random().toString(36).slice(2), contact: trimmed, role: inviteRole }]);
+    setInviteContact("");
+  };
 
-  function onBusinessNameChange(value: string) {
-    setValue("businessName", value);
-    setValue("slug", slugify(value, { lower: true, strict: true }).slice(0, 50).replace(/-+$/, ""));
-  }
+  const handleRemoveTeamMember = (id: string) => {
+    setTeamMembers((prev) => prev.filter((m) => m.id !== id));
+  };
 
-  async function onSubmit(values: SignupInput) {
+  const validateStep1 = () => {
+    if (!fullName.trim()) {
+      toast.error("Veuillez renseigner votre nom complet.");
+      return false;
+    }
+    if (!email.trim() && !phone.trim()) {
+      toast.error("Veuillez renseigner un email ou un numéro de téléphone.");
+      return false;
+    }
+    if (password.length < 8) {
+      toast.error("Le mot de passe doit comporter au moins 8 caractères.");
+      return false;
+    }
+    return true;
+  };
+
+  const validateStep2 = () => {
+    if (!businessName.trim()) {
+      toast.error("Veuillez renseigner le nom de votre organisation.");
+      return false;
+    }
+    if (!slug.trim()) {
+      toast.error("Veuillez définir une adresse pour votre site vitrine.");
+      return false;
+    }
+    return true;
+  };
+
+  const handleNextStep = () => {
+    if (step === 1) {
+      if (validateStep1()) setStep(2);
+    } else if (step === 2) {
+      if (validateStep2()) setStep(3);
+    }
+  };
+
+  const handleSubmit = async () => {
+    if (!acceptedTerms) {
+      toast.error("Veuillez accepter les CGU et la politique de confidentialité.");
+      return;
+    }
+
     setSubmitting(true);
     try {
       const user = await signup({
-        fullName: values.fullName,
-        email: values.email || undefined,
-        phone: values.phone ? values.phone.replace(/[\s.()-]/g, "") : undefined,
-        password: values.password,
-        businessName: values.businessName,
-        slug: values.slug,
-        sector: values.sector,
+        fullName: fullName.trim(),
+        email: email.trim() || undefined,
+        phone: phone.trim() ? phone.replace(/[\s.()-]/g, "") : undefined,
+        password,
+        businessName: businessName.trim(),
+        slug: slug.trim(),
+        sector,
         acceptedTerms: true,
       });
-      toast.success("Compte créé avec succès");
+
+      toast.success("Votre compte GiyaX a été créé avec succès !");
       router.replace(await homePathFor(user));
     } catch (err) {
       toast.error(apiError(err, "Impossible de créer le compte."));
       setSubmitting(false);
     }
-  }
+  };
 
-  const [googleLoading, setGoogleLoading] = useState(false);
-
-  function handleGoogleSignup() {
+  const handleGoogleSignup = () => {
     setGoogleLoading(true);
     toast.loading("Redirection vers Google...");
-    window.location.href = `${API_URL}/auth/google`;
-  }
+    // eslint-disable-next-line @next/next/no-location-assign-relative-destination
+    window.location.assign(`${API_URL}/auth/google`);
+  };
 
-  const hasSubdomain = subdomainActive();
-  // Fond du libellé posé sur la bordure (page au-dessus, champ en dessous),
-  // identique aux champs FloatingField.
-  const raisedLabelBg = "bg-[linear-gradient(to_bottom,var(--background)_50%,var(--card)_50%)]";
+  const pwdStrength = checkPasswordStrength(password);
 
   return (
-    <div>
-      <h1 className="font-display text-2xl font-bold leading-tight text-foreground sm:text-[26px]">Créer votre compte GiyaX</h1>
-      <p className="mt-1 text-sm text-muted-foreground">
-        Démarrez gratuitement, sans frais d&apos;entrée.
-      </p>
+    <div className="w-full">
+      {/* Header */}
+      <div className="mb-6">
+        <h1 className="font-display text-2xl font-bold tracking-tight text-foreground sm:text-[26px]">
+          Créer votre compte GiyaX
+        </h1>
+        <p className="mt-1 text-xs text-muted-foreground">
+          Étape {step} sur 3 : {step === 1 ? "Vos identifiants" : step === 2 ? "Votre organisation" : "Votre équipe"}
+        </p>
 
-      {/* Bouton Google */}
-      <Button
-        type="button"
-        variant="outline"
-        className="mt-4 h-11 w-full rounded-xl border-2 border-foreground/15 bg-card text-[15px] font-medium shadow-xs transition-all hover:border-primary/40 hover:bg-muted/50"
-        onClick={handleGoogleSignup}
-        disabled={googleLoading}
-      >
-        <GoogleIcon className="mr-2 size-5" />
-        {googleLoading ? "Inscription en cours..." : "S'inscrire avec Google"}
-      </Button>
-
-      <div className="my-3 flex items-center gap-3">
-        <div className="h-px flex-1 bg-border" />
-        <span className="text-xs font-medium text-muted-foreground">ou avec vos informations</span>
-        <div className="h-px flex-1 bg-border" />
+        {/* Stepper bar */}
+        <div className="mt-4 flex h-1.5 w-full gap-1.5 overflow-hidden rounded-full bg-muted">
+          <div
+            className={cn("h-full flex-1 rounded-full transition-all duration-300", step >= 1 ? "bg-primary" : "bg-transparent")}
+          />
+          <div
+            className={cn("h-full flex-1 rounded-full transition-all duration-300", step >= 2 ? "bg-primary" : "bg-transparent")}
+          />
+          <div
+            className={cn("h-full flex-1 rounded-full transition-all duration-300", step >= 3 ? "bg-primary" : "bg-transparent")}
+          />
+        </div>
       </div>
 
-      {/* Deux colonnes (mobile compris) et erreurs posées sous les champs :
-          le formulaire tient dans l'écran, sans défilement. */}
-      <form onSubmit={handleSubmit(onSubmit)} className="grid grid-cols-2 gap-x-3 gap-y-5" noValidate>
-        <FloatingField
-          id="fullName"
-          label="Nom complet"
-          required
-          dense
-          errorOverlay
-          autoComplete="name"
-          error={errors.fullName?.message}
-          {...register("fullName")}
-        />
-        <FloatingField
-          id="password"
-          label="Mot de passe"
-          required
-          dense
-          errorOverlay
-          type={showPassword ? "text" : "password"}
-          autoComplete="new-password"
-          error={errors.password?.message}
-          endAdornment={
+      {/* Étape 1 : Compte & Identifiants */}
+      {step === 1 && (
+        <div className="space-y-4">
+          <Button
+            type="button"
+            variant="outline"
+            className="h-11 w-full rounded-xl border-2 border-foreground/15 bg-card text-sm font-medium shadow-xs transition-all hover:border-primary/40 hover:bg-muted/50"
+            onClick={handleGoogleSignup}
+            disabled={googleLoading}
+          >
+            <GoogleIcon className="mr-2 size-4" />
+            {googleLoading ? "Inscription en cours..." : "Continuer avec Google"}
+          </Button>
+
+          <div className="my-3 flex items-center gap-3">
+            <div className="h-px flex-1 bg-border" />
+            <span className="text-[11px] font-medium uppercase tracking-wider text-muted-foreground">
+              ou avec vos identifiants
+            </span>
+            <div className="h-px flex-1 bg-border" />
+          </div>
+
+          <div>
+            <label htmlFor="fullName" className="text-xs font-semibold text-foreground">
+              Nom complet <span className="text-destructive">*</span>
+            </label>
+            <input
+              id="fullName"
+              type="text"
+              value={fullName}
+              onChange={(e) => setFullName(e.target.value)}
+              placeholder="Ex. Jean Ondo"
+              className="mt-1.5 h-11 w-full rounded-xl border border-input bg-card px-3.5 text-sm outline-none focus:border-primary focus:ring-2 focus:ring-primary/20"
+              autoFocus
+            />
+          </div>
+
+          <div className="grid grid-cols-2 gap-3">
+            <div>
+              <label htmlFor="email" className="text-xs font-semibold text-foreground">
+                Email
+              </label>
+              <input
+                id="email"
+                type="email"
+                value={email}
+                onChange={(e) => setEmail(e.target.value)}
+                placeholder="contact@exemple.ga"
+                className="mt-1.5 h-11 w-full rounded-xl border border-input bg-card px-3.5 text-sm outline-none focus:border-primary focus:ring-2 focus:ring-primary/20"
+              />
+            </div>
+            <div>
+              <label htmlFor="phone" className="text-xs font-semibold text-foreground">
+                Téléphone
+              </label>
+              <input
+                id="phone"
+                type="tel"
+                value={phone}
+                onChange={(e) => setPhone(e.target.value)}
+                placeholder="074 XX XX XX"
+                className="mt-1.5 h-11 w-full rounded-xl border border-input bg-card px-3.5 text-sm outline-none focus:border-primary focus:ring-2 focus:ring-primary/20"
+              />
+            </div>
+          </div>
+
+          <div>
+            <div className="flex items-center justify-between">
+              <label htmlFor="password" className="text-xs font-semibold text-foreground">
+                Mot de passe <span className="text-destructive">*</span>
+              </label>
+            </div>
+            <div className="relative mt-1.5">
+              <input
+                id="password"
+                type={showPassword ? "text" : "password"}
+                value={password}
+                onChange={(e) => setPassword(e.target.value)}
+                placeholder="8 caractères minimum..."
+                className="h-11 w-full rounded-xl border border-input bg-card px-3.5 pr-10 text-sm outline-none focus:border-primary focus:ring-2 focus:ring-primary/20"
+              />
+              <button
+                type="button"
+                onClick={() => setShowPassword((v) => !v)}
+                className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground"
+              >
+                {showPassword ? <EyeOff className="size-4" /> : <Eye className="size-4" />}
+              </button>
+            </div>
+
+            {/* Indicateur de force */}
+            {password.length > 0 && (
+              <div className="mt-2 flex items-center gap-2">
+                <div className="flex h-1 flex-1 gap-1">
+                  <div
+                    className={cn(
+                      "h-full flex-1 rounded-full transition-all",
+                      pwdStrength >= 1 ? (pwdStrength === 1 ? "bg-red-500" : pwdStrength === 2 ? "bg-amber-500" : "bg-emerald-500") : "bg-muted",
+                    )}
+                  />
+                  <div
+                    className={cn(
+                      "h-full flex-1 rounded-full transition-all",
+                      pwdStrength >= 2 ? (pwdStrength === 2 ? "bg-amber-500" : "bg-emerald-500") : "bg-muted",
+                    )}
+                  />
+                  <div
+                    className={cn(
+                      "h-full flex-1 rounded-full transition-all",
+                      pwdStrength >= 3 ? "bg-emerald-500" : "bg-muted",
+                    )}
+                  />
+                </div>
+                <span className="text-[10px] font-semibold uppercase text-muted-foreground">
+                  {pwdStrength === 1 ? "Faible" : pwdStrength === 2 ? "Moyen" : "Sécurisé"}
+                </span>
+              </div>
+            )}
+          </div>
+
+          <Button
+            type="button"
+            onClick={handleNextStep}
+            className="mt-2 h-11 w-full rounded-xl text-sm font-semibold shadow-md shadow-primary/20"
+          >
+            <span>Continuer</span>
+            <ChevronRight className="ml-1 size-4" />
+          </Button>
+        </div>
+      )}
+
+      {/* Étape 2 : Organisation */}
+      {step === 2 && (
+        <div className="space-y-4">
+          <div>
+            <label htmlFor="businessName" className="text-xs font-semibold text-foreground">
+              Nom de l&apos;organisation <span className="text-destructive">*</span>
+            </label>
+            <input
+              id="businessName"
+              type="text"
+              value={businessName}
+              onChange={(e) => handleBusinessNameChange(e.target.value)}
+              placeholder="Ex. Afro Nation Gabon, TedxLibreville..."
+              className="mt-1.5 h-11 w-full rounded-xl border border-input bg-card px-3.5 text-sm outline-none focus:border-primary focus:ring-2 focus:ring-primary/20"
+              autoFocus
+            />
+          </div>
+
+          <div>
+            <label htmlFor="slug" className="text-xs font-semibold text-foreground">
+              Adresse du site vitrine <span className="text-destructive">*</span>
+            </label>
+            <div className="mt-1.5 flex items-center rounded-xl border border-input bg-card px-3.5 focus-within:border-primary focus-within:ring-2 focus-within:ring-primary/20">
+              <span className="text-xs font-medium text-muted-foreground">giya.events/</span>
+              <input
+                id="slug"
+                type="text"
+                value={slug}
+                onChange={(e) => setSlug(slugify(e.target.value, { lower: true, strict: true }))}
+                placeholder="nom-organisation"
+                className="h-11 flex-1 bg-transparent px-1.5 text-sm font-medium outline-none"
+              />
+              {slug && (
+                <span className="inline-flex items-center gap-1 rounded-full bg-emerald-50 px-2 py-0.5 text-[10px] font-semibold text-emerald-700">
+                  <Check className="size-3" />
+                  Valide
+                </span>
+              )}
+            </div>
+            <p className="mt-1 text-[11px] text-muted-foreground">
+              Adresse publique : <strong>{publicSiteLabel(slug || "votre-activite")}</strong>
+            </p>
+          </div>
+
+          <div>
+            <label className="text-xs font-semibold text-foreground">
+              Secteur d&apos;activité <span className="text-destructive">*</span>
+            </label>
+            <div className="mt-2 grid grid-cols-3 gap-2">
+              {SECTOR_OPTIONS.map((opt) => {
+                const Icon = opt.icon;
+                const isSelected = sector === opt.id;
+                return (
+                  <button
+                    key={opt.id}
+                    type="button"
+                    onClick={() => setSector(opt.id)}
+                    className={cn(
+                      "flex flex-col items-center gap-1.5 rounded-xl border p-3 text-center transition-all",
+                      isSelected
+                        ? "border-primary bg-primary/10 text-primary font-bold shadow-xs"
+                        : "border-input bg-card text-muted-foreground hover:border-foreground/30 hover:text-foreground",
+                    )}
+                  >
+                    <Icon className="size-5" />
+                    <span className="text-xs">{opt.label}</span>
+                  </button>
+                );
+              })}
+            </div>
+          </div>
+
+          <div className="flex gap-2.5 pt-2">
+            <Button
+              type="button"
+              variant="outline"
+              onClick={() => setStep(1)}
+              className="h-11 rounded-xl px-4 text-xs font-semibold"
+            >
+              <ArrowLeft className="mr-1.5 size-3.5" />
+              Retour
+            </Button>
+            <Button
+              type="button"
+              onClick={handleNextStep}
+              className="h-11 flex-1 rounded-xl text-sm font-semibold shadow-md shadow-primary/20"
+            >
+              <span>Continuer</span>
+              <ChevronRight className="ml-1 size-4" />
+            </Button>
+          </div>
+        </div>
+      )}
+
+      {/* Étape 3 : Équipe & CGU */}
+      {step === 3 && (
+        <div className="space-y-4">
+          <div>
+            <div className="flex items-center gap-2">
+              <Users className="size-4 text-primary" />
+              <h3 className="text-xs font-bold uppercase tracking-wider text-foreground">
+                Inviter votre équipe (facultatif)
+              </h3>
+            </div>
+            <p className="mt-1 text-xs text-muted-foreground">
+              Ajoutez des collaborateurs pour gérer les événements ou scanner les billets à l&apos;entrée.
+            </p>
+          </div>
+
+          {/* Formulaire ajout collaborateur */}
+          <div className="flex gap-2">
+            <input
+              type="text"
+              value={inviteContact}
+              onChange={(e) => setInviteContact(e.target.value)}
+              placeholder="Email ou téléphone..."
+              className="h-10 flex-1 rounded-xl border border-input bg-card px-3 text-xs outline-none focus:border-primary"
+              onKeyDown={(e) => {
+                if (e.key === "Enter") {
+                  e.preventDefault();
+                  handleAddTeamMember();
+                }
+              }}
+            />
+            <select
+              value={inviteRole}
+              onChange={(e) => setInviteRole(e.target.value as "MANAGER" | "STAFF")}
+              className="rounded-xl border border-input bg-card px-2.5 text-xs font-medium text-foreground outline-none focus:border-primary"
+            >
+              <option value="MANAGER">Manager</option>
+              <option value="STAFF">Scanner</option>
+            </select>
             <button
               type="button"
-              onClick={() => setShowPassword((v) => !v)}
-              className="flex size-9 items-center justify-center rounded-lg text-muted-foreground transition-colors hover:bg-muted hover:text-foreground"
-              aria-label={showPassword ? "Masquer le mot de passe" : "Afficher le mot de passe"}
+              onClick={handleAddTeamMember}
+              disabled={!inviteContact.trim()}
+              className="inline-flex h-10 items-center gap-1.5 rounded-xl bg-muted px-3 text-xs font-semibold text-foreground hover:bg-muted/80 disabled:opacity-40"
             >
-              {showPassword ? <EyeOff className="size-4" /> : <Eye className="size-4" />}
+              <Plus className="size-3.5" />
+              Ajouter
             </button>
-          }
-          {...register("password")}
-        />
-        <FloatingField
-          id="email"
-          label="Email"
-          type="email"
-          dense
-          errorOverlay
-          autoComplete="email"
-          error={errors.email?.message}
-          {...register("email")}
-        />
-        <FloatingField
-          id="phone"
-          label="Téléphone"
-          type="tel"
-          inputMode="tel"
-          dense
-          errorOverlay
-          autoComplete="tel"
-          error={errors.phone?.message}
-          {...register("phone")}
-        />
-        <FloatingField
-          id="businessName"
-          label="Nom de l'activité"
-          required
-          dense
-          errorOverlay
-          error={errors.businessName?.message}
-          value={businessName ?? ""}
-          onChange={(e) => onBusinessNameChange(e.target.value)}
-        />
+          </div>
 
-        {/* Secteur : même habillage que les champs, libellé toujours remonté. */}
-        <div className="relative">
-          <Select
-            value={sector}
-            onValueChange={(v) => setValue("sector", v as SignupInput["sector"], { shouldValidate: true })}
-          >
-            <SelectTrigger
-              id="sector"
-              className="h-12! w-full rounded-xl border-2 border-foreground/15 bg-card px-4 text-sm shadow-xs hover:border-foreground/30 focus-visible:border-primary focus-visible:ring-4 focus-visible:ring-primary/15 dark:border-white/15 dark:bg-card"
-            >
-              <SelectValue />
-            </SelectTrigger>
-            <SelectContent>
-              <SelectItem value="EVENT"><PartyPopper className="size-4" /> Événementiel</SelectItem>
-              <SelectItem value="RESTAURANT"><UtensilsCrossed className="size-4" /> Restauration</SelectItem>
-              <SelectItem value="ACCOMMODATION"><Building2 className="size-4" /> RBNB</SelectItem>
-            </SelectContent>
-          </Select>
-          <label
-            htmlFor="sector"
-            className={`pointer-events-none absolute left-3 top-0 -translate-y-1/2 rounded px-1.5 text-xs font-semibold text-muted-foreground ${raisedLabelBg}`}
-          >
-            Secteur <span className="text-destructive">*</span>
-          </label>
-        </div>
-
-        <div className="relative col-span-2">
-          <FloatingField
-            id="slug"
-            label="Adresse de votre site"
-            required
-            dense
-            errorOverlay
-            error={errors.slug?.message}
-            className={hasSubdomain ? "pr-28" : undefined}
-            endAdornment={
-              hasSubdomain ? (
-                <span className="pr-2.5 text-sm font-semibold text-primary">.{ROOT_DOMAIN}</span>
-              ) : undefined
-            }
-            {...register("slug")}
-          />
-          {/* Aperçu de l'adresse, à l'emplacement de l'erreur (aucune hauteur ajoutée). */}
-          {!hasSubdomain && !errors.slug && (
-            <p className="absolute left-0 top-full mt-0.5 w-full truncate px-1 text-[11px] leading-tight text-muted-foreground">
-              Votre site : <strong>{publicSiteLabel(watch("slug") || "votre-activite")}</strong>
-            </p>
+          {teamMembers.length > 0 && (
+            <div className="flex flex-col gap-1.5 rounded-xl border border-input bg-card/60 p-2.5">
+              {teamMembers.map((m) => (
+                <div key={m.id} className="flex items-center justify-between rounded-lg bg-muted/50 px-3 py-1.5 text-xs">
+                  <div className="flex items-center gap-2">
+                    <span className="font-medium text-foreground">{m.contact}</span>
+                    <span className="rounded bg-card px-1.5 py-0.5 text-[10px] font-semibold text-muted-foreground border">
+                      {m.role === "MANAGER" ? "Manager" : "Scanner"}
+                    </span>
+                  </div>
+                  <button
+                    type="button"
+                    onClick={() => handleRemoveTeamMember(m.id)}
+                    className="text-muted-foreground hover:text-destructive"
+                  >
+                    <Trash2 className="size-3.5" />
+                  </button>
+                </div>
+              ))}
+            </div>
           )}
+
+          {/* CGU checkbox */}
+          <label className="flex cursor-pointer items-start gap-2.5 pt-2 text-xs text-muted-foreground">
+            <input
+              type="checkbox"
+              checked={acceptedTerms}
+              onChange={(e) => setAcceptedTerms(e.target.checked)}
+              className="mt-0.5 size-4 rounded border-input accent-[var(--primary)]"
+            />
+            <span>
+              J&apos;accepte les{" "}
+              <a href={LEGAL_LINKS.terms} target="_blank" rel="noopener noreferrer" className="font-medium text-foreground underline underline-offset-2">
+                conditions d&apos;utilisation
+              </a>{" "}
+              et la{" "}
+              <a href={LEGAL_LINKS.privacy} target="_blank" rel="noopener noreferrer" className="font-medium text-foreground underline underline-offset-2">
+                politique de confidentialité
+              </a>{" "}
+              de GiyaX.
+            </span>
+          </label>
+
+          {/* Actions */}
+          <div className="flex gap-2.5 pt-2">
+            <Button
+              type="button"
+              variant="outline"
+              onClick={() => setStep(2)}
+              className="h-11 rounded-xl px-4 text-xs font-semibold"
+            >
+              <ArrowLeft className="mr-1.5 size-3.5" />
+              Retour
+            </Button>
+            <Button
+              type="button"
+              disabled={submitting || !acceptedTerms}
+              onClick={handleSubmit}
+              className="h-11 flex-1 rounded-xl text-sm font-semibold shadow-md shadow-primary/20"
+            >
+              {submitting ? "Création en cours..." : "Créer mon compte"}
+            </Button>
+          </div>
         </div>
+      )}
 
-        <label className="col-span-2 -mt-1 flex items-start gap-2 text-sm">
-          <input
-            type="checkbox"
-            className="mt-0.5 size-4 shrink-0 rounded border-input accent-[var(--primary)]"
-            aria-invalid={errors.acceptedTerms ? true : undefined}
-            {...register("acceptedTerms")}
-          />
-          <span className={errors.acceptedTerms ? "text-destructive" : "text-muted-foreground"}>
-            J&apos;accepte les CGU et la politique de confidentialité de GiyaX.
-          </span>
-        </label>
-
-        <Button
-          type="submit"
-          className="col-span-2 h-12 w-full rounded-xl text-base font-semibold shadow-md shadow-primary/20"
-          disabled={submitting}
-        >
-          {submitting ? "Création..." : "Démarrer gratuitement"}
-        </Button>
-      </form>
-
-      <p className="mt-5 text-center text-sm text-muted-foreground">
+      {/* Footer link to Login */}
+      <p className="mt-6 text-center text-xs text-muted-foreground">
         Déjà un compte ?{" "}
         <Link href="/login" className="font-semibold text-primary underline-offset-4 hover:underline">
           Se connecter

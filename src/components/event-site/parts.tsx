@@ -3,12 +3,32 @@
 import { useState, type ReactNode } from "react";
 import { toast } from "sonner";
 import { cn } from "@/lib/utils";
+import { APP_URL } from "@/lib/constants";
+import { LEGAL_LINKS } from "@/lib/legal";
 import type { SiteData, SiteEvent } from "@/components/event-site/site-data";
 import type { FAQItem } from "@/stores/useShowcaseStore";
 
 // Pièces communes aux modèles Nuit et Lumière.
 
 export type SiteMode = { preview?: boolean };
+
+// Mention GiyaX en pied de page, avec les documents légaux de la plateforme
+// (sous-traitant des données des acheteurs). Adresses absolues : le site
+// public peut être servi sur le sous-domaine de l'organisateur.
+export function GiyaxCredit() {
+  const link = "underline-offset-4 hover:underline";
+  return (
+    <span className="flex flex-wrap gap-x-3 gap-y-1">
+      <span>Billetterie propulsée par GiyaX</span>
+      <a href={`${APP_URL}${LEGAL_LINKS.privacy}`} target="_blank" rel="noopener noreferrer" className={link}>
+        Confidentialité
+      </a>
+      <a href={`${APP_URL}${LEGAL_LINKS.terms}`} target="_blank" rel="noopener noreferrer" className={link}>
+        Conditions
+      </a>
+    </span>
+  );
+}
 
 // Photo réelle, ou emplacement gris (libellé visible dans l'éditeur).
 export function Photo({ src, alt = "", label, preview, className, imgClassName }: { src?: string | null; alt?: string; label?: string; preview?: boolean; className?: string; imgClassName?: string }) {
@@ -42,11 +62,13 @@ export function Soon() {
   return <span className="ml-2 inline-flex h-6 items-center rounded-full bg-(--s-chip) px-2.5 align-middle text-xs font-semibold text-(--s-muted)">Bientôt</span>;
 }
 
+// nom.giyax.com/events/42 sur sous-domaine, giyax.vercel.app/nom/events/42 sinon.
 export function homeHref(site: SiteData, hash = "") {
-  return `/${site.slug}${hash}`;
+  const base = site.base ?? `/${site.slug}`;
+  return base ? `${base}${hash}` : `/${hash}`;
 }
 export function eventHref(site: SiteData, e: SiteEvent) {
-  return `/${site.slug}/events/${e.id}`;
+  return `${site.base ?? `/${site.slug}`}/events/${e.id}`;
 }
 
 export function mapsLink(e: SiteEvent) {

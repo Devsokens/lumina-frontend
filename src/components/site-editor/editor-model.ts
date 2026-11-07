@@ -35,6 +35,15 @@ export const FIELDS: Record<TextField, { label: string; crumb: string; section: 
 
 export const isTextField = (v: string | undefined): v is TextField => !!v && v in FIELDS;
 
+// Proposition de l'IA en attente : montrée sur l'aperçu, appliquée sur demande.
+export type AiProposal = { field: TextField | "faq"; text: string; question?: string } | null;
+
+export function proposalPatch(p: NonNullable<AiProposal>, content: ShowcaseContent, id = `faq-${Date.now().toString(36)}`): Partial<ShowcaseContent> {
+  return p.field === "faq"
+    ? { faqs: [...(content.faqs ?? []), { id, question: (p.question ?? "").slice(0, 200), answer: p.text.slice(0, 1500) }] }
+    : { [p.field]: p.text.slice(0, FIELDS[p.field].max) };
+}
+
 // Contenu de départ d'un compte sans site publié : les textes du nouveau
 // design et l'identité du compte (jamais les exemples de démonstration).
 export function initialContent(tenant: Tenant): { content: ShowcaseContent; saved: boolean } {

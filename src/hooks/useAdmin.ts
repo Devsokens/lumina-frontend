@@ -76,6 +76,50 @@ export function useTestEmail() {
   });
 }
 
+// ---------- Envoi depuis le Gmail de l'organisateur (OAuth2) ----------
+
+export type GmailStatus = {
+  connected: boolean;
+  email: string | null;
+  // ERROR : Google a retiré l'autorisation (reconnexion nécessaire).
+  status: "ACTIVE" | "ERROR" | null;
+  lastError: string | null;
+  connectedAt: string | null;
+  // Connexion Google possible sur ce serveur.
+  available: boolean;
+  // Adresse GiyaX connectée (relais sans Gmail, quota atteint ou erreur).
+  platformReady: boolean;
+  sentToday: number;
+  dailyLimit: number;
+};
+
+export function useGmailStatus(enabled = true) {
+  return useQuery({
+    queryKey: ["admin-gmail"],
+    queryFn: () => get<GmailStatus>("/admin/tenant/emails/gmail"),
+    enabled,
+  });
+}
+
+// Renvoie l'adresse de l'écran Google ; le serveur ramène ensuite sur
+// Paramètres › E-mails avec ?gmail=connected | denied | scope | error.
+export function useConnectGmail() {
+  return useMutation({
+    mutationFn: async () => {
+      const { data } = await api.post<ApiResponse<{ url: string }>>("/admin/tenant/emails/gmail/connect");
+      return data.data?.url ?? "";
+    },
+  });
+}
+
+export function useDisconnectGmail() {
+  const invalidate = useInvalidate("admin-gmail");
+  return useMutation({
+    mutationFn: () => api.delete("/admin/tenant/emails/gmail"),
+    onSuccess: invalidate,
+  });
+}
+
 // ---------- Comptes de versement (Tenant.settings.payouts) ----------
 
 export type PayoutOperator = "AIRTEL" | "MOOV";

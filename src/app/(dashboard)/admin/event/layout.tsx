@@ -1,4 +1,5 @@
 import { DashboardShell } from "@/components/dashboard/dashboard-shell";
+import { EventShellHosts } from "@/components/dashboard/event-shell/shell-hosts";
 import { eventFontVariables } from "@/lib/event-fonts";
 
 // Back-office événementiel : palette et typographie de la refonte du module
@@ -7,6 +8,7 @@ export default function EventAdminLayout({ children }: { children: React.ReactNo
   return (
     <div className={`ev ${eventFontVariables}`}>
       <DashboardShell>{children}</DashboardShell>
+      <EventShellHosts />
     </div>
   );
 }

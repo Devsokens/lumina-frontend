@@ -7,6 +7,7 @@ import { TicketBox } from "@/components/event-site/ticket-box";
 import { formatPrice, instagramLink, splitHeadline, waLink, type SiteData, type SiteEvent } from "@/components/event-site/site-data";
 import {
   FaqList,
+  GiyaxCredit,
   ICONS,
   Icon,
   LOGO_ROLE,
@@ -57,7 +58,7 @@ function FooterLine({ site }: { site: SiteData }) {
         © {new Date().getFullYear()} {site.name}
         {legal && ` · ${legal}`}
       </span>
-      <span>Billetterie propulsée par GiyaX</span>
+      <GiyaxCredit />
     </div>
   );
 }

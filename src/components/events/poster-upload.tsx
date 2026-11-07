@@ -10,6 +10,7 @@ import { Textarea } from "@/components/ui/textarea";
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { ACCEPTED_IMAGE_TYPES, isHttpsImageUrl, prepareImage } from "@/lib/image";
 import { aiError, isPlanLimited, useGenerateVisual } from "@/hooks/useAi";
+import { FEATURES } from "@/lib/features";
 import { PricingUpgradeModal } from "@/components/shared/pricing-upgrade-modal";
 import { cn } from "@/lib/utils";
 import type { EventType } from "@/types/api";
@@ -101,15 +102,17 @@ export function PosterUpload({ value, onChange, eventTitle, eventType }: Props) 
           <Button type="button" variant="ghost" size="sm" className="h-7 gap-1 text-[11px]" onClick={() => setShowUrl((v) => !v)}>
             <Link2 className="size-3.5" /> URL
           </Button>
-          <Button
-            type="button"
-            variant="outline"
-            size="sm"
-            className="h-7 gap-1.5 rounded-xl border-secondary/50 bg-secondary/15 text-[11px] font-bold text-foreground hover:bg-secondary/30"
-            onClick={() => setAiOpen(true)}
-          >
-            <Sparkles className="size-3.5" /> Générer avec l&apos;IA
-          </Button>
+          {FEATURES.aiPoster && (
+            <Button
+              type="button"
+              variant="outline"
+              size="sm"
+              className="h-7 gap-1.5 rounded-xl border-secondary/50 bg-secondary/15 text-[11px] font-bold text-foreground hover:bg-secondary/30"
+              onClick={() => setAiOpen(true)}
+            >
+              <Sparkles className="size-3.5" /> Générer avec l&apos;IA
+            </Button>
+          )}
         </div>
       </div>
 

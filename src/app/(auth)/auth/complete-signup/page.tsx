@@ -14,6 +14,7 @@ import { Skeleton } from "@/components/ui/skeleton";
 import { homePathFor, useAuth } from "@/hooks/useAuth";
 import { api, apiError, type ApiResponse } from "@/lib/api";
 import { APP_URL, ROOT_DOMAIN, SECTOR_LABELS, type Sector } from "@/lib/constants";
+import { LEGAL_LINKS } from "@/lib/legal";
 import { publicSiteLabel, subdomainActive } from "@/lib/tenant-url";
 import { slugSchema } from "@/lib/validations";
 import { cn } from "@/lib/utils";
@@ -196,7 +197,17 @@ function CompleteSignup() {
       </div>
       <label className="flex items-start gap-2 text-sm">
         <input type="checkbox" checked={accepted} onChange={(e) => setAccepted(e.target.checked)} className="mt-1" />
-        J&apos;accepte les conditions générales d&apos;utilisation.
+        <span>
+          J&apos;accepte les{" "}
+          <a href={LEGAL_LINKS.terms} target="_blank" rel="noopener noreferrer" className="font-medium underline underline-offset-2">
+            conditions d&apos;utilisation
+          </a>{" "}
+          et la{" "}
+          <a href={LEGAL_LINKS.privacy} target="_blank" rel="noopener noreferrer" className="font-medium underline underline-offset-2">
+            politique de confidentialité
+          </a>
+          .
+        </span>
       </label>
       <Button type="submit" className="h-11 w-full rounded-xl" disabled={busy}>
         {busy && <Loader2 className="size-4 animate-spin" />}
