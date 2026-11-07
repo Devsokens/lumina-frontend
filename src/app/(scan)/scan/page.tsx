@@ -161,16 +161,10 @@ export default function ScanPage() {
 
   return (
     <div className="mobile-readable relative h-dvh overflow-hidden bg-black lg:h-auto lg:min-h-dvh lg:overflow-visible lg:bg-background">
-      {/* En-tête de la console (ordinateur) */}
+      {/* En-tête de la console (ordinateur). La navigation passe par la barre
+          latérale (ScanShell), sauf pour le rôle Scanner. */}
       <header className="hidden h-16 items-center justify-between gap-4 border-b border-border bg-card px-6 lg:flex">
         <div className="flex items-center gap-3">
-          {!scannerOnly && (
-            <Button asChild variant="ghost" size="sm" className="gap-1.5">
-              <Link href="/admin/event">
-                <ArrowLeft className="size-4" /> Tableau de bord
-              </Link>
-            </Button>
-          )}
           <span className="flex items-center gap-2 font-display text-lg font-semibold">
             <ScanLine className="size-5 text-primary" /> Contrôle d&apos;accès
           </span>
@@ -203,14 +197,14 @@ export default function ScanPage() {
             <header className="absolute inset-x-0 top-0 z-10 flex flex-col gap-2 p-3 lg:hidden">
               {syncBanner}
               <div className="flex gap-2">
-                {/* Retour au back-office (lien direct : /admin/event/scanner
-                    redirige ici, un router.back() bouclerait). Le Scanner seul
+                {/* Retour au back-office sur téléphone (dès la tablette, la barre
+                    latérale est affichée). Lien direct : /admin/event/scanner
+                    redirige ici, un router.back() bouclerait. Le Scanner seul
                     n'a pas de back-office : il garde la déconnexion. */}
                 {!scannerOnly && (
-                  <Button asChild variant="secondary" className="h-10" aria-label="Retour au tableau de bord">
+                  <Button asChild variant="secondary" className="h-10 sm:hidden" aria-label="Retour au tableau de bord">
                     <Link href="/admin/event">
                       <ArrowLeft className="size-4" />
-                      <span className="hidden sm:inline">Retour</span>
                     </Link>
                   </Button>
                 )}

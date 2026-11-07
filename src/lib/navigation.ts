@@ -54,9 +54,9 @@ export function navLinks(sectorParam: string | undefined, role: Role | undefined
     // proposées aux autres secteurs : admin/[sector]/invoices).
     links = [
       { href: base, label: "Tableau de bord", short: "Accueil", icon: LayoutDashboard, exact: true, tab: true, hint: "Ventes et entrées du jour" },
-      { href: `${base}/events`, label: "Mes Événements", short: "Événements", icon: CalendarDays, roles: OWNER_MANAGER, tab: true, hint: "Billetterie, participants, remboursements" },
-      { href: "/scan", label: "Contrôle d'Accès", short: "Scanner", icon: ScanLine, roles: ["OWNER", "MANAGER", "STAFF"], tab: true, accent: true, hint: "Scanner les billets à l'entrée" },
-      { href: `${base}/showcase`, label: "Site Vitrine & Éditeur", short: "Vitrine", icon: Globe, roles: OWNER_MANAGER, tab: true, hint: "Votre site public et son apparence" },
+      { href: `${base}/events`, label: "Mes événements", short: "Événements", icon: CalendarDays, roles: OWNER_MANAGER, tab: true, hint: "Billetterie, participants, remboursements" },
+      { href: "/scan", label: "Contrôle d'accès", short: "Scanner", icon: ScanLine, roles: ["OWNER", "MANAGER", "STAFF"], tab: true, accent: true, hint: "Scanner les billets à l'entrée" },
+      { href: `${base}/showcase`, label: "Site vitrine", short: "Vitrine", icon: Globe, roles: OWNER_MANAGER, tab: true, hint: "Votre site public et son apparence" },
       { href: `${base}/users`, label: "Équipe", icon: Users, roles: OWNER_MANAGER, hint: "Membres, rôles et accès au scanner" },
       { href: `${base}/settings`, label: "Paramètres", icon: Settings, roles: OWNER_MANAGER, hint: "Organisation, coordonnées, compte" },
     ];

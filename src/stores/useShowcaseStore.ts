@@ -507,8 +507,21 @@ export const SHOWCASE_CONTENT_KEYS = [
 
 // visibleSections : publié seulement si le serveur l’accepte (drapeau
 // showcase-sections, lib/features.ts).
+// Apparence du site vitrine événementiel (refonte 2026-11, UpdateShowcaseDto.design).
+export type ShowcaseDesign = {
+  model: "nuit" | "lumiere";
+  palette: "amber" | "ruby" | "emerald" | "indigo" | "electric" | "custom";
+  typography: "expressive" | "moderne" | "elegante" | "audacieuse";
+  radius: "droits" | "doux" | "arrondis";
+  colors?: { accent: string; background: string; text: string };
+  // Mot du titre mis en couleur (absent = dernier mot pour Nuit, aucun pour Lumière ; "" = aucun).
+  highlight?: string;
+  headlineSize?: "S" | "M" | "L" | "XL";
+};
+
 export type ShowcaseContent = Pick<ShowcaseState, (typeof SHOWCASE_CONTENT_KEYS)[number]> & {
   visibleSections?: ShowcaseSections;
+  design?: ShowcaseDesign;
 };
 
 export function showcaseContentOf(state: ShowcaseState): ShowcaseContent {
@@ -554,7 +567,8 @@ export function showcaseFromConfig(config: Record<string, unknown> | undefined, 
     FEATURES.showcaseSections && saved.visibleSections
       ? { visibleSections: { ...DEFAULT_STATE.visibleSections, ...saved.visibleSections } }
       : {};
-  return { ...base, ...picked, ...sections, layout: showcaseLayoutOf(saved.layout) };
+  const design = saved.design && typeof saved.design === "object" ? { design: saved.design } : {};
+  return { ...base, ...picked, ...sections, ...design, layout: showcaseLayoutOf(saved.layout) };
 }
 
 export const useShowcaseStore = create<ShowcaseState>((set) => ({

@@ -7,7 +7,8 @@
 // - table-occupancy : `guestCount` (nombre de personnes) sur POST /orders
 //   (docs/API_CONTRACT.md §4, §5).
 // - showcase-sections : `visibleSections` (sections affichées / masquées)
-//   enregistré avec la vitrine (PUT /admin/tenant/showcase).
+//   enregistré avec la vitrine (PUT /admin/tenant/showcase). Actif par
+//   défaut (serveur à jour, 2026-11) ; « no-showcase-sections » le coupe.
 // - event-extras : réglages de la refonte du module Événements que le serveur
 //   n’enregistre pas encore (types Mariage / Autre, questions Oui-Non, étoiles,
 //   nombre, date, logos, format, contenu et envoi du certificat…). Sans le
@@ -17,6 +18,6 @@ const flags = new Set((process.env.NEXT_PUBLIC_FEATURES ?? "").split(/[\s,]+/).f
 export const FEATURES = {
   ticketExtras: !flags.has("no-ticket-extras"),
   tableOccupancy: flags.has("table-occupancy"),
-  showcaseSections: flags.has("showcase-sections"),
+  showcaseSections: !flags.has("no-showcase-sections"),
   eventExtras: !flags.has("no-event-extras"),
 };

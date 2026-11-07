@@ -4,7 +4,7 @@ import { isReservedSlug } from "@/lib/tenant-url";
 
 // Espaces de l'application : jamais servis depuis le sous-domaine d'un compte
 // (nom.giyax.com/login renvoie vers giyax.com/login).
-const APP_PATHS = /^\/(admin|login|signup|auth|change-password|kitchen|scan|vision|verify|showcase|pricing)(\/|$)/;
+const APP_PATHS = /^\/(admin|login|signup|auth|change-password|invitation|kitchen|scan|vision|verify|showcase|pricing)(\/|$)/;
 
 // L'auth ne peut PAS être vérifiée ici : l'access token vit en mémoire
 // Zustand côté client, invisible du middleware (edge runtime). Le guard

@@ -5,7 +5,7 @@ import { cn } from "@/lib/utils";
 
 // Pages qui gèrent elles-mêmes leur largeur et leurs marges (bandeaux pleine
 // largeur du module Événements, refonte 2026-11).
-const FULL_BLEED = /^\/admin\/event\/events(\/|$)/;
+const FULL_BLEED = /^\/admin\/event\/(events|users|settings)(\/|$)/;
 
 export function ShellMain({ children }: { children: React.ReactNode }) {
   const bleed = FULL_BLEED.test(usePathname());

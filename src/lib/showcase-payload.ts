@@ -66,6 +66,21 @@ export function toShowcasePayload(content: ShowcaseContent): ShowcaseContent {
       Object.entries(content.visibleSections).map(([k, v]) => [k, v !== false]),
     );
   }
+  // Apparence : valeurs connues du serveur seulement (UpdateShowcaseDto).
+  if (content.design) {
+    const d = content.design;
+    const hex = (v: unknown) => (typeof v === "string" && /^#[0-9a-fA-F]{6}$/.test(v) ? v : null);
+    const colors = d.colors && hex(d.colors.accent) && hex(d.colors.background) && hex(d.colors.text) ? d.colors : undefined;
+    out.design = {
+      model: d.model === "lumiere" ? "lumiere" : "nuit",
+      palette: d.palette === "custom" && !colors ? "amber" : d.palette,
+      typography: d.typography,
+      radius: d.radius,
+      ...(colors ? { colors } : {}),
+      ...(typeof d.highlight === "string" ? { highlight: d.highlight.slice(0, 60) } : {}),
+      ...(d.headlineSize ? { headlineSize: d.headlineSize } : {}),
+    };
+  }
   out.faqs = (content.faqs ?? []).slice(0, 30).map((f) => ({
     id: text(f.id, 40),
     question: text(f.question, 200),

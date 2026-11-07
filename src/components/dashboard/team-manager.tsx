@@ -54,7 +54,7 @@ const STRONG = /^(?=.*[A-Z])(?=.*\d).{8,}$/;
 
 // Mot de passe temporaire lisible, communiqué par l'OWNER au membre (qui
 // doit le changer à sa première connexion).
-function generatePassword() {
+export function generatePassword() {
   const bytes = crypto.getRandomValues(new Uint8Array(6));
   const body = Array.from(bytes, (b) => "abcdefghjkmnpqrstuvwxyz23456789"[b % 31]).join("");
   return `G${body}${(bytes[0] % 90) + 10}`;

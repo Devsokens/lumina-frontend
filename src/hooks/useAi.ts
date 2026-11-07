@@ -56,3 +56,14 @@ export function aiError(err: unknown) {
   }
   return apiError(err, "La génération a échoué, réessayez.");
 }
+
+// Texte libre (POST /ai/generate, docs/API_CONTRACT.md §9) : réécriture des
+// textes du site vitrine. Consigne de 500 caractères au plus (DTO backend).
+export function useAiText() {
+  return useMutation({
+    mutationFn: async ({ prompt, language = "fr" }: { prompt: string; language?: "fr" | "en" }) => {
+      const { data } = await api.post<ApiResponse<{ text: string }>>("/ai/generate", { prompt: prompt.slice(0, 500), language });
+      return (data.data?.text ?? "").trim();
+    },
+  });
+}

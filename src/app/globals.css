@@ -521,3 +521,13 @@
     animation: none;
   }
 }
+
+/* Site vitrine événementiel : arrondis choisis dans l'éditeur (Thème ·
+   Arrondis). « Arrondis » = dessin d'origine ; « Doux » ramène les grands
+   rayons à 10 px ; « Droits » met tout à 3 px (pastilles comprises). */
+[data-radius="doux"] [class*="rounded"]:not([class*="rounded-full"]) {
+  border-radius: 10px !important;
+}
+[data-radius="droits"] [class*="rounded"] {
+  border-radius: 3px !important;
+}

@@ -1,20 +1,15 @@
 "use client";
 
 import { useTenant } from "@/hooks/useTenant";
-import { LiveShowcase } from "@/components/vitrine/live-showcase";
+import { PublicEventSiteHome } from "@/components/event-site/event-site";
 import { SiteHome } from "@/components/site/site-home";
 import { StaysHome } from "@/components/stays/stays-home";
 
 export default function TenantHomePage() {
   const tenant = useTenant();
 
-  if (tenant.sector === "EVENT") {
-    return (
-      <main className="min-h-screen">
-        <LiveShowcase />
-      </main>
-    );
-  }
+  // Événementiel : site vitrine Nuit ou Lumière (refonte 2026-11).
+  if (tenant.sector === "EVENT") return <PublicEventSiteHome />;
 
   if (tenant.sector === "ACCOMMODATION") return <StaysHome />;
 

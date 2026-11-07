@@ -50,7 +50,16 @@ ne grossit pas avec leur nombre.
 | Comparatif | Bandeau chiffré | Tableau (voyageurs, chambres, prix) | Appart-hôtel, long séjour |
 | Panorama | Plein écran, logements en bas | Bento | Destination « coup de cœur » |
 
-## Événementiel — `config.showcase.layout` (`src/lib/showcase-layouts.ts`)
+## Événementiel — modèles Nuit et Lumière (refonte 2026-11)
+
+Le site public événementiel n'utilise plus les dix variantes ci-dessous : deux modèles conçus avec
+Claude Design (`src/components/event-site/nuit.tsx`, `lumiere.tsx`), cinq palettes et quatre
+typographies (`src/lib/event-site-theme.ts`), réglés dans l'éditeur `admin/event/showcase`
+(`src/components/site-editor`). Correspondance avec les champs enregistrés : voir
+`docs/API_CONTRACT.md` §2 (`design`, `visibleSections`). Les modèles utilisent des requêtes de conteneur
+(`@container`) : l'aperçu mobile de l'éditeur affiche la vraie version mobile.
+
+## Événementiel (ancien) — `config.showcase.layout` (`src/lib/showcase-layouts.ts`)
 
 | Variante | Couverture | Événements | Ordre (après événements) | Bouton billets fixe |
 |---|---|---|---|---|

@@ -20,6 +20,7 @@ import { prepareImage } from "@/lib/image";
 import { defaultTemplateFor } from "@/lib/ticket-templates";
 import { cn } from "@/lib/utils";
 import { durationLabel, newId, type EditorForm } from "./editor-model";
+import { EventPageExtras } from "./step-infos-page";
 
 type Props = {
   form: EditorForm;
@@ -488,6 +489,10 @@ export function StepInfos({ form, set, soldCount, orgName: _orgName, onOpenPoste
           </label>
         </div>
       </section>
+
+      <EvHr />
+
+      <EventPageExtras form={form} set={set} />
 
       {/* Modale d'ajustement des recadrages de l'affiche */}
       <Dialog open={cropDialogOpen} onOpenChange={setCropDialogOpen}>

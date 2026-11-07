@@ -43,7 +43,70 @@ export type TenantUpdate = {
   taxRate?: number; // points de base : 1800 = 18 %
   taxIncluded?: boolean;
   logoUrl?: string; // https ou data URL ; "" = retirer
+  contactEmail?: string; // "" = retirer
+  legalName?: string;
+  nif?: string;
+  rccm?: string;
 };
+
+// ---------- E-mails et messages (Tenant.settings.emails) ----------
+
+export type MessageKind = "ticket" | "certificate" | "reminder" | "survey";
+export type MessageTemplate = { subject: string; body: string; cta: string; enabled: boolean };
+export type EmailSettings = {
+  senderName: string;
+  replyTo: string;
+  templates: Partial<Record<MessageKind, MessageTemplate>>;
+};
+
+export function useSaveEmailSettings() {
+  const invalidate = useInvalidate("admin-tenant");
+  return useMutation({
+    mutationFn: (body: EmailSettings) => api.put("/admin/tenant/emails", body),
+    onSuccess: invalidate,
+  });
+}
+
+export function useTestEmail() {
+  return useMutation({
+    mutationFn: async (kind: MessageKind) => {
+      const { data } = await api.post<ApiResponse<{ sentTo: string }>>("/admin/tenant/emails/test", { kind });
+      return data.data?.sentTo ?? "";
+    },
+  });
+}
+
+// ---------- Comptes de versement (Tenant.settings.payouts) ----------
+
+export type PayoutOperator = "AIRTEL" | "MOOV";
+export type PayoutAccount = { operator: PayoutOperator; phone: string; holderName: string; verifiedAt: string | null };
+export type Payouts = { frequency: "AFTER_EVENT" | "WEEKLY"; accounts: PayoutAccount[] };
+
+export function useSavePayouts() {
+  const invalidate = useInvalidate("admin-tenant");
+  return useMutation({
+    mutationFn: (body: { frequency: Payouts["frequency"]; accounts: Omit<PayoutAccount, "verifiedAt">[] }) =>
+      api.put("/admin/tenant/payouts", body),
+    onSuccess: invalidate,
+  });
+}
+
+export function usePayoutCode() {
+  return useMutation({
+    mutationFn: async (operator: PayoutOperator) => {
+      const { data } = await api.post<ApiResponse<{ sentTo: string }>>("/admin/tenant/payouts/verify", { operator });
+      return data.data?.sentTo ?? "";
+    },
+  });
+}
+
+export function useConfirmPayout() {
+  const invalidate = useInvalidate("admin-tenant");
+  return useMutation({
+    mutationFn: (body: { operator: PayoutOperator; code: string }) => api.post("/admin/tenant/payouts/confirm", body),
+    onSuccess: invalidate,
+  });
+}
 
 export function useUpdateTenant() {
   const invalidate = useInvalidate("admin-tenant");
@@ -203,6 +266,9 @@ export type Member = {
   mustChangePassword: boolean;
   lastLoginAt: string | null;
   createdAt: string;
+  // Événements accessibles (vide = tous) ; invitation par lien non activée.
+  eventIds: string[];
+  invitePending: boolean;
 };
 
 export function useMembers(enabled = true) {
@@ -216,13 +282,31 @@ export function useMembers(enabled = true) {
 export function useCreateMember() {
   const invalidate = useInvalidate("admin-members");
   return useMutation({
-    mutationFn: (body: {
+    // invite: lien d'invitation (le membre choisit son mot de passe) ;
+    // sinon mot de passe temporaire. eventIds vide = tous les événements.
+    mutationFn: async (body: {
       fullName: string;
       email?: string;
       phone?: string;
       role: MemberRole;
-      temporaryPassword: string;
-    }) => api.post("/admin/users", body),
+      temporaryPassword?: string;
+      invite?: boolean;
+      eventIds?: string[];
+    }) => {
+      const { data } = await api.post<ApiResponse<Member & { inviteUrl?: string }>>("/admin/users", body);
+      return data.data;
+    },
+    onSuccess: invalidate,
+  });
+}
+
+export function useResendInvite() {
+  const invalidate = useInvalidate("admin-members");
+  return useMutation({
+    mutationFn: async (id: string) => {
+      const { data } = await api.post<ApiResponse<{ inviteUrl: string }>>(`/admin/users/${id}/invite`);
+      return data.data?.inviteUrl ?? "";
+    },
     onSuccess: invalidate,
   });
 }
@@ -230,7 +314,7 @@ export function useCreateMember() {
 export function useUpdateMember() {
   const invalidate = useInvalidate("admin-members");
   return useMutation({
-    mutationFn: ({ id, ...body }: { id: string; role?: MemberRole; isActive?: boolean }) =>
+    mutationFn: ({ id, ...body }: { id: string; role?: MemberRole; isActive?: boolean; eventIds?: string[] }) =>
       api.patch(`/admin/users/${id}`, body),
     onSuccess: invalidate,
   });

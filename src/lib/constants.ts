@@ -24,7 +24,7 @@ export const TENANT_SUBDOMAINS = process.env.NEXT_PUBLIC_TENANT_SUBDOMAINS ?? "a
 // À garder aligné avec la validation du slug côté backend.
 export const RESERVED_SLUGS = [
   "www", "app", "api", "admin", "mail", "smtp", "ftp", "cdn", "static", "assets", "status",
-  "login", "signup", "auth", "change-password", "logout", "register",
+  "login", "signup", "auth", "change-password", "logout", "register", "invitation",
   "kitchen", "scan", "vision", "verify", "showcase", "pricing", "offline", "dashboard",
   "brand", "icons", "images", "videos", "logos", "zxing", "manifest", "sw",
 ] as const;

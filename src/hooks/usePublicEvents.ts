@@ -22,6 +22,32 @@ export function usePublicEvents(slug: string) {
   });
 }
 
+// Événements passés (albums « Souvenirs ») : GET /tenants/:slug/past-events.
+export type PastEvent = {
+  id: string;
+  title: string;
+  startDate: string;
+  endDate: string | null;
+  venueName: string | null;
+  location: string | null;
+  eventType: string | null;
+  imageUrl: string | null;
+  settings: { album?: string[] };
+};
+
+export function usePastEvents(slug: string) {
+  return useQuery({
+    queryKey: ["public-past-events", slug],
+    queryFn: async () => {
+      const { data } = await api.get<ApiResponse<PastEvent[]>>(`/tenants/${slug}/past-events`);
+      return data.data ?? [];
+    },
+    enabled: !!slug,
+    // Serveur pas encore à jour : pas d'album, le site reste utilisable.
+    retry: false,
+  });
+}
+
 export function usePublicEvent(slug: string, eventId: string) {
   return useQuery({
     queryKey: ["public-event", slug, eventId],

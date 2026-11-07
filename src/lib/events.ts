@@ -124,8 +124,15 @@ export type EventPayload = {
   notifyParticipants?: boolean;
 };
 
+// Page publique de l'événement (programme, intervenants, album photo).
+export type ProgramItem = { id: string; time: string; title: string; detail?: string };
+export type Speaker = { id: string; name: string; role?: string; photoUrl?: string | null };
+
 // Event.settings côté serveur (EventSettingsDto).
 export type EventSettings = {
+  program?: ProgramItem[];
+  speakers?: Speaker[];
+  album?: string[];
   questionnaireEnabled?: boolean;
   questionnaire?: QuestionnaireQuestion[];
   hasCertificate?: boolean;
