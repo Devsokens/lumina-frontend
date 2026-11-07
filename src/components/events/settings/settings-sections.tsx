@@ -1,12 +1,16 @@
 "use client";
 
-import { Fragment, useRef, useState } from "react";
+import { Fragment, useEffect, useRef, useState } from "react";
 import Link from "next/link";
+import { usePathname, useRouter, useSearchParams } from "next/navigation";
 import { toast } from "sonner";
 import { EvButton, EvInput, EvSoon, initialsOf } from "@/components/events/ev-ui";
 import { ADDON_FIELD, AddonInput, Field, InfoNote, MiniSwitch, RadioCard, SettingsCard, SettingsHeading, SettingsRow, StatePill } from "@/components/events/settings/settings-ui";
 import {
   useConfirmPayout,
+  useConnectGmail,
+  useDisconnectGmail,
+  useGmailStatus,
   usePayoutCode,
   useSaveEmailSettings,
   useSavePayouts,
@@ -344,6 +348,134 @@ function Preview({ text }: { text: string }) {
   );
 }
 
+// ---------- Adresse d'envoi (Gmail de l'organisateur, OAuth2) ----------
+
+const GMAIL_RETURN: Record<string, { ok: boolean; text: string }> = {
+  connected: { ok: true, text: "Gmail connecté : vos e-mails partent maintenant de votre adresse." },
+  denied: { ok: false, text: "Connexion à Gmail annulée." },
+  scope: { ok: false, text: "Cochez « Envoyer des e-mails en votre nom » sur l'écran Google pour connecter Gmail." },
+  error: { ok: false, text: "La connexion à Gmail a échoué, réessayez." },
+};
+
+function MailIcon() {
+  return (
+    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2} strokeLinecap="round" strokeLinejoin="round" aria-hidden>
+      <rect x="3" y="5" width="18" height="14" rx="2" />
+      <path d="m3 7 9 6 9-6" />
+    </svg>
+  );
+}
+
+function SendingAddress({ canEdit, senderName }: { canEdit: boolean; senderName: string }) {
+  const router = useRouter();
+  const pathname = usePathname();
+  const params = useSearchParams();
+  const status = useGmailStatus(canEdit);
+  const connect = useConnectGmail();
+  const disconnect = useDisconnectGmail();
+  const g = status.data;
+
+  // Retour de l'écran Google : message, puis on retire ?gmail= de l'adresse.
+  const back = params.get("gmail");
+  useEffect(() => {
+    if (!back) return;
+    const r = GMAIL_RETURN[back] ?? GMAIL_RETURN.error;
+    if (r.ok) toast.success(r.text);
+    else toast.error(r.text);
+    const next = new URLSearchParams(params.toString());
+    next.delete("gmail");
+    router.replace(`${pathname}${next.size ? `?${next.toString()}` : ""}`, { scroll: false });
+    void status.refetch();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [back]);
+
+  async function start() {
+    try {
+      const url = await connect.mutateAsync();
+      if (url) window.location.assign(url);
+    } catch (err) {
+      toast.error(apiError(err, "Connexion à Gmail impossible pour l'instant."));
+    }
+  }
+
+  async function stop() {
+    if (!window.confirm("Déconnecter Gmail ? Vos e-mails partiront de l'adresse GiyaX.")) return;
+    try {
+      await disconnect.mutateAsync();
+      toast.success("Gmail déconnecté.");
+    } catch (err) {
+      toast.error(apiError(err, "Échec de la déconnexion"));
+    }
+  }
+
+  if (!canEdit) return null;
+
+  const active = g?.connected && g.status === "ACTIVE";
+  const broken = g?.connected && g.status === "ERROR";
+
+  return (
+    <SettingsCard>
+      <SettingsRow title="Adresse d'envoi" desc="Vos e-mails peuvent partir de votre propre adresse Gmail. Sinon, ils partent de l'adresse GiyaX à votre nom." last>
+        {status.isLoading ? (
+          <div className="h-[58px] animate-pulse rounded-[12px] bg-ev-line" />
+        ) : (
+          <div className="flex flex-col gap-3">
+            <div className="flex flex-wrap items-center gap-3 rounded-[12px] border border-ev-border px-4 py-3">
+              <span className={cn("flex size-9 shrink-0 items-center justify-center rounded-full", active ? "bg-ev-ok-bg text-ev-ok" : "bg-ev-soft text-ev-ink2")}>
+                <MailIcon />
+              </span>
+              <span className="flex min-w-[180px] flex-1 flex-col gap-1">
+                {g?.connected ? (
+                  <>
+                    <span className="truncate text-sm font-semibold">{g.email}</span>
+                    <span className="flex flex-wrap items-center gap-x-2 gap-y-1 text-xs text-ev-muted">
+                      <StatePill tone={active ? "ok" : "warn"} dot>
+                        {active ? "Actif" : "À reconnecter"}
+                      </StatePill>
+                      {active && `${g.sentToday} / ${g.dailyLimit} e-mails aujourd'hui`}
+                    </span>
+                  </>
+                ) : (
+                  <>
+                    <span className="truncate text-sm font-semibold">Adresse GiyaX</span>
+                    <span className="truncate text-xs text-ev-muted">Affiché : « {senderName} via GiyaX »</span>
+                  </>
+                )}
+              </span>
+              <div className="flex w-full gap-2 sm:w-auto [&>button]:flex-1 sm:[&>button]:flex-none">
+                {g?.connected && (
+                  <EvButton variant="secondary" className="h-9 px-3.5 text-[13px]" disabled={disconnect.isPending} onClick={() => void stop()}>
+                    Déconnecter
+                  </EvButton>
+                )}
+                {!active && (
+                  <EvButton variant="primary" className="h-9 px-3.5 text-[13px]" disabled={!g?.available || connect.isPending} onClick={() => void start()}>
+                    {broken ? "Reconnecter" : "Connecter mon Gmail"}
+                  </EvButton>
+                )}
+              </div>
+            </div>
+            {g && !g.available && <p className="m-0 text-[13px] text-ev-muted">La connexion à Gmail n&apos;est pas encore disponible.</p>}
+            {g && !active && (broken || !g.platformReady) && (
+              <p className="m-0 rounded-[10px] bg-ev-warn-bg px-3.5 py-2.5 text-[13px] leading-relaxed text-ev-gold-text">
+                {broken
+                  ? g.platformReady
+                    ? "Google a retiré l'autorisation d'envoi. En attendant la reconnexion, vos e-mails partent de l'adresse GiyaX."
+                    : "Google a retiré l'autorisation d'envoi : reconnectez Gmail, sinon vos e-mails (billets, rappels) ne partent pas."
+                  : "L'adresse GiyaX n'est pas encore active : connectez votre Gmail, sinon vos e-mails (billets, rappels) ne partent pas."}
+              </p>
+            )}
+            <span className="text-xs leading-relaxed text-ev-muted">
+              GiyaX demande seulement l&apos;autorisation d&apos;envoyer des e-mails en votre nom : votre boîte de réception n&apos;est jamais lue. Au-delà de {g?.dailyLimit ?? 450} e-mails par jour, les
+              envois passent par l&apos;adresse GiyaX.
+            </span>
+          </div>
+        )}
+      </SettingsRow>
+    </SettingsCard>
+  );
+}
+
 export function SettingsMessages({ tenant, canEdit }: { tenant: Tenant; canEdit: boolean }) {
   const saved = emailSettingsOf(tenant);
   const initial: EmailSettings = {
@@ -361,6 +493,7 @@ export function SettingsMessages({ tenant, canEdit }: { tenant: Tenant; canEdit:
   const bodyRef = useRef<HTMLTextAreaElement>(null);
   const save = useSaveEmailSettings();
   const test = useTestEmail();
+  const gmail = useGmailStatus(canEdit);
   const meta = MESSAGE_META[active];
   const t = form.templates[active] as MessageTemplate;
   const dirty = JSON.stringify(form) !== JSON.stringify(initial);
@@ -409,6 +542,7 @@ export function SettingsMessages({ tenant, canEdit }: { tenant: Tenant; canEdit:
     <>
       <SettingsHeading title="E-mails et messages" sub="Ce que reçoivent vos participants, et au nom de qui." />
       {!canEdit && <p className="m-0 text-[13px] text-ev-muted">Seul l&apos;organisateur peut modifier les messages.</p>}
+      <SendingAddress canEdit={canEdit} senderName={form.senderName || tenant.name} />
       <SettingsCard>
         <fieldset disabled={!canEdit} className="m-0 min-w-0 border-0 p-0">
           <SettingsRow title="Expéditeur" desc="Le nom que voient les participants et l'adresse qui reçoit leurs réponses." last>
@@ -433,7 +567,8 @@ export function SettingsMessages({ tenant, canEdit }: { tenant: Tenant; canEdit:
                 <span className="flex size-8 shrink-0 items-center justify-center rounded-full bg-ev-primary text-[11px] font-semibold text-white">{initialsOf(form.senderName || tenant.name)}</span>
                 <span className="flex min-w-0 flex-col gap-0.5">
                   <span className="truncate">
-                    <b>{form.senderName || tenant.name}</b> <span className="text-ev-muted">via GiyaX</span>
+                    <b>{form.senderName || tenant.name}</b>{" "}
+                    <span className="text-ev-muted">{gmail.data?.connected && gmail.data.status === "ACTIVE" ? `<${gmail.data.email}>` : "via GiyaX"}</span>
                   </span>
                   <span className="truncate text-ev-muted">{(form.templates.ticket as MessageTemplate).subject.replaceAll("{Événement}", "votre prochain événement")}</span>
                 </span>
@@ -619,6 +754,8 @@ export function SettingsProfile() {
   );
 }
 
+import { SubscriptionManager } from "@/components/events/settings/subscription-manager";
+
 // ---------- Abonnement ----------
 
 export const PLAN_LABELS: Record<Tenant["plan"], { label: string; detail: string }> = {
@@ -629,33 +766,6 @@ export const PLAN_LABELS: Record<Tenant["plan"], { label: string; detail: string
 };
 
 export function SettingsPlan({ tenant }: { tenant: Tenant }) {
-  const plan = PLAN_LABELS[tenant.plan] ?? PLAN_LABELS.FREE;
-  return (
-    <>
-      <SettingsHeading title="Abonnement" sub="Votre formule et ce qu'elle comprend." />
-      <SettingsCard>
-        <SettingsRow
-          title="Formule actuelle"
-          desc={tenant.createdAt ? `Compte créé le ${new Date(tenant.createdAt).toLocaleDateString("fr-FR", { day: "numeric", month: "long", year: "numeric" })}.` : "Votre formule en cours."}
-          last
-        >
-          <div className="flex flex-wrap items-center justify-between gap-4 rounded-[12px] border border-ev-line bg-ev-soft p-4">
-            <span className="flex flex-col gap-1">
-              <span className="flex items-center gap-2 text-base font-semibold">
-                {plan.label}
-                <StatePill tone={tenant.status === "ACTIVE" ? "ok" : "warn"} dot>
-                  {tenant.status === "ACTIVE" ? "Actif" : "Suspendu"}
-                </StatePill>
-              </span>
-              <span className="text-[13px] text-ev-muted">{plan.detail}</span>
-            </span>
-            <EvButton size="sm" disabled>
-              Changer de formule <EvSoon className="ml-1" />
-            </EvButton>
-          </div>
-        </SettingsRow>
-      </SettingsCard>
-    </>
-  );
+  return <SubscriptionManager tenant={tenant} />;
 }
 

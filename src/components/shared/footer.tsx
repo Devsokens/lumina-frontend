@@ -1,6 +1,7 @@
 import Link from "next/link";
 import { ArrowUpRight, Mail, MapPin, Phone } from "lucide-react";
 import { Logo } from "./logo";
+import { LEGAL_LINKS } from "@/lib/legal";
 
 const PLATFORM_LINKS = [
   { href: "/login", label: "Connexion" },
@@ -101,8 +102,12 @@ export function Footer() {
             <ArrowUpRight className="size-3.5 transition-transform group-hover:-translate-y-0.5 group-hover:translate-x-0.5" />
           </a>
           <div className="flex items-center gap-6">
-            <span>Confidentialité</span>
-            <span>Conditions d&apos;utilisation</span>
+            <Link href={LEGAL_LINKS.privacy} className="transition-colors hover:text-secondary">
+              Confidentialité
+            </Link>
+            <Link href={LEGAL_LINKS.terms} className="transition-colors hover:text-secondary">
+              Conditions d&apos;utilisation
+            </Link>
           </div>
         </div>
       </div>

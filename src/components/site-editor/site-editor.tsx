@@ -2,9 +2,11 @@
 
 import { useCallback, useEffect, useLayoutEffect, useMemo, useRef, useState } from "react";
 import Link from "next/link";
+import { useRouter } from "next/navigation";
 import { toast } from "sonner";
 import {
   ArrowUp,
+  Check,
   ChevronDown,
   ChevronLeft,
   FileText,
@@ -24,11 +26,15 @@ import {
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuLabel, DropdownMenuSeparator, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
 import { Sheet, SheetContent, SheetTitle } from "@/components/ui/sheet";
 import { EV_PORTAL } from "@/components/events/ev-ui";
+import { NavIcon } from "@/components/dashboard/event-sidebar";
+import { BASE, NAV_ICON, keyOf } from "@/components/dashboard/event-shell/shell-model";
+import { sidebarLinks } from "@/lib/navigation";
+import { useAuthStore } from "@/stores/useAuthStore";
 import { SiteEventPage, SiteFrame, SiteHome } from "@/components/event-site/event-site";
 import { buildSite, toSiteEvent } from "@/components/event-site/site-data";
-import { FIELDS, SECTION_LABEL, countChanges, initialContent, isTextField, type SectionKey, type TextField } from "@/components/site-editor/editor-model";
+import { FIELDS, SECTION_LABEL, countChanges, initialContent, isTextField, proposalPatch, type AiProposal, type SectionKey, type TextField } from "@/components/site-editor/editor-model";
 import { MediaPanel, PagesPanel, SectionsPanel, ThemePanel } from "@/components/site-editor/editor-panels";
-import { Inspector, type AiProposal, type Selection } from "@/components/site-editor/editor-inspector";
+import { Inspector, type Selection } from "@/components/site-editor/editor-inspector";
 import { useSaveShowcase } from "@/hooks/useAdmin";
 import { aiError, useAiText } from "@/hooks/useAi";
 import { usePastEvents, usePublicEvents } from "@/hooks/usePublicEvents";
@@ -98,8 +104,10 @@ export function SiteEditor({ tenant }: { tenant: Tenant }) {
   const [proposal, setProposal] = useState<AiProposal>(null);
   const [sheet, setSheet] = useState<"panel" | "inspector" | null>(null);
 
+  // L'aperçu montre la proposition de l'IA en place, sans l'enregistrer.
+  const preview = useMemo(() => (proposal ? { ...content, ...proposalPatch(proposal, content, "faq-ai-preview") } : content), [content, proposal]);
   const look = lookOf(content);
-  const site = useMemo(() => buildSite(tenant, content, publicEvents ?? [], true, pastEvents ?? []), [tenant, content, publicEvents, pastEvents]);
+  const site = useMemo(() => buildSite(tenant, preview, publicEvents ?? [], true, pastEvents ?? []), [tenant, preview, publicEvents, pastEvents]);
   const pageEvent = page === "home" ? null : (site.events.find((e) => e.id === page) ?? (publicEvents ?? []).map(toSiteEvent).find((e) => e.id === page) ?? null);
   const changes = published ? countChanges(content, published) : null;
 
@@ -127,11 +135,33 @@ export function SiteEditor({ tenant }: { tenant: Tenant }) {
     if (typeof window !== "undefined" && window.innerWidth < 1024 && (s.field || s.section)) setSheet("inspector");
   }
 
+  // Modifier à la main le texte visé par la proposition l'écarte.
+  const edit = useCallback(
+    (patch: Partial<ShowcaseContent>, key?: string) => {
+      setProposal((p) => (p && (p.field === "faq" ? "faqs" in patch : p.field in patch) ? null : p));
+      update(patch, key);
+    },
+    [update]
+  );
+
+  function applyProposal() {
+    if (!proposal) return;
+    update(proposalPatch(proposal, content), `${proposal.field}-ai`);
+    if (proposal.field === "faq") setSelection({ section: "faq", field: null });
+    setProposal(null);
+  }
+
+  function goPage(p: string) {
+    setPage(p);
+    setSelection({ section: null, field: null });
+    setProposal(null);
+  }
+
   const panel =
     tool === "sections" ? (
       <SectionsPanel
         content={content}
-        update={update}
+        update={edit}
         selected={selection.section}
         page={page}
         onSelect={(s) => {
@@ -140,32 +170,14 @@ export function SiteEditor({ tenant }: { tenant: Tenant }) {
         }}
       />
     ) : tool === "theme" ? (
-      <ThemePanel content={content} update={update} look={look} />
+      <ThemePanel content={content} update={edit} look={look} />
     ) : tool === "pages" ? (
-      <PagesPanel
-        events={site.events}
-        page={page}
-        onPage={(p) => {
-          setPage(p);
-          setSelection({ section: null, field: null });
-        }}
-      />
+      <PagesPanel events={site.events} page={page} onPage={goPage} />
     ) : (
-      <MediaPanel content={content} update={update} />
+      <MediaPanel content={content} update={edit} />
     );
 
-  const inspector = (
-    <Inspector
-      selection={selection}
-      setSelection={select}
-      content={content}
-      update={update}
-      events={site.events}
-      pageEvent={pageEvent}
-      proposal={proposal}
-      setProposal={setProposal}
-    />
-  );
+  const inspector = <Inspector selection={selection} setSelection={select} content={content} update={edit} events={site.events} pageEvent={pageEvent} />;
 
   const scrollToSection = useRef<((s: SectionKey) => void) | null>(null);
 
@@ -174,9 +186,7 @@ export function SiteEditor({ tenant }: { tenant: Tenant }) {
       {/* Barre du haut */}
       <header className="flex h-[60px] shrink-0 items-center justify-between gap-3 border-b border-ev-border bg-ev-surface px-3 sm:px-4">
         <div className="flex min-w-0 items-center gap-3">
-          <Link href="/admin/event" aria-label="Retour au tableau de bord" className="flex size-9 shrink-0 items-center justify-center rounded-[10px] border border-ev-border text-ev-ink2 hover:bg-ev-soft">
-            <ChevronLeft className="size-4" />
-          </Link>
+          <ModulesMenu unpublished={changes === null ? (canUndo ? -1 : 0) : changes} />
           <div className="flex min-w-0 flex-col leading-[1.2]">
             <span className="truncate text-sm font-semibold">Site vitrine · {content.orgName || tenant.name}</span>
             <span className="flex items-center gap-1.5 truncate text-xs text-ev-muted">
@@ -194,13 +204,13 @@ export function SiteEditor({ tenant }: { tenant: Tenant }) {
               </button>
             </DropdownMenuTrigger>
             <DropdownMenuContent align="start" className={cn(EV_PORTAL, "z-[70] w-72 rounded-xl")}>
-              <DropdownMenuItem onClick={() => setPage("home")}>Accueil</DropdownMenuItem>
+              <DropdownMenuItem onClick={() => goPage("home")}>Accueil</DropdownMenuItem>
               {site.events.length > 0 && (
                 <>
                   <DropdownMenuSeparator />
                   <DropdownMenuLabel className="text-xs text-ev-muted">Pages d&apos;événement</DropdownMenuLabel>
                   {site.events.map((e) => (
-                    <DropdownMenuItem key={e.id} onClick={() => setPage(e.id)}>
+                    <DropdownMenuItem key={e.id} onClick={() => goPage(e.id)}>
                       <span className="truncate">{e.title}</span>
                     </DropdownMenuItem>
                   ))}
@@ -293,8 +303,12 @@ export function SiteEditor({ tenant }: { tenant: Tenant }) {
           device={device}
           selection={selection}
           onSelect={select}
+          onFocus={setSelection}
           content={content}
-          proposal={setProposal}
+          proposal={proposal}
+          onPropose={setProposal}
+          onApply={applyProposal}
+          onDismiss={() => setProposal(null)}
           registerScroll={(fn) => (scrollToSection.current = fn)}
         >
           <SiteFrame look={look} className="min-h-full">
@@ -338,6 +352,86 @@ export function SiteEditor({ tenant }: { tenant: Tenant }) {
   );
 }
 
+// Flèche de retour : la liste des modules s'ouvre au survol (au toucher sur
+// téléphone, Entrée au clavier) ; un clic à la souris revient au tableau de
+// bord. unpublished : nombre de modifications non publiées (-1 = site jamais
+// publié, déjà modifié).
+function ModulesMenu({ unpublished }: { unpublished: number }) {
+  const router = useRouter();
+  const role = useAuthStore((s) => s.user?.role);
+  const links = sidebarLinks("event", role);
+  const [open, setOpen] = useState(false);
+  const timer = useRef<number | undefined>(undefined);
+  const pointer = useRef("");
+
+  useEffect(() => () => window.clearTimeout(timer.current), []);
+  const show = () => {
+    window.clearTimeout(timer.current);
+    setOpen(true);
+  };
+  // Petit délai : le temps de passer de la flèche à la liste.
+  const hide = () => {
+    window.clearTimeout(timer.current);
+    timer.current = window.setTimeout(() => setOpen(false), 180);
+  };
+  const mouse = (e: React.PointerEvent) => e.pointerType === "mouse";
+
+  return (
+    <DropdownMenu open={open} onOpenChange={setOpen} modal={false}>
+      <DropdownMenuTrigger asChild>
+        <button
+          type="button"
+          aria-label="Revenir à un module"
+          onPointerEnter={(e) => mouse(e) && show()}
+          onPointerLeave={(e) => mouse(e) && hide()}
+          onPointerDown={(e) => {
+            pointer.current = e.pointerType;
+            // Souris : pas de bascule du menu au clic (il est déjà ouvert).
+            if (mouse(e)) e.preventDefault();
+          }}
+          onClick={() => pointer.current === "mouse" && router.push(BASE)}
+          className="flex size-9 shrink-0 items-center justify-center rounded-[10px] border border-ev-border text-ev-ink2 hover:bg-ev-soft data-[state=open]:bg-ev-soft"
+        >
+          <ChevronLeft className="size-4" />
+        </button>
+      </DropdownMenuTrigger>
+      <DropdownMenuContent
+        align="start"
+        sideOffset={6}
+        onPointerEnter={show}
+        onPointerLeave={hide}
+        onCloseAutoFocus={(e) => e.preventDefault()}
+        className={cn(EV_PORTAL, "z-[70] w-[280px] rounded-[14px] p-1.5")}
+      >
+        <DropdownMenuLabel className="px-2 pb-1.5 pt-1 text-xs font-normal text-ev-muted">Quitter l&apos;éditeur et revenir à…</DropdownMenuLabel>
+        {unpublished !== 0 && (
+          <p className="mx-1 mb-1.5 mt-0 rounded-[10px] bg-ev-warn-bg px-3 py-2 text-xs leading-relaxed text-ev-gold-text">
+            {unpublished > 0 ? `${unpublished} modification${unpublished > 1 ? "s" : ""} non publiée${unpublished > 1 ? "s" : ""}` : "Site jamais publié"} : publiez avant de quitter, sinon vos
+            changements seront perdus.
+          </p>
+        )}
+        {links.map((l) => {
+          const key = keyOf(l.href);
+          return key === "showcase" ? (
+            <DropdownMenuItem key={l.href} className="gap-2.5 bg-ev-soft font-semibold">
+              <NavIcon d={NAV_ICON[key]} size={16} />
+              <span className="flex-1 truncate">{l.label}</span>
+              <span className="text-xs font-normal text-ev-muted">Vous êtes ici</span>
+            </DropdownMenuItem>
+          ) : (
+            <DropdownMenuItem key={l.href} asChild>
+              <Link href={l.href} className="gap-2.5">
+                <NavIcon d={NAV_ICON[key]} size={16} />
+                <span className="flex-1 truncate">{l.label}</span>
+              </Link>
+            </DropdownMenuItem>
+          );
+        })}
+      </DropdownMenuContent>
+    </DropdownMenu>
+  );
+}
+
 // ---------- Aperçu ----------
 
 function Canvas({
@@ -345,8 +439,12 @@ function Canvas({
   device,
   selection,
   onSelect,
+  onFocus,
   content,
   proposal,
+  onPropose,
+  onApply,
+  onDismiss,
   registerScroll,
   children,
 }: {
@@ -354,8 +452,13 @@ function Canvas({
   device: Device | null;
   selection: Selection;
   onSelect: (s: Selection) => void;
+  // Sélection sans ouvrir le tiroir (téléphone) : la proposition reste visible.
+  onFocus: (s: Selection) => void;
   content: ShowcaseContent;
-  proposal: (p: AiProposal) => void;
+  proposal: AiProposal;
+  onPropose: (p: AiProposal) => void;
+  onApply: () => void;
+  onDismiss: () => void;
   registerScroll: (fn: (s: SectionKey) => void) => void;
   children: React.ReactNode;
 }) {
@@ -400,7 +503,20 @@ function Canvas({
 
   useLayoutEffect(() => {
     measure();
-  }, [measure, content, device, scale]);
+  }, [measure, content, proposal, device, scale]);
+
+  // Amène le texte proposé au-dessus de la carte de l'IA.
+  useEffect(() => {
+    const f = frame.current;
+    if (!proposal || !f) return;
+    const faq = proposal.field === "faq";
+    const r = rectOf(siteEl.current?.querySelector(faq ? '[data-section="faq"]' : `[data-edit="${proposal.field}"]`) ?? null);
+    if (!r) return;
+    const room = Math.max(120, f.clientHeight - 300);
+    const from = faq ? r.top + r.height - 200 : r.top;
+    const to = faq ? r.top + r.height : r.top + Math.min(r.height, room - 40);
+    if (from < f.scrollTop + 16 || to > f.scrollTop + room) f.scrollTo({ top: Math.max(0, faq ? to - room : from - 72), behavior: "smooth" });
+  }, [proposal, rectOf]);
 
   useEffect(() => {
     const root = siteEl.current;
@@ -440,7 +556,7 @@ function Canvas({
         style={{ width: width * scale }}
         className="relative h-full overflow-y-auto overflow-x-hidden rounded-t-[12px] bg-white shadow-[0_10px_40px_rgba(22,33,28,.16)] [scrollbar-width:thin]"
       >
-        <div ref={siteEl} style={{ width, zoom: scale }} onClickCapture={pick} onMouseMove={hover} onMouseLeave={() => setRects((r) => ({ ...r, hover: null }))} className="cursor-default pb-28">
+        <div ref={siteEl} style={{ width, zoom: scale }} onClickCapture={pick} onMouseMove={hover} onMouseLeave={() => setRects((r) => ({ ...r, hover: null }))} className={cn("cursor-default", proposal ? "pb-80" : "pb-28")}>
           {children}
         </div>
 
@@ -456,17 +572,19 @@ function Canvas({
         {rects.field && selection.field && (
           <>
             <div aria-hidden className="pointer-events-none absolute rounded-[4px] border-2 border-[#3DB3FF]" style={rects.field} />
-            <FieldToolbar
-              style={{ top: Math.max(4, rects.field.top - 44), left: Math.max(4, Math.min(rects.field.left, width * scale - 330)) }}
-              field={selection.field}
-              content={content}
-              proposal={proposal}
-              onParent={() => onSelect({ section: selection.section, field: null })}
-            />
+            {!proposal && (
+              <FieldToolbar
+                style={{ top: Math.max(4, rects.field.top - 44), left: Math.max(4, Math.min(rects.field.left, width * scale - 330)) }}
+                field={selection.field}
+                content={content}
+                onPropose={onPropose}
+                onParent={() => onSelect({ section: selection.section, field: null })}
+              />
+            )}
           </>
         )}
       </div>
-      <AiBar tenant={tenant} content={content} selection={selection} proposal={proposal} onSelect={onSelect} />
+      <AiBar tenant={tenant} content={content} selection={selection} proposal={proposal} onPropose={onPropose} onApply={onApply} onDismiss={onDismiss} onFocus={onFocus} />
     </main>
   );
 }
@@ -476,13 +594,13 @@ function FieldToolbar({
   style,
   field,
   content,
-  proposal,
+  onPropose,
   onParent,
 }: {
   style: React.CSSProperties;
   field: TextField;
   content: ShowcaseContent;
-  proposal: (p: AiProposal) => void;
+  onPropose: (p: AiProposal) => void;
   onParent: () => void;
 }) {
   const ai = useAiText();
@@ -492,7 +610,7 @@ function FieldToolbar({
       const out = await ai.mutateAsync({
         prompt: `Réécris « ${FIELDS[field].label} » du site d'un organisateur d'événements, en plus engageant et naturel. Texte : « ${text} ». Maximum ${Math.min(FIELDS[field].max, 400)} caractères. Réponds uniquement par le nouveau texte.`,
       });
-      proposal({ field, text: out.replace(/^["«“]\s*|\s*["»”]$/g, "") });
+      onPropose({ field, text: out.replace(/^["«“]\s*|\s*["»”]$/g, "") });
     } catch (err) {
       toast.error(aiError(err));
     }
@@ -519,12 +637,43 @@ function FieldToolbar({
   );
 }
 
-// Assistant IA en bas de l'aperçu (écran 19).
-function AiBar({ tenant, content, selection, proposal, onSelect }: { tenant: Tenant; content: ShowcaseContent; selection: Selection; proposal: (p: AiProposal) => void; onSelect: (s: Selection) => void }) {
+// Assistant IA en bas de l'aperçu (écran 19). Sa proposition s'affiche
+// au-dessus, dans la zone du site, et le site la montre déjà en place.
+function AiBar({
+  tenant,
+  content,
+  selection,
+  proposal,
+  onPropose,
+  onApply,
+  onDismiss,
+  onFocus,
+}: {
+  tenant: Tenant;
+  content: ShowcaseContent;
+  selection: Selection;
+  proposal: AiProposal;
+  onPropose: (p: AiProposal) => void;
+  onApply: () => void;
+  onDismiss: () => void;
+  onFocus: (s: Selection) => void;
+}) {
   const ai = useAiText();
   const [prompt, setPrompt] = useState("");
   const target: TextField = selection.field ?? (selection.section === "about" ? "aboutText" : "heroHeadline");
   const name = content.orgName || tenant.name;
+
+  // Échap : ignorer (sauf si un menu ou un tiroir est ouvert, il se ferme seul).
+  useEffect(() => {
+    if (!proposal) return;
+    const onKey = (e: KeyboardEvent) => {
+      if (e.key !== "Escape" || e.defaultPrevented) return;
+      if (document.querySelector('[role="dialog"][data-state="open"],[role="menu"][data-state="open"]')) return;
+      onDismiss();
+    };
+    window.addEventListener("keydown", onKey);
+    return () => window.removeEventListener("keydown", onKey);
+  }, [proposal, onDismiss]);
 
   async function run(kind: "about" | "faq" | "english" | "free") {
     try {
@@ -532,8 +681,8 @@ function AiBar({ tenant, content, selection, proposal, onSelect }: { tenant: Ten
         const text = await ai.mutateAsync({
           prompt: `Rédige la présentation (3 à 4 phrases) de la section « À propos » du site de ${name}, organisateur d'événements au Gabon. Ton chaleureux et professionnel, sans emoji. Réponds uniquement par le texte.`,
         });
-        onSelect({ section: "about", field: "aboutText" });
-        proposal({ field: "aboutText", text });
+        onFocus({ section: "about", field: "aboutText" });
+        onPropose({ field: "aboutText", text });
       } else if (kind === "faq") {
         const text = await ai.mutateAsync({
           prompt: `Propose une question fréquente utile pour le site d'un organisateur d'événements (billets en ligne avec QR code, paiement Mobile Money), avec sa réponse en 2 phrases. Format exact : « Q: … » puis à la ligne « R: … ».`,
@@ -541,18 +690,20 @@ function AiBar({ tenant, content, selection, proposal, onSelect }: { tenant: Ten
         const q = text.match(/Q\s*:\s*(.+)/i)?.[1]?.trim();
         const r = text.match(/R\s*:\s*([\s\S]+)/i)?.[1]?.trim();
         if (!q || !r) return void toast.error("L'IA n'a pas proposé de question exploitable, réessayez.");
-        onSelect({ section: "faq", field: null });
-        proposal({ field: "faq", question: q, text: r });
+        onFocus({ section: "faq", field: null });
+        onPropose({ field: "faq", question: q, text: r });
       } else {
-        const current = ((content[target] as string) ?? "").slice(0, 300);
+        // Une consigne sur une proposition en attente la retravaille.
+        const base = proposal && proposal.field === target ? proposal.text : ((content[target] as string) ?? "");
+        const current = base.slice(0, 300);
         const instruction = kind === "english" ? "Traduis-le en anglais" : prompt.trim().slice(0, 140);
         if (!instruction) return;
         const text = await ai.mutateAsync({
           prompt: `${instruction}. Texte (« ${FIELDS[target].label} » du site d'un organisateur d'événements) : « ${current} ». Maximum ${Math.min(FIELDS[target].max, 400)} caractères. Réponds uniquement par le nouveau texte.`,
           language: kind === "english" ? "en" : "fr",
         });
-        onSelect({ section: FIELDS[target].section, field: target });
-        proposal({ field: target, text: text.replace(/^["«“]\s*|\s*["»”]$/g, "") });
+        onFocus({ section: FIELDS[target].section, field: target });
+        onPropose({ field: target, text: text.replace(/^["«“]\s*|\s*["»”]$/g, "") });
         setPrompt("");
       }
     } catch (err) {
@@ -569,26 +720,51 @@ function AiBar({ tenant, content, selection, proposal, onSelect }: { tenant: Ten
       }}
       className="absolute bottom-3 left-1/2 flex w-[min(640px,calc(100%-24px))] -translate-x-1/2 flex-col gap-2 sm:bottom-5"
     >
-      <div className="hidden flex-wrap justify-center gap-1.5 sm:flex">
-        {(
-          [
-            ["about", "Rédiger la section « À propos »"],
-            ["faq", "Ajouter une FAQ"],
-            ["english", "Traduire en anglais"],
-          ] as const
-        ).map(([k, l]) => (
-          <button key={k} type="button" disabled={ai.isPending} onClick={() => void run(k)} className="h-7 rounded-full border border-ev-border bg-ev-surface px-2.5 text-xs shadow-sm disabled:opacity-60">
-            {l}
-          </button>
-        ))}
-      </div>
+      {proposal ? (
+        <div role="region" aria-label="Proposition de l'IA" aria-live="polite" className="flex flex-col gap-2.5 rounded-[16px] bg-ev-surface p-3.5 shadow-[0_12px_40px_rgba(22,33,28,.2),0_0_0_1px_var(--ev-border)] sm:p-4">
+          <div className="flex flex-wrap items-center justify-between gap-x-3 gap-y-0.5">
+            <span className="flex items-center gap-2 text-[13px] font-semibold text-ev-primary">
+              <Sparkles className="size-4" /> Proposition de l&apos;IA · {proposal.field === "faq" ? "FAQ" : FIELDS[proposal.field].label}
+            </span>
+            <span className="text-xs text-ev-muted">Visible sur l&apos;aperçu, pas encore appliquée</span>
+          </div>
+          {proposal.question && <span className="text-[13px] font-semibold">{proposal.question}</span>}
+          <p className="m-0 max-h-28 overflow-y-auto whitespace-pre-line text-[13px] leading-relaxed text-ev-ink2 [scrollbar-width:thin] sm:max-h-36">{proposal.text}</p>
+          <div className="flex items-center justify-end gap-2">
+            <button type="button" onClick={onDismiss} className="h-9 rounded-[10px] border border-ev-border bg-ev-surface px-3.5 text-[13px] font-medium hover:bg-ev-soft">
+              Ignorer
+            </button>
+            <button type="button" onClick={onApply} className="flex h-9 items-center gap-1.5 rounded-[10px] bg-ev-primary px-4 text-[13px] font-semibold text-white transition-colors hover:bg-ev-primary-hover">
+              <Check className="size-4" /> Appliquer
+            </button>
+          </div>
+        </div>
+      ) : (
+        <div className="hidden flex-wrap justify-center gap-1.5 sm:flex">
+          {(
+            [
+              ["about", "Rédiger la section « À propos »"],
+              ["faq", "Ajouter une FAQ"],
+              ["english", "Traduire en anglais"],
+            ] as const
+          ).map(([k, l]) => (
+            <button key={k} type="button" disabled={ai.isPending} onClick={() => void run(k)} className="h-7 rounded-full border border-ev-border bg-ev-surface px-2.5 text-xs shadow-sm disabled:opacity-60">
+              {l}
+            </button>
+          ))}
+        </div>
+      )}
       <label className="flex h-[52px] items-center gap-2.5 rounded-[16px] bg-ev-surface pl-4 pr-2 shadow-[0_12px_40px_rgba(22,33,28,.2),0_0_0_1px_var(--ev-border)]">
         {ai.isPending ? <Loader2 className="size-4 shrink-0 animate-spin text-ev-primary" /> : <Sparkles className="size-4 shrink-0 text-ev-primary" />}
         <input
           value={prompt}
           onChange={(e) => setPrompt(e.target.value)}
           maxLength={140}
-          placeholder={`Demandez à GiyaX AI (${FIELDS[target].label.toLowerCase()}) : « rends le ton plus chaleureux »…`}
+          placeholder={
+            proposal && proposal.field === target
+              ? "Retoucher la proposition : « plus court », « plus formel »…"
+              : `Demandez à GiyaX AI (${FIELDS[target].label.toLowerCase()}) : « rends le ton plus chaleureux »…`
+          }
           aria-label="Demande à l'IA"
           className="min-w-0 flex-1 border-0 bg-transparent text-sm outline-none placeholder:text-ev-muted"
         />

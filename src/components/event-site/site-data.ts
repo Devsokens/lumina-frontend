@@ -41,6 +41,8 @@ export type SiteAlbum = { id: string; title: string; date: string; place: string
 
 export type SiteData = {
   slug: string;
+  // Préfixe des liens internes (useSiteBase) ; « /slug » par défaut.
+  base?: string;
   name: string;
   initials: string;
   logo: string | null;

@@ -10,6 +10,7 @@ import { Skeleton } from "@/components/ui/skeleton";
 import { DoubleConfirmDialog } from "@/components/shared/double-confirm-dialog";
 import { PageTitle, Pager, Panel, Pill } from "@/components/vision/vision-ui";
 import { PLAN_LABELS, SECTOR_LABELS, STATUS_LABELS, fcfaCents, relative, visionApi, visionGet, visionPage } from "@/lib/vision";
+import { publicSiteLabel, publicSiteUrl } from "@/lib/tenant-url";
 import { cn } from "@/lib/utils";
 
 type TenantRow = {
@@ -174,8 +175,8 @@ function TenantSheet({ id, onClose }: { id: string; onClose: () => void }) {
               <p className="text-sm text-muted-foreground">
                 {SECTOR_LABELS[t.sector]} · inscrit le {new Date(t.createdAt).toLocaleDateString("fr-FR")}
               </p>
-              <a href={`/${t.slug}`} target="_blank" rel="noopener noreferrer" className="mt-2 inline-flex items-center gap-1 text-sm text-primary">
-                /{t.slug} <ExternalLink className="size-3.5" />
+              <a href={publicSiteUrl(t.slug)} target="_blank" rel="noopener noreferrer" className="mt-2 inline-flex items-center gap-1 text-sm text-primary">
+                {publicSiteLabel(t.slug)} <ExternalLink className="size-3.5" />
               </a>
             </div>
 

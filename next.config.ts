@@ -62,6 +62,15 @@ const csp = [
 ].join("; ");
 
 const nextConfig: NextConfig = {
+  // Adresses courantes des documents légaux (formulaires Google, stores…).
+  async redirects() {
+    return [
+      { source: "/privacy", destination: "/confidentialite", permanent: true },
+      { source: "/privacy-policy", destination: "/confidentialite", permanent: true },
+      { source: "/terms", destination: "/conditions", permanent: true },
+      { source: "/cgu", destination: "/conditions", permanent: true },
+    ];
+  },
   async rewrites() {
     return {
       // Avant les pages : /v1/... ne doit jamais tomber sur /[tenant].

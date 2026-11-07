@@ -11,6 +11,7 @@ import {
   KeyRound,
   LayoutDashboard,
   LogOut,
+  Mail,
   Menu,
   ScrollText,
   ShieldCheck,
@@ -27,6 +28,7 @@ const NAV = [
   { href: "/vision/traffic", label: "Trafic API", icon: Activity },
   { href: "/vision/costs", label: "Coûts & revenus", icon: Coins },
   { href: "/vision/domains", label: "Domaines", icon: Globe },
+  { href: "/vision/emails", label: "E-mails", icon: Mail },
   { href: "/vision/logs", label: "Journal & admins", icon: ScrollText },
 ];
 

@@ -6,6 +6,7 @@ import { Check, ChevronLeft, Loader2, RefreshCw, Sparkles } from "lucide-react";
 import { EvButton, EvCheckbox } from "@/components/events/ev-ui";
 import { aiError, useGenerateVisual } from "@/hooks/useAi";
 import { amount, formatEventDay, typeOption } from "@/lib/event-meta";
+import { FEATURES } from "@/lib/features";
 import { cn } from "@/lib/utils";
 import type { EditorForm } from "./editor-model";
 
@@ -430,14 +431,17 @@ export function PosterStudio({ form, orgName, onBack, onUse }: { form: EditorFor
           </label>
           <div className="flex flex-col gap-2">
             <span className="text-[13px] font-semibold">Style</span>
-            <div role="radiogroup" aria-label="Style" className="grid grid-cols-3 gap-1.5">
+            <div role="radiogroup" aria-label="Style" className={cn("grid gap-1.5", FEATURES.aiPoster ? "grid-cols-3" : "grid-cols-2")}>
               {(
                 [
                   ["PHOTO", "Photo"],
                   ["GRAPHIC", "Graphique"],
                   ["TYPO", "Typographique"],
                 ] as const
-              ).map(([v, l]) => (
+              )
+                // « Photo » : image générée par l'IA du serveur (drapeau ai-poster).
+                .filter(([v]) => v !== "PHOTO" || FEATURES.aiPoster)
+                .map(([v, l]) => (
                 <button
                   key={v}
                   type="button"
