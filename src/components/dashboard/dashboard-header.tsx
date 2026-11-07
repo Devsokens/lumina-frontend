@@ -41,6 +41,7 @@ import { useRouter, useParams } from "next/navigation";
 import { auditLink, navLinks } from "@/lib/navigation";
 import { useTenantSector } from "@/hooks/useTenantSector";
 import type { Role } from "@/lib/constants";
+import { cn } from "@/lib/utils";
 
 const ROLE_LABELS: Record<Role, string> = {
   OWNER: "Propriétaire",
@@ -59,6 +60,9 @@ export function DashboardHeader() {
   const { sector: tenantSector } = useTenantSector();
   const sector = tenantSector ?? urlSector;
   const currentSector = (sector ?? "event").toLowerCase();
+  // Événementiel : en-tête de la refonte (recherche + notifications ; le
+  // profil est dans la barre latérale, sauf sur téléphone).
+  const isEvent = currentSector === "event";
 
   const [searchQuery, setSearchQuery] = useState("");
   const [showSearchDropdown, setShowSearchDropdown] = useState(false);
@@ -84,15 +88,23 @@ export function DashboardHeader() {
 
   return (
     <>
-      <header className="sticky top-0 z-40 flex h-16 items-center justify-between border-b border-border/80 bg-background/90 px-4 backdrop-blur-md sm:px-6">
+      <header
+        className={cn(
+          "sticky top-0 z-40 flex h-16 items-center justify-between border-b px-4 backdrop-blur-md",
+          isEvent ? "border-ev-border bg-ev-surface/95 sm:px-8" : "border-border/80 bg-background/90 sm:px-6"
+        )}
+      >
         {/* Global Search Bar */}
-        <div className="relative flex-1 max-w-md">
+        <div className={cn("relative flex-1", isEvent ? "max-w-[400px]" : "max-w-md")}>
           <div className="relative">
             <Search className="absolute left-3 top-1/2 -translate-y-1/2 size-4 text-muted-foreground" />
             <Input
               type="text"
               placeholder="Aller à un écran (menu, commandes, équipe…)"
-              className="h-10 w-full rounded-xl pl-9 pr-12 text-xs sm:text-sm bg-muted/40 border-border/80 focus:bg-background transition-all"
+              className={cn(
+                "h-10 w-full pl-9 pr-12 text-xs transition-all sm:text-sm",
+                isEvent ? "rounded-[10px] border-ev-border bg-ev-bg focus:bg-ev-surface" : "rounded-xl border-border/80 bg-muted/40 focus:bg-background"
+              )}
               value={searchQuery}
               onChange={(e) => {
                 setSearchQuery(e.target.value);
@@ -148,7 +160,10 @@ export function DashboardHeader() {
           <Button
             variant="ghost"
             size="icon"
-            className="size-9 rounded-xl text-muted-foreground hover:text-foreground"
+            className={cn(
+              "text-muted-foreground hover:text-foreground",
+              isEvent ? "size-10 rounded-[10px] border border-ev-border bg-ev-surface text-ev-ink2" : "size-9 rounded-xl"
+            )}
             aria-label="Notifications"
             onClick={() => toast.info("Aucune notification.")}
           >
@@ -160,7 +175,10 @@ export function DashboardHeader() {
             <DropdownMenuTrigger asChild>
               <button
                 type="button"
-                className="flex items-center gap-2.5 rounded-xl border border-border/80 bg-card p-1.5 pr-3 text-left transition-all hover:border-primary/40 hover:bg-muted/40"
+                className={cn(
+                  "flex items-center gap-2.5 rounded-xl border border-border/80 bg-card p-1.5 pr-3 text-left transition-all hover:border-primary/40 hover:bg-muted/40",
+                  isEvent && "sm:hidden"
+                )}
               >
                 <Avatar className="size-7 rounded-lg bg-primary/15 text-primary border border-primary/30">
                   <AvatarFallback className="rounded-lg font-bold text-xs bg-primary text-white">

@@ -10,8 +10,17 @@ import { useAuth } from "@/hooks/useAuth";
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 import { useOrganizationSettings } from "@/hooks/useOrganizationSettings";
 import { useTenantSector } from "@/hooks/useTenantSector";
+import { EventSidebar } from "@/components/dashboard/event-sidebar";
 
 export function Sidebar() {
+  const { sector: urlSector } = useParams<{ sector: string }>();
+  const { sector: tenantSector } = useTenantSector();
+  // Événementiel : barre de la refonte (Claude Design 2026-11).
+  if ((tenantSector ?? urlSector ?? "event") === "event") return <EventSidebar />;
+  return <ClassicSidebar />;
+}
+
+function ClassicSidebar() {
   const pathname = usePathname();
   const { sector: urlSector } = useParams<{ sector: string }>();
   const { sector: tenantSector, tenant } = useTenantSector();

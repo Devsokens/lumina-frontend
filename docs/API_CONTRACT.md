@@ -110,6 +110,31 @@ corps limité à 3 Mo sur cette seule route (100 ko ailleurs). Les événements 
 
 ---
 
+### Paramètres de l'organisation (2026-11)
+
+`PATCH /admin/tenant` accepte aussi `contactEmail` (`""` = retirer), `legalName`, `nif`, `rccm`
+(stockés dans `config.contactEmail` et `config.legal = { name, nif, rccm }`, exposés par
+`GET /tenants/:slug`).
+
+| Méthode | Route | Auth | Body → Réponse |
+|---|---|---|---|
+| PUT | `/admin/tenant/emails` | Bearer (OWNER) | `{ senderName, replyTo ("" possible), templates: { ticket?, certificate?, reminder?, survey?: { subject, body, cta, enabled } } }` → `settings.emails` |
+| POST | `/admin/tenant/emails/test` | Bearer (OWNER), 5/15 min | `{ kind: "ticket" \| "certificate" \| "reminder" \| "survey" }` → `{ sentTo }` (e-mail du compte connecté) |
+| PUT | `/admin/tenant/payouts` | Bearer (OWNER) | `{ frequency: "AFTER_EVENT" \| "WEEKLY", accounts: [{ operator: "AIRTEL" \| "MOOV", phone, holderName }] }` → `settings.payouts` (vérification conservée si le numéro ne change pas) |
+| POST | `/admin/tenant/payouts/verify` | Bearer (OWNER), 5/15 min | `{ operator }` → `{ sentTo }` (numéro masqué) : code SMS à 6 chiffres, 10 min |
+| POST | `/admin/tenant/payouts/confirm` | Bearer (OWNER), 10/15 min | `{ operator, code }` → `settings.payouts` (`verifiedAt` renseigné) |
+
+Messages : variables `{Prénom}` `{Événement}` `{Date}` `{Lieu}`, `**gras**`, `*italique*`, texte
+toujours échappé. Expéditeur affiché « {senderName} via GiyaX », `replyTo` en réponse. « Billet »
+toujours envoyé (avec les PDF) ; « Certificat » à l'envoi des attestations ; « Rappel » la veille
+à 18:00 (Libreville) si `enabled` ; « Avis » : texte enregistré, envoi pas encore branché.
+
+`PUT /admin/tenant/showcase` accepte aussi `design` (`{ model: "nuit" | "lumiere", palette:
+"amber" | "ruby" | "emerald" | "indigo" | "electric" | "custom", typography: "expressive" | "moderne" |
+"elegante" | "audacieuse", radius: "droits" | "doux" | "arrondis", colors?: { accent, background,
+text } (hex #RRGGBB), highlight?: string (≤ 60, "" = aucun), headlineSize?: "S" | "M" | "L" | "XL" }`)
+et `visibleSections` (`{ hero, stats, events, about, gallery, testimonials, faq, footer }`, booléens).
+
 ## 3. Menu — Restauration (`/tenants/:slug`, `/admin`)
 
 | Méthode | Route | Auth | Réponse `data` |
@@ -302,11 +327,15 @@ audit `REFUND_PARTIAL_REVIEW` pour revue manuelle. `refund.pending` / `refund.pr
 
 ---
 
-## 9. IA (à venir — non encore consommé par le frontend)
+## 9. IA
 
-Prévu : `POST /ai/generate` `{ type, prompt }` → `{ text }`, protégé Bearer + rate limit
-10/min/tenant. Sera ajouté ici dès qu'un composant frontend l'utilisera (génération de
-description produit).
+| Méthode | Route | Auth | Body → Réponse |
+|---|---|---|---|
+| POST | `/ai/generate` | Bearer (OWNER, MANAGER), 10/min/tenant | `{ prompt (≤ 500), language?: "fr" | "en" }` → `{ text, cached? }` |
+
+Utilisé par l'éditeur du site vitrine (`src/components/site-editor`, hook `useAiText`) :
+variantes d'un texte, réécriture, présentation « À propos », question de FAQ, traduction.
+Jamais de données personnelles dans la consigne (noms de clients, téléphones).
 
 ---
 
@@ -335,6 +364,23 @@ sont pas modifiables ici (**403**). Désactiver un membre ou réinitialiser son 
 toutes ses sessions.
 
 ---
+
+### Invitation par lien et périmètre (2026-11)
+
+`POST /admin/users` : `invite: true` au lieu de `temporaryPassword` → le membre est créé sans mot de
+passe et la réponse contient `inviteUrl` (`{FRONTEND_URL}/invitation/{jeton}`, 7 jours, usage
+unique ; envoyé aussi par e-mail si `email`). `eventIds` (UUID des événements du tenant, vide = tous)
+sur `POST` et `PATCH /admin/users/:id`. Chaque membre renvoyé porte `eventIds` et `invitePending`.
+
+| Méthode | Route | Auth | Body → Réponse |
+|---|---|---|---|
+| POST | `/admin/users/:id/invite` | Bearer (OWNER) | — → `{ inviteUrl }` (l'ancien lien ne marche plus) |
+| GET | `/auth/invitations/:token` | Public, 20/15 min | → `{ fullName, businessName, login }` ; 404 si invalide ou expiré |
+| POST | `/auth/invitations/:token` | Public, 5/15 min | `{ password }` (8+, une majuscule, un chiffre) → `{ login }` |
+
+Scanner (STAFF) limité à des événements (`eventIds` non vide) : `GET /admin/events` ne renvoie que
+ceux-là ; `GET /admin/events/:id`, `/tickets`, `/scan-manifest`, `/certificates` → 404 pour les
+autres ; `POST /admin/scan/validate` refuse leurs billets (`invalid`).
 
 ## 12. Clients (`/admin/customers`)
 
@@ -425,6 +471,17 @@ Achat : prix recalculé serveur, places réservées de façon atomique (**409** 
 Un événement n'est visible et achetable qu'en `PUBLISHED`/`ONGOING`. La somme des `quantity` des
 types de billets ne peut pas dépasser `capacity` (**409**). Validation à l'entrée : §7
 (`/admin/scan/validate`, un billet `PENDING` répond `invalid`).
+
+### Page publique d'un événement, albums (2026-11)
+
+`Event.settings` accepte aussi `program` (`[{ id, time, title, detail? }]`, 30 max), `speakers`
+(`[{ id, name, role?, photoUrl? }]`, 16 max) et `album` (12 images max, IsImageRef). Corps de
+`/admin/events` jusqu'à 8 Mo. Réponses publiques : images des réglages remplacées par leur URL
+(`/tenants/:slug/events/:id/image/:hash`) ; `certificateSignatories` n'est jamais exposé.
+
+| Méthode | Route | Auth | Réponse |
+|---|---|---|---|
+| GET | `/tenants/:slug/past-events` | Public | 12 derniers événements terminés : `{ id, title, startDate, endDate, venueName, location, eventType, imageUrl, settings: { album } }` |
 
 ## 15. RBNB — hébergement (`/tenants/:slug/listings`, `/admin/listings`, `/admin/bookings`)
 
@@ -522,6 +579,13 @@ coordonnée client renvoyée.
 
 ## Historique
 
+- **2026-11-07** — Refonte événementielle (cohérence frontend / backend) : paramètres de
+  l'organisation (e-mail de contact, identité légale, messages aux participants personnalisables avec
+  expéditeur et rappel la veille, comptes de versement Mobile Money vérifiés par SMS) ; équipe
+  (invitation par lien, événements accessibles d'un scanner) ; événements (programme, intervenants,
+  album, `GET /tenants/:slug/past-events`, signatures d'attestation retirées des réponses publiques) ;
+  site vitrine (`design`, `visibleSections`). Migration `20261107000000_member_event_scope`
+  (`User.eventIds`).
 - **2026-11-04 (frontend, à aligner côté backend)** — Adresses des sites : le slug devient un sous-domaine (`nom.giyax.com`) dès que le domaine est branché, sinon `giyax.vercel.app/nom`. Le frontend refuse les slugs qui ne sont pas un libellé DNS valide (tiret au début ou à la fin) et la liste `RESERVED_SLUGS` de `src/lib/constants.ts` (sous-domaines techniques et chemins de l'application : `www`, `api`, `login`, `signup`, `scan`, `kitchen`…) : la même règle doit être appliquée par `POST /auth/register` et `POST /auth/google/complete`. CORS et cookie de rafraîchissement à ouvrir aux origines `https://*.giyax.com` le jour du branchement. Vitrine : `visibleSections` (`{ hero, stats, events, about, gallery, testimonials, faq, footer }`, booléens) à accepter dans `UpdateShowcaseDto` et à renvoyer dans `config.showcase` ; envoyé seulement avec le drapeau `NEXT_PUBLIC_FEATURES=showcase-sections`.
 - **2026-11-04** — Variantes de site : `layout` (10 valeurs) et `motion` facultatifs sur `PUT /admin/tenant/site` ; `layout` facultatif sur `PUT /admin/tenant/showcase` (`scene, affiche, agenda, festival, conference, gala, club, communaute, masterclass, minimal`) ; `PUT /admin/tenant/stay-site` accepte aussi `lodge, carnet, comparatif, panorama`.
 - **2026-11-04** — Signature numérique des factures/additions (QR + empreinte) et `GET /documents/verify/:code` (§18) ; billets vérifiables au même endroit.

@@ -50,7 +50,11 @@ function LoginContent() {
     register,
     handleSubmit,
     formState: { errors },
-  } = useForm<LoginInput>({ resolver: zodResolver(loginSchema) });
+  } = useForm<LoginInput>({
+    resolver: zodResolver(loginSchema),
+    // Après une invitation acceptée : identifiant déjà rempli.
+    defaultValues: { identifier: searchParams.get("login") ?? "" },
+  });
 
   async function onSubmit(values: LoginInput) {
     setSubmitting(true);

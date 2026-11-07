@@ -9,6 +9,8 @@ import type {
   EventFormat,
   EventLogo,
   PosterCrops,
+  ProgramItem,
+  Speaker,
 } from "@/lib/events";
 import { defaultTemplateFor } from "@/lib/ticket-templates";
 
@@ -54,6 +56,10 @@ export type EditorForm = {
   certificateSendMode: CertificateSendMode;
   certificateChannels: CertificateChannels;
   notifyParticipants: boolean;
+  // Page publique de l'événement.
+  program: ProgramItem[];
+  speakers: Speaker[];
+  album: string[];
 };
 
 const pad = (n: number) => String(n).padStart(2, "0");
@@ -109,6 +115,9 @@ export function formFromEvent(e: ApiEvent | null, issuer: string): EditorForm {
       certificateSendMode: "AUTO_NEXT_DAY",
       certificateChannels: { email: true, whatsapp: true, portal: false },
       notifyParticipants: true,
+      program: [],
+      speakers: [],
+      album: [],
     };
   }
   const start = new Date(e.startDate);
@@ -123,6 +132,9 @@ export function formFromEvent(e: ApiEvent | null, issuer: string): EditorForm {
     posterCrops: s.posterCrops ?? { portrait45: "center", square11: "center", banner169: "center" },
     logos: s.logos && s.logos.length > 0 ? s.logos : defaultLogos,
     logosDisplay: s.logosDisplay ?? { vitrine: true, billets: true, certificats: true },
+    program: s.program ?? [],
+    speakers: s.speakers ?? [],
+    album: s.album ?? [],
     startDay: dayOf(start),
     startTime: timeOf(start),
     endDay: end ? dayOf(end) : "",
@@ -223,6 +235,9 @@ export function toEventForm(form: EditorForm): Partial<Event> {
       certificateRecipients: form.certificateRecipients,
       certificateSendMode: form.certificateSendMode,
       certificateChannels: form.certificateChannels,
+      program: form.program.filter((p) => p.title.trim()).map((p) => ({ ...p, time: p.time.trim(), title: p.title.trim(), detail: p.detail?.trim() || undefined })),
+      speakers: form.speakers.filter((p) => p.name.trim()).map((p) => ({ ...p, name: p.name.trim(), role: p.role?.trim() || undefined, photoUrl: p.photoUrl || null })),
+      album: form.album,
     },
   };
 }
