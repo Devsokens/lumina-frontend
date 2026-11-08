@@ -1,112 +1,22 @@
 "use client";
 
-import { useEffect, useRef } from "react";
 import { useRouter } from "next/navigation";
 import { Dialog as DialogPrimitive } from "radix-ui";
 import { Check, X } from "lucide-react";
 import { EventEditor } from "@/components/events/editor/event-editor";
-import { EvDialog } from "@/components/events/team/invite-member-dialog";
 import { EV_PORTAL, initialsOf } from "@/components/events/ev-ui";
 import { CommandPalette } from "@/components/dashboard/event-shell/command-palette";
 import { NewOrganizationDrawer } from "@/components/dashboard/event-shell/new-organization";
-import { BASE, GO_KEYS, NAV_ICON, keyOf, navGroups } from "@/components/dashboard/event-shell/shell-model";
-import { useAuth } from "@/hooks/useAuth";
+import { BASE, NAV_ICON } from "@/components/dashboard/event-shell/shell-model";
+import { OnboardingTour } from "@/components/experience/onboarding-tour";
+import { FeedbackModal, FeedbackPrompter } from "@/components/experience/feedback-modal";
 import { useTenantSector } from "@/hooks/useTenantSector";
 import { useShellStore } from "@/stores/useShellStore";
 import { cn } from "@/lib/utils";
 
-// Éléments communs du cadre événementiel, montés une fois : raccourcis
-// clavier, palette ⌘K, aide, création d'événement, offre Business,
-// nouvelle organisation.
-
-const isTyping = (t: EventTarget | null) => {
-  const el = t as HTMLElement | null;
-  return !!el && (el.tagName === "INPUT" || el.tagName === "TEXTAREA" || el.tagName === "SELECT" || el.isContentEditable);
-};
-
-function useShortcuts() {
-  const router = useRouter();
-  const { user } = useAuth();
-  const store = useShellStore;
-  const pendingG = useRef<number | null>(null);
-  const canCreate = user?.role === "OWNER" || user?.role === "MANAGER";
-
-  useEffect(() => {
-    const links = navGroups(user?.role).flatMap((g) => g.links);
-    function onKey(e: KeyboardEvent) {
-      if ((e.metaKey || e.ctrlKey) && e.key.toLowerCase() === "k") {
-        e.preventDefault();
-        store.getState().setPaletteOpen(!store.getState().paletteOpen);
-        return;
-      }
-      if (e.metaKey || e.ctrlKey || e.altKey || isTyping(e.target)) return;
-      const s = store.getState();
-      if (s.paletteOpen || s.createEventOpen || s.newOrgOpen) return;
-      const key = e.key.toUpperCase();
-      if (pendingG.current) {
-        window.clearTimeout(pendingG.current);
-        pendingG.current = null;
-        const target = links.find((l) => GO_KEYS[keyOf(l.href)] === key);
-        if (target) {
-          e.preventDefault();
-          router.push(target.href);
-        }
-        return;
-      }
-      if (key === "G") {
-        pendingG.current = window.setTimeout(() => (pendingG.current = null), 1200);
-      } else if (e.key === "?") {
-        s.setShortcutsOpen(true);
-      } else if (key === "C" && canCreate) {
-        e.preventDefault();
-        s.setCreateEventOpen(true);
-      } else if (key === "S") {
-        router.push("/scan");
-      }
-    }
-    window.addEventListener("keydown", onKey);
-    return () => window.removeEventListener("keydown", onKey);
-  }, [router, user?.role, canCreate, store]);
-}
-
-function ShortcutsDialog() {
-  const open = useShellStore((s) => s.shortcutsOpen);
-  const setOpen = useShellStore((s) => s.setShortcutsOpen);
-  const { user } = useAuth();
-  const nav = navGroups(user?.role).flatMap((g) => g.links);
-  const rows: [string, string][] = [
-    ["⌘ K", "Rechercher ou aller à…"],
-    ["C", "Créer un événement"],
-    ["S", "Scanner les pass"],
-    ["?", "Afficher les raccourcis"],
-    ...nav.map((l) => [`G puis ${GO_KEYS[keyOf(l.href)]}`, l.label] as [string, string]),
-  ];
-  return (
-    <EvDialog
-      open={open}
-      onOpenChange={setOpen}
-      width={520}
-      title="Raccourcis et aide"
-      description="Allez plus vite au clavier. Sur Windows, ⌘ = Ctrl."
-      footer={
-        <a href="/#faq" target="_blank" rel="noreferrer" className="flex h-[42px] items-center rounded-[10px] border border-ev-border bg-ev-surface px-4 text-sm font-medium">
-          Centre d&apos;aide
-        </a>
-      }
-    >
-      <dl className="m-0 grid gap-x-6 gap-y-2.5 text-sm sm:grid-cols-[auto_1fr]">
-        {rows.map(([k, label]) => (
-          <div key={label} className="contents">
-            <dt>
-              <kbd className="inline-flex h-6 items-center rounded-[6px] border border-ev-border bg-ev-soft px-2 font-ev-mono text-xs">{k}</kbd>
-            </dt>
-            <dd className="m-0 text-ev-ink2">{label}</dd>
-          </div>
-        ))}
-      </dl>
-    </EvDialog>
-  );
-}
+// Éléments communs du cadre événementiel, montés une fois : palette de
+// recherche, visite guidée, demande d'avis, création d'événement, offre
+// Business, nouvelle organisation.
 
 // Offre Business : plusieurs organisations sous un même compte.
 function BusinessDialog() {
@@ -182,11 +92,12 @@ function CreateEventHost() {
 }
 
 export function EventShellHosts() {
-  useShortcuts();
   return (
     <>
       <CommandPalette />
-      <ShortcutsDialog />
+      <OnboardingTour />
+      <FeedbackModal />
+      <FeedbackPrompter />
       <BusinessDialog />
       <NewOrganizationDrawer />
       <CreateEventHost />

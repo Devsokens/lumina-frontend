@@ -2,20 +2,51 @@
 
 import { Fragment, useEffect, useRef, useState, type ReactNode } from "react";
 import { usePathname } from "next/navigation";
-import { ArrowUp, RotateCcw, X } from "lucide-react";
+import { ArrowDown, ArrowLeft, ArrowUp, History, Loader2, SquarePen, Trash2, X } from "lucide-react";
 import { GiyaxAvatar, type GiyaxMood } from "@/components/ai/giyax-avatar";
 import { TypewriterText } from "@/components/ai/typewriter";
-import { useAssistant, type ChatMessage } from "@/hooks/useAi";
+import { fetchConversation, useAssistant, useAssistantConversations, useDeleteConversation, type ChatMessage, type ConversationSummary } from "@/hooks/useAi";
 import { apiError } from "@/lib/api";
 import { LEGAL } from "@/lib/legal";
 import { cn } from "@/lib/utils";
 
 // GiyaX AI : assistant de la page d'accueil (visiteurs) et du back-office
-// (organisateurs et équipes). Conversation gardée le temps de la session du
-// navigateur ; seule la dernière réponse s'écrit à l'écran.
+// (organisateurs et équipes). Historique des conversations : sur le serveur
+// pour les membres connectés (retrouvé sur tous leurs appareils), dans ce
+// navigateur pour les visiteurs. Seule la dernière réponse s'écrit à l'écran.
 
 type Mode = "public" | "admin";
 type Msg = ChatMessage & { id: string; local?: boolean };
+type Session = { conversationId: string | null; messages: Msg[] };
+type LocalConversation = { id: string; title: string; updatedAt: string; messages: ChatMessage[] };
+
+const HISTORY_KEY = "giyax-ai:public:history";
+
+function loadHistory(): LocalConversation[] {
+  try {
+    const list = JSON.parse(localStorage.getItem(HISTORY_KEY) ?? "[]") as LocalConversation[];
+    return Array.isArray(list) ? list : [];
+  } catch {
+    return [];
+  }
+}
+
+function saveHistory(list: LocalConversation[]) {
+  try {
+    localStorage.setItem(HISTORY_KEY, JSON.stringify(list.slice(0, 20)));
+  } catch {
+    // stockage indisponible : historique non gardé
+  }
+}
+
+function when(iso: string) {
+  const d = new Date(iso);
+  const diff = (Date.now() - d.getTime()) / 60000;
+  if (diff < 1) return "à l'instant";
+  if (diff < 60) return `il y a ${Math.round(diff)} min`;
+  if (diff < 24 * 60) return `il y a ${Math.round(diff / 60)} h`;
+  return d.toLocaleDateString("fr-FR", { day: "numeric", month: "short" });
+}
 
 const GREETING: Record<Mode, string> = {
   public: "Bonjour, je suis GiyaX AI. Je peux vous présenter GiyaX, vous expliquer comment vendre vos billets ou gérer votre activité, et répondre à vos questions.",
@@ -31,19 +62,20 @@ const SUGGESTIONS: Record<Mode, string[]> = {
 const STORE = (mode: Mode) => `giyax-ai:${mode}`;
 const newId = () => Math.random().toString(36).slice(2, 10);
 
-function load(mode: Mode): Msg[] {
+// Conversation en cours (garde la page entre deux écrans).
+function load(mode: Mode): Session {
   try {
-    const raw = sessionStorage.getItem(STORE(mode));
-    const list = raw ? (JSON.parse(raw) as Msg[]) : [];
-    return Array.isArray(list) ? list.slice(-30) : [];
+    const raw = JSON.parse(sessionStorage.getItem(STORE(mode)) ?? "null") as Session | Msg[] | null;
+    if (Array.isArray(raw)) return { conversationId: null, messages: raw.slice(-30) };
+    return raw && Array.isArray(raw.messages) ? { conversationId: raw.conversationId ?? null, messages: raw.messages.slice(-30) } : { conversationId: null, messages: [] };
   } catch {
-    return [];
+    return { conversationId: null, messages: [] };
   }
 }
 
-function save(mode: Mode, list: Msg[]) {
+function save(mode: Mode, session: Session) {
   try {
-    sessionStorage.setItem(STORE(mode), JSON.stringify(list.slice(-30)));
+    sessionStorage.setItem(STORE(mode), JSON.stringify({ ...session, messages: session.messages.slice(-30) }));
   } catch {
     // stockage indisponible (navigation privée) : conversation non gardée
   }
@@ -120,14 +152,25 @@ export function GiyaxAssistant({ mode }: { mode: Mode }) {
   const [input, setInput] = useState("");
   const [error, setError] = useState<string | null>(null);
   const [teaser, setTeaser] = useState(false);
+  const [conversationId, setConversationId] = useState<string | null>(null);
+  const [view, setView] = useState<"chat" | "history">("chat");
+  const [opening, setOpening] = useState<string | null>(null);
+  const [local, setLocal] = useState<LocalConversation[]>([]);
+  const remote = useAssistantConversations(mode === "admin" && open && view === "history");
+  const remove = useDeleteConversation();
   const listRef = useRef<HTMLDivElement>(null);
   const inputRef = useRef<HTMLTextAreaElement>(null);
+  // La liste suit-elle le bas (nouveaux messages, texte qui s'écrit) ?
+  const stick = useRef(true);
+  const [atBottom, setAtBottom] = useState(true);
 
   // Conversation de la session (après l'hydratation).
   useEffect(() => {
     const saved = load(mode);
+    if (!saved.messages.length) return;
     // eslint-disable-next-line react-hooks/set-state-in-effect
-    if (saved.length) setMessages(saved);
+    setMessages(saved.messages);
+    setConversationId(saved.conversationId);
   }, [mode]);
 
   // Bulle d'accueil une fois par session, quelques secondes après l'arrivée.
@@ -155,11 +198,7 @@ export function GiyaxAssistant({ mode }: { mode: Mode }) {
   function openPanel() {
     hideTeaser();
     setOpen(true);
-    if (!messages.length) {
-      const greet: Msg = { id: newId(), role: "assistant", content: GREETING[mode], local: true };
-      setMessages([greet]);
-      setTyping(greet.id);
-    }
+    if (!messages.length) greet();
   }
 
   useEffect(() => {
@@ -173,14 +212,37 @@ export function GiyaxAssistant({ mode }: { mode: Mode }) {
     };
   }, [open]);
 
-  // Défilement vers le bas pendant que l'IA écrit.
+  // Nouveau message (envoyé, reçu, conversation rouverte) : on va en bas.
   useEffect(() => {
     const el = listRef.current;
-    if (!el || !open) return;
-    const id = window.setInterval(() => el.scrollTo({ top: el.scrollHeight }), 120);
+    if (!el || !open || view !== "chat") return;
+    stick.current = true;
     el.scrollTo({ top: el.scrollHeight });
+  }, [open, view, messages.length]);
+
+  // Pendant que l'IA réfléchit ou écrit, on suit le texte, sauf si la
+  // personne est remontée lire le début de la conversation.
+  useEffect(() => {
+    const el = listRef.current;
+    if (!el || !open || (!typing && !ask.isPending)) return;
+    const id = window.setInterval(() => {
+      if (stick.current) el.scrollTo({ top: el.scrollHeight });
+    }, 120);
     return () => window.clearInterval(id);
-  }, [open, messages.length, ask.isPending, typing]);
+  }, [open, typing, ask.isPending]);
+
+  function onListScroll(e: React.UIEvent<HTMLDivElement>) {
+    const el = e.currentTarget;
+    const bottom = el.scrollHeight - el.scrollTop - el.clientHeight < 60;
+    stick.current = bottom;
+    if (bottom !== atBottom) setAtBottom(bottom);
+  }
+
+  function toBottom() {
+    const el = listRef.current;
+    stick.current = true;
+    el?.scrollTo({ top: el.scrollHeight, behavior: "smooth" });
+  }
 
   async function send(text: string) {
     const content = text.trim().slice(0, 1000);
@@ -189,31 +251,94 @@ export function GiyaxAssistant({ mode }: { mode: Mode }) {
     setInput("");
     const next: Msg[] = [...messages, { id: newId(), role: "user", content }];
     setMessages(next);
-    save(mode, next);
+    save(mode, { conversationId, messages: next });
     try {
-      const reply = await ask.mutateAsync({
-        messages: next.filter((m) => !m.local).map(({ role, content: c }) => ({ role, content: c })),
+      const plain = next.filter((m) => !m.local).map(({ role, content: c }) => ({ role, content: c }));
+      const res = await ask.mutateAsync({
+        messages: plain,
         page: mode === "admin" ? pathname : undefined,
+        ...(mode === "admin" && conversationId ? { conversationId } : {}),
       });
-      const answer: Msg = { id: newId(), role: "assistant", content: reply };
+      const answer: Msg = { id: newId(), role: "assistant", content: res.reply };
       const withAnswer = [...next, answer];
+      // Visiteurs : l'historique reste dans ce navigateur.
+      const id = mode === "admin" ? res.conversationId : (conversationId ?? `l-${newId()}`);
+      if (mode === "public" && id) {
+        const entry: LocalConversation = {
+          id,
+          title: plain.find((m) => m.role === "user")?.content.slice(0, 80) ?? "Conversation",
+          updatedAt: new Date().toISOString(),
+          messages: [...plain, { role: "assistant" as const, content: res.reply }].slice(-40),
+        };
+        saveHistory([entry, ...loadHistory().filter((c) => c.id !== id)]);
+      }
+      setConversationId(id);
       setMessages(withAnswer);
       setTyping(answer.id);
-      save(mode, withAnswer);
+      save(mode, { conversationId: id, messages: withAnswer });
     } catch (err) {
       setError(apiError(err, "Je n'arrive pas à répondre pour l'instant. Réessayez dans un instant."));
     }
   }
 
+  function greet() {
+    const g: Msg = { id: newId(), role: "assistant", content: GREETING[mode], local: true };
+    setMessages([g]);
+    setTyping(g.id);
+  }
+
   function reset() {
-    setMessages([]);
     setTyping(null);
     setError(null);
-    save(mode, []);
-    const greet: Msg = { id: newId(), role: "assistant", content: GREETING[mode], local: true };
-    setMessages([greet]);
-    setTyping(greet.id);
+    setConversationId(null);
+    setView("chat");
+    save(mode, { conversationId: null, messages: [] });
+    greet();
   }
+
+  function showHistory() {
+    if (mode === "public") setLocal(loadHistory());
+    setView((v) => (v === "history" ? "chat" : "history"));
+  }
+
+  // Rouvrir une conversation passée (sans animation d'écriture).
+  async function reopen(id: string) {
+    setError(null);
+    try {
+      let list: ChatMessage[] = [];
+      if (mode === "admin") {
+        setOpening(id);
+        list = (await fetchConversation(id))?.messages ?? [];
+      } else {
+        list = loadHistory().find((c) => c.id === id)?.messages ?? [];
+      }
+      const msgs: Msg[] = list.map((m) => ({ id: newId(), role: m.role, content: m.content }));
+      setMessages(msgs);
+      setConversationId(id);
+      setTyping(null);
+      setView("chat");
+      save(mode, { conversationId: id, messages: msgs });
+    } catch (err) {
+      setError(apiError(err, "Conversation introuvable."));
+    } finally {
+      setOpening(null);
+    }
+  }
+
+  async function forget(id: string) {
+    if (mode === "admin") await remove.mutateAsync(id).catch(() => undefined);
+    else {
+      const rest = loadHistory().filter((c) => c.id !== id);
+      saveHistory(rest);
+      setLocal(rest);
+    }
+    if (id === conversationId) reset();
+  }
+
+  const history: (ConversationSummary | (LocalConversation & { preview: string }))[] =
+    mode === "admin"
+      ? (remote.data ?? [])
+      : local.map((c) => ({ ...c, preview: [...c.messages].reverse().find((m) => m.role === "assistant")?.content.replace(/\s+/g, " ").slice(0, 120) ?? "" }));
 
   const mood: GiyaxMood = ask.isPending ? "thinking" : typing ? "talking" : "idle";
   const onlyGreeting = messages.length <= 1;
@@ -235,6 +360,7 @@ export function GiyaxAssistant({ mode }: { mode: Mode }) {
           <button
             type="button"
             onClick={openPanel}
+            data-tour="assistant"
             aria-label="Ouvrir GiyaX AI, l'assistant"
             className="group relative flex size-[60px] items-center justify-center rounded-full bg-white shadow-[0_10px_30px_rgba(11,59,46,.28)] ring-1 ring-black/5 transition-transform hover:scale-105 dark:bg-[#10221B]"
           >
@@ -259,18 +385,93 @@ export function GiyaxAssistant({ mode }: { mode: Mode }) {
               <span className="text-[15px] font-semibold">GiyaX AI</span>
               <span className="flex items-center gap-1.5 text-xs text-white/75">
                 <span className={cn("size-1.5 rounded-full", ask.isPending || typing ? "bg-[#F5B83D]" : "bg-[#3DD68C]")} />
-                {ask.isPending ? "réfléchit…" : typing ? "écrit…" : "En ligne"}
+                {view === "history" ? "Vos conversations" : ask.isPending ? "réfléchit…" : typing ? "écrit…" : "En ligne"}
               </span>
             </span>
+            <button
+              type="button"
+              aria-label="Historique des conversations"
+              aria-pressed={view === "history"}
+              title="Historique"
+              onClick={showHistory}
+              className={cn("flex size-9 items-center justify-center rounded-full text-white/80 hover:bg-white/10 hover:text-white", view === "history" && "bg-white/15 text-white")}
+            >
+              <History className="size-4" />
+            </button>
             <button type="button" aria-label="Nouvelle conversation" title="Nouvelle conversation" onClick={reset} className="flex size-9 items-center justify-center rounded-full text-white/80 hover:bg-white/10 hover:text-white">
-              <RotateCcw className="size-4" />
+              <SquarePen className="size-4" />
             </button>
             <button type="button" aria-label="Fermer" onClick={() => setOpen(false)} className="flex size-9 items-center justify-center rounded-full text-white/80 hover:bg-white/10 hover:text-white">
               <X className="size-5" />
             </button>
           </header>
 
-          <div ref={listRef} aria-live="polite" className="flex min-h-0 flex-1 flex-col gap-3 overflow-y-auto bg-muted/30 px-4 py-4 [scrollbar-width:thin]">
+          {view === "history" && (
+            <div className="flex min-h-0 flex-1 flex-col overflow-y-auto bg-muted/30 [scrollbar-width:thin]">
+              <div className="flex items-center justify-between gap-2 px-4 pb-2 pt-4">
+                <button type="button" onClick={() => setView("chat")} className="flex items-center gap-1.5 text-[13px] font-medium text-muted-foreground hover:text-foreground">
+                  <ArrowLeft className="size-4" /> Retour
+                </button>
+                <button type="button" onClick={reset} className="flex h-8 items-center gap-1.5 rounded-full bg-[#0C4A3A] px-3 text-[13px] font-semibold text-white">
+                  <SquarePen className="size-3.5" /> Nouvelle conversation
+                </button>
+              </div>
+              <h3 className="m-0 px-4 pb-2 pt-1 text-[15px] font-semibold">Vos conversations</h3>
+              {mode === "admin" && remote.isLoading ? (
+                <div className="flex flex-col gap-2 px-4">
+                  {[0, 1, 2].map((i) => (
+                    <span key={i} className="h-[62px] animate-pulse rounded-xl bg-muted" />
+                  ))}
+                </div>
+              ) : history.length === 0 ? (
+                <div className="flex flex-col items-center gap-3 px-6 py-10 text-center text-[13px] text-muted-foreground">
+                  <GiyaxAvatar size={52} />
+                  Aucune conversation pour l&apos;instant. Posez votre première question !
+                </div>
+              ) : (
+                <ul className="m-0 flex list-none flex-col gap-2 px-4 pb-4">
+                  {history.map((c) => (
+                    <li key={c.id} className={cn("group relative rounded-xl border bg-background transition-colors hover:border-[#0C4A3A]/40", c.id === conversationId ? "border-[#0C4A3A]/50" : "border-border")}>
+                      <button type="button" onClick={() => void reopen(c.id)} className="flex w-full flex-col gap-0.5 px-3.5 py-2.5 pr-11 text-left">
+                        <span className="flex items-center gap-2">
+                          <span className="truncate text-[14px] font-semibold">{c.title}</span>
+                          {opening === c.id && <Loader2 className="size-3.5 shrink-0 animate-spin" />}
+                        </span>
+                        {c.preview && <span className="line-clamp-2 text-[12.5px] leading-snug text-muted-foreground">{c.preview}</span>}
+                        <span className="text-[11px] text-muted-foreground/80">{when(c.updatedAt)}</span>
+                      </button>
+                      <button
+                        type="button"
+                        aria-label={`Supprimer « ${c.title} »`}
+                        onClick={() => void forget(c.id)}
+                        className="absolute right-2 top-2 flex size-8 items-center justify-center rounded-lg text-muted-foreground opacity-70 hover:bg-muted hover:text-red-500 hover:opacity-100"
+                      >
+                        <Trash2 className="size-4" />
+                      </button>
+                    </li>
+                  ))}
+                </ul>
+              )}
+              <p className="m-0 mt-auto px-4 pb-3 text-center text-[11px] text-muted-foreground">
+                {mode === "admin" ? "Vos conversations sont retrouvées sur tous vos appareils." : "Vos conversations restent sur ce navigateur."}
+              </p>
+            </div>
+          )}
+
+          {view === "chat" && !atBottom && (
+            // Remonté lire : bouton pour revenir aux derniers messages.
+            <div className="pointer-events-none relative z-10 h-0">
+              <button
+                type="button"
+                onClick={toBottom}
+                aria-label="Aller aux derniers messages"
+                className="giyax-pop pointer-events-auto absolute left-1/2 top-2 flex h-8 -translate-x-1/2 items-center gap-1.5 rounded-full border border-border bg-background px-3 text-xs font-semibold text-foreground shadow-lg"
+              >
+                <ArrowDown className="size-3.5" /> Aller en bas
+              </button>
+            </div>
+          )}
+          <div ref={listRef} onScroll={onListScroll} aria-live="polite" className={cn("min-h-0 flex-1 flex-col gap-3 overflow-y-auto overscroll-contain bg-muted/30 px-4 py-4 [scrollbar-width:thin]", view === "history" ? "hidden" : "flex")}>
             {messages.map((m) =>
               m.role === "user" ? (
                 <div key={m.id} className="giyax-pop ml-auto max-w-[85%] whitespace-pre-line rounded-2xl rounded-br-md bg-[#0C4A3A] px-3.5 py-2.5 text-[14px] leading-relaxed text-white">

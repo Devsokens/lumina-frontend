@@ -1,8 +1,8 @@
 import { create } from "zustand";
 
 // Cadre du back-office événementiel (refonte 2026-11) : barre latérale
-// repliée, palette de recherche (⌘K), raccourcis clavier, création d'un
-// événement depuis n'importe quelle page, offre Business, nouvelle organisation.
+// repliée, palette de recherche, visite guidée, demande d'avis, création
+// d'un événement depuis n'importe quelle page, offre Business, nouvelle organisation.
 
 const COLLAPSED_KEY = "giyax-sidebar-collapsed";
 
@@ -17,13 +17,15 @@ function readCollapsed() {
 type ShellState = {
   collapsed: boolean;
   paletteOpen: boolean;
-  shortcutsOpen: boolean;
+  tourOpen: boolean;
+  feedbackOpen: boolean;
   createEventOpen: boolean;
   businessOpen: boolean;
   newOrgOpen: boolean;
   setCollapsed: (v: boolean) => void;
   setPaletteOpen: (v: boolean) => void;
-  setShortcutsOpen: (v: boolean) => void;
+  setTourOpen: (v: boolean) => void;
+  setFeedbackOpen: (v: boolean) => void;
   setCreateEventOpen: (v: boolean) => void;
   setBusinessOpen: (v: boolean) => void;
   setNewOrgOpen: (v: boolean) => void;
@@ -33,7 +35,8 @@ type ShellState = {
 export const useShellStore = create<ShellState>((set) => ({
   collapsed: false,
   paletteOpen: false,
-  shortcutsOpen: false,
+  tourOpen: false,
+  feedbackOpen: false,
   createEventOpen: false,
   businessOpen: false,
   newOrgOpen: false,
@@ -46,7 +49,8 @@ export const useShellStore = create<ShellState>((set) => ({
     set({ collapsed });
   },
   setPaletteOpen: (paletteOpen) => set({ paletteOpen }),
-  setShortcutsOpen: (shortcutsOpen) => set({ shortcutsOpen }),
+  setTourOpen: (tourOpen) => set({ tourOpen }),
+  setFeedbackOpen: (feedbackOpen) => set({ feedbackOpen }),
   setCreateEventOpen: (createEventOpen) => set({ createEventOpen }),
   setBusinessOpen: (businessOpen) => set({ businessOpen }),
   setNewOrgOpen: (newOrgOpen) => set({ newOrgOpen }),

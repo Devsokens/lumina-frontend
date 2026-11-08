@@ -587,3 +587,11 @@
   .giyax-float, .giyax-eye, .giyax-pupils, .giyax-mouth-talk, .giyax-spark,
   .giyax-orbit, .giyax-halo, .giyax-dot, .giyax-pop { animation: none; }
 }
+@keyframes giyax-tour-ring {
+  0%, 100% { box-shadow: 0 0 0 0 rgba(245, 184, 61, 0.55); }
+  50% { box-shadow: 0 0 0 8px rgba(245, 184, 61, 0); }
+}
+.giyax-tour-ring { animation: giyax-tour-ring 1.8s ease-in-out infinite; }
+@media (prefers-reduced-motion: reduce) {
+  .giyax-tour-ring { animation: none; }
+}

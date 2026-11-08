@@ -6,7 +6,7 @@ import type { Role } from "@/lib/constants";
 import type { Tenant } from "@/types/api";
 
 // Cadre du back-office événementiel (refonte 2026-11) : navigation groupée,
-// icônes, raccourcis, formule et étapes de configuration.
+// icônes, formule et étapes de configuration.
 
 export const BASE = "/admin/event";
 
@@ -27,17 +27,6 @@ export function keyOf(href: string): keyof typeof NAV_ICON {
   const last = href.split("/").pop() ?? "";
   return (last in NAV_ICON ? last : "home") as keyof typeof NAV_ICON;
 }
-
-// « G puis … » : aller à une page.
-export const GO_KEYS: Record<keyof typeof NAV_ICON, string> = {
-  home: "T",
-  events: "M",
-  scan: "C",
-  showcase: "S",
-  users: "E",
-  audit: "J",
-  settings: "P",
-};
 
 // Groupes de la barre latérale ; les noms des modules restent ceux de l'app.
 const GROUPS: { title: string; keys: (keyof typeof NAV_ICON)[] }[] = [

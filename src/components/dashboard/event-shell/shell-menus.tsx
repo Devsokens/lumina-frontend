@@ -3,7 +3,7 @@
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { toast } from "sonner";
-import { Building2, Check, CircleHelp, CreditCard, Keyboard, Languages, LockKeyhole, LogOut, Plus, Star, User, UserPlus } from "lucide-react";
+import { Building2, Check, Compass, CreditCard, Languages, LockKeyhole, LogOut, MessageSquareHeart, Plus, Star, User, UserPlus } from "lucide-react";
 import { DropdownMenuItem, DropdownMenuLabel, DropdownMenuSeparator } from "@/components/ui/dropdown-menu";
 import { initialsOf } from "@/components/events/ev-ui";
 import { BASE, PLAN_NAME, logoOf, type SetupStep } from "@/components/dashboard/event-shell/shell-model";
@@ -122,11 +122,12 @@ export function OrgMenuContent({ tenant, isOwner }: { tenant: Tenant | undefined
   );
 }
 
-// Menu du compte : profil, sécurité, langue, raccourcis, aide, déconnexion.
+// Menu du compte : profil, sécurité, langue, visite guidée, avis, déconnexion.
 export function UserMenuContent({ name, contact }: { name: string; contact: string }) {
   const router = useRouter();
   const { signOut } = useAuth();
-  const setShortcutsOpen = useShellStore((s) => s.setShortcutsOpen);
+  const setTourOpen = useShellStore((s) => s.setTourOpen);
+  const setFeedbackOpen = useShellStore((s) => s.setFeedbackOpen);
 
   async function logout() {
     await signOut();
@@ -158,14 +159,11 @@ export function UserMenuContent({ name, contact }: { name: string; contact: stri
         <DropdownMenuItem disabled className="gap-2.5" title="Seule langue disponible pour l'instant">
           <Languages className="size-4" /> Langue : Français
         </DropdownMenuItem>
-        <DropdownMenuItem className="gap-2.5" onClick={() => setShortcutsOpen(true)}>
-          <Keyboard className="size-4" /> <span className="flex-1">Raccourcis clavier</span>
-          <kbd className="font-ev-mono text-[11px] text-ev-muted">?</kbd>
+        <DropdownMenuItem className="gap-2.5" onClick={() => setTourOpen(true)}>
+          <Compass className="size-4" /> Revoir la visite guidée
         </DropdownMenuItem>
-        <DropdownMenuItem asChild>
-          <Link href="/#faq" target="_blank" className="gap-2.5">
-            <CircleHelp className="size-4" /> Centre d&apos;aide
-          </Link>
+        <DropdownMenuItem className="gap-2.5" onClick={() => setFeedbackOpen(true)}>
+          <MessageSquareHeart className="size-4" /> Donner mon avis
         </DropdownMenuItem>
       </div>
       <DropdownMenuSeparator className="my-0" />

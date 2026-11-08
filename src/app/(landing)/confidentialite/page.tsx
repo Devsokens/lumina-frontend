@@ -242,6 +242,8 @@ const sections: LegalSection[] = [
             ["Session de connexion (cookie)", "7 jours, renouvelée à chaque visite"],
             ["Autorisation Gmail", "Jusqu'à la déconnexion ; supprimée immédiatement ensuite"],
             ["Consignes et réponses de l'assistant IA", "12 mois, pour la sécurité et le suivi des coûts"],
+            ["Historique de vos conversations avec GiyaX AI", "Jusqu'à ce que vous les supprimiez, ou la clôture du compte"],
+            ["Avis et suggestions", "3 ans, pour suivre l'évolution du produit"],
           ]}
         />
       </>
@@ -344,9 +346,15 @@ const sections: LegalSection[] = [
         <H3>GiyaX AI, l&apos;assistant conversationnel</H3>
         <p>
           Sur notre site et dans les espaces de gestion, GiyaX AI répond aux questions sur l&apos;application et peut conseiller les responsables. Vos messages sont transmis au
-          fournisseur d&apos;IA (Groq) pour produire la réponse, sans servir à entraîner des modèles. Pour les visiteurs non connectés, nous ne conservons pas la conversation
-          sur nos serveurs. Pour les membres connectés, la question et la réponse sont journalisées 12 mois (sécurité, suivi des coûts). N&apos;y indiquez pas de données
-          sensibles ni de données de vos clients. GiyaX AI n&apos;a pas accès aux données de votre compte et peut se tromper : vérifiez les informations importantes.
+          fournisseur d&apos;IA (Groq) pour produire la réponse, sans servir à entraîner des modèles. Pour les visiteurs non connectés, l&apos;historique des conversations
+          reste dans leur navigateur : nous ne le conservons pas sur nos serveurs. Pour les membres connectés, les conversations sont gardées dans leur historique, visible
+          d&apos;eux seuls et supprimable à tout moment, et chaque échange est journalisé 12 mois (sécurité, suivi des coûts). N&apos;y indiquez pas de données sensibles ni
+          de données de vos clients. GiyaX AI n&apos;a pas accès aux données de votre compte et peut se tromper : vérifiez les informations importantes.
+        </p>
+        <H3>Vos avis</H3>
+        <p>
+          Quand vous répondez à « Aidez-nous à améliorer votre expérience », vos réponses et vos idées sont enregistrées avec votre organisation, votre rôle et la page
+          d&apos;où vous écrivez, pour que notre équipe les lise et améliore GiyaX. Elles ne sont jamais publiées ni revendues.
         </p>
         <p>
           Nous ne prenons aucune décision produisant des effets juridiques à votre égard sur le seul fondement d&apos;un traitement automatisé. Le contrôle d&apos;accès vérifie la

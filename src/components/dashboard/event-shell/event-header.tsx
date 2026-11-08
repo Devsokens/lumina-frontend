@@ -4,7 +4,7 @@ import Link from "next/link";
 import { Suspense } from "react";
 import { usePathname, useSearchParams } from "next/navigation";
 import { toast } from "sonner";
-import { ArrowUpRight, Bell, ChevronRight, CircleHelp, Search } from "lucide-react";
+import { ArrowUpRight, Bell, ChevronRight, Compass, Search } from "lucide-react";
 import { DropdownMenu, DropdownMenuContent, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
 import { EV_PORTAL, initialsOf } from "@/components/events/ev-ui";
 import { BASE } from "@/components/dashboard/event-shell/shell-model";
@@ -17,7 +17,7 @@ import { publicSiteUrl } from "@/lib/tenant-url";
 import { cn } from "@/lib/utils";
 
 // En-tête du back-office événementiel (refonte 2026-11, 2e version) : fil
-// d'Ariane, recherche (⌘K), « Voir mon site », aide, notifications.
+// d'Ariane, recherche, « Voir mon site », visite guidée, notifications.
 
 const PAGES: Record<string, string> = {
   "": "Tableau de bord",
@@ -73,7 +73,7 @@ export function EventHeader() {
   const { tenant } = useTenantSector();
   const collapsed = useShellStore((s) => s.collapsed);
   const setPaletteOpen = useShellStore((s) => s.setPaletteOpen);
-  const setShortcutsOpen = useShellStore((s) => s.setShortcutsOpen);
+  const setTourOpen = useShellStore((s) => s.setTourOpen);
   const userName = user?.fullName || user?.email || "Administrateur";
 
   return (
@@ -85,12 +85,12 @@ export function EventHeader() {
       <div className="flex shrink-0 items-center gap-2 sm:gap-2.5">
         <button
           type="button"
+          data-tour="search"
           onClick={() => setPaletteOpen(true)}
           className="hidden h-10 w-[200px] items-center gap-2.5 rounded-[10px] border border-ev-border bg-ev-bg px-3 text-left text-sm text-ev-muted transition-colors hover:border-ev-dash md:flex lg:w-[312px]"
         >
           <Search className="size-4 shrink-0" />
           <span className="flex-1 truncate">Rechercher ou aller à…</span>
-          <kbd className="rounded-[6px] border border-ev-border bg-ev-surface px-1.5 py-0.5 font-ev-mono text-[11px]">⌘K</kbd>
         </button>
         <button type="button" aria-label="Rechercher" onClick={() => setPaletteOpen(true)} className="flex size-10 items-center justify-center rounded-[10px] border border-ev-border bg-ev-surface text-ev-ink2 md:hidden">
           <Search className="size-4" />
@@ -105,8 +105,9 @@ export function EventHeader() {
             Voir mon site <ArrowUpRight className="size-4" />
           </a>
         )}
-        <button type="button" aria-label="Aide et raccourcis" onClick={() => setShortcutsOpen(true)} className="hidden size-10 items-center justify-center rounded-[10px] text-ev-ink2 hover:bg-ev-soft sm:flex">
-          <CircleHelp className="size-[18px]" />
+        {/* Visite guidée : toujours accessible pour revoir le tutoriel. */}
+        <button type="button" data-tour="tour" aria-label="Revoir la visite guidée" title="Visite guidée" onClick={() => setTourOpen(true)} className="flex size-10 items-center justify-center rounded-[10px] text-ev-ink2 hover:bg-ev-soft">
+          <Compass className="size-[18px]" />
         </button>
         <button type="button" aria-label="Notifications" onClick={() => toast.info("Aucune notification.")} className="relative flex size-10 items-center justify-center rounded-[10px] text-ev-ink2 hover:bg-ev-soft">
           <Bell className="size-[18px]" />

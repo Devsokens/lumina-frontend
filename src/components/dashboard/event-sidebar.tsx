@@ -7,7 +7,7 @@ import { ChevronDown, PanelLeftClose, PanelLeftOpen, Plus } from "lucide-react";
 import { DropdownMenu, DropdownMenuContent, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
 import { initialsOf, EV_PORTAL } from "@/components/events/ev-ui";
 import { sidebarLinks } from "@/lib/navigation";
-import { BASE, GO_KEYS, NAV_ICON, PLAN_NAME, keyOf, useActiveEventsCount, useSetupSteps } from "@/components/dashboard/event-shell/shell-model";
+import { BASE, NAV_ICON, PLAN_NAME, keyOf, useActiveEventsCount, useSetupSteps } from "@/components/dashboard/event-shell/shell-model";
 import { OrgAvatar, OrgMenuContent, SetupMenuContent, UserMenuContent } from "@/components/dashboard/event-shell/shell-menus";
 import { useAuth } from "@/hooks/useAuth";
 import { useTenantSector } from "@/hooks/useTenantSector";
@@ -77,11 +77,11 @@ export function EventSidebar() {
       <DropdownMenu>
         <DropdownMenuTrigger asChild>
           {collapsed ? (
-            <button type="button" aria-label={`Organisation : ${orgName}`} className="rounded-[12px] transition-opacity hover:opacity-90">
+            <button type="button" data-tour="org" aria-label={`Organisation : ${orgName}`} className="rounded-[12px] transition-opacity hover:opacity-90">
               <OrgAvatar tenant={tenant} name={orgName} className="size-11" />
             </button>
           ) : (
-            <button type="button" className="flex items-center gap-2.5 rounded-[12px] bg-white/[0.06] p-2 text-left transition-colors hover:bg-white/10">
+            <button type="button" data-tour="org" className="flex items-center gap-2.5 rounded-[12px] bg-white/[0.06] p-2 text-left transition-colors hover:bg-white/10">
               <OrgAvatar tenant={tenant} name={orgName} className="size-9" />
               <span className="flex min-w-0 flex-1 flex-col leading-[1.25]">
                 <span className="truncate text-[15px] font-semibold text-white">{orgName}</span>
@@ -101,8 +101,9 @@ export function EventSidebar() {
         (collapsed ? (
           <button
             type="button"
+            data-tour="create"
             aria-label="Créer un événement"
-            title="Créer un événement (C)"
+            title="Créer un événement"
             onClick={() => setCreateEventOpen(true)}
             className="mt-4 flex size-11 items-center justify-center rounded-[10px] bg-white/10 text-white transition-colors hover:bg-white/15"
           >
@@ -111,6 +112,7 @@ export function EventSidebar() {
         ) : (
           <button
             type="button"
+            data-tour="create"
             onClick={() => setCreateEventOpen(true)}
             className="mt-3.5 flex h-[42px] items-center justify-center gap-2 rounded-[10px] bg-white text-sm font-semibold text-[#0B3B2E] transition-colors hover:bg-[#F2F7F5]"
           >
@@ -129,6 +131,7 @@ export function EventSidebar() {
             <Link
               key={l.href}
               href={l.href}
+              data-tour={`nav-${key}`}
               aria-label={l.label}
               aria-current={active ? "page" : undefined}
               className={cn(
@@ -140,13 +143,13 @@ export function EventSidebar() {
               {dot && <span className="absolute right-2 top-2 size-1.5 rounded-full bg-[#F5B83D]" />}
               <span className="pointer-events-none absolute left-[calc(100%+10px)] z-50 hidden items-center gap-2 whitespace-nowrap rounded-[8px] bg-[#16211C] px-2.5 py-1.5 text-[13px] font-medium text-white shadow-lg group-hover:flex group-focus-visible:flex">
                 {l.label}
-                <span className="font-ev-mono text-[11px] text-white/60">G puis {GO_KEYS[key]}</span>
               </span>
             </Link>
           ) : (
             <Link
               key={l.href}
               href={l.href}
+              data-tour={`nav-${key}`}
               aria-current={active ? "page" : undefined}
               className={cn(
                 "flex h-10 items-center gap-3 rounded-[10px] px-3 text-sm transition-colors",
@@ -175,7 +178,7 @@ export function EventSidebar() {
           {isOwner && done < steps.length && (
             <DropdownMenu>
               <DropdownMenuTrigger asChild>
-                <button type="button" className="flex flex-col gap-2 rounded-[12px] bg-white/[0.06] px-3 py-2.5 text-left transition-colors hover:bg-white/10">
+                <button type="button" data-tour="setup" className="flex flex-col gap-2 rounded-[12px] bg-white/[0.06] px-3 py-2.5 text-left transition-colors hover:bg-white/10">
                   <span className="flex items-center justify-between text-[13px]">
                     <span className="font-semibold text-white">Configuration</span>
                     <span className="text-[#9FBDB0]">
