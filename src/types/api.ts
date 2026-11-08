@@ -195,6 +195,9 @@ export type Event = {
   endDate: string | null;
   location: string | null;
   venueName?: string | null;
+  // Coordonnées du lieu (carte de la page publique).
+  lat?: number | null;
+  lng?: number | null;
   address?: string | null;
   capacity: number | null;
   status: EventStatus;

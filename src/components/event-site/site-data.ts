@@ -25,6 +25,8 @@ export type SiteEvent = {
   timeRange: string;
   venue: string | null;
   place: string | null;
+  // Position choisie sur la carte de l'éditeur (null : seulement l'adresse).
+  coords: { lat: number; lng: number } | null;
   category: string;
   certified: boolean;
   minPrice: number | null; // centimes
@@ -105,6 +107,7 @@ export function toSiteEvent(e: PublicEvent): SiteEvent {
     timeRange: sameDay ? `${hm(start)} – ${hm(end)}` : hm(start),
     venue: e.venueName,
     place: e.location,
+    coords: e.lat != null && e.lng != null ? { lat: e.lat, lng: e.lng } : null,
     category: opt.value ? opt.card : "Événement",
     certified: !!settings.hasCertificate,
     minPrice: prices.length ? Math.min(...prices) : null,

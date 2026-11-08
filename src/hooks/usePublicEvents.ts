@@ -62,11 +62,15 @@ export function usePublicEvent(slug: string, eventId: string) {
 }
 
 export type PurchaseInput = {
-  ticketTypeId: string;
-  quantity: number;
+  // Une ligne par formule (10 billets au plus au total).
+  items: { ticketTypeId: string; quantity: number }[];
   customerPhone: string;
   customerName?: string;
   customerEmail?: string;
+  // Un nom par billet (billet 1 = l'acheteur) ; billets envoyés à l'acheteur.
+  attendees?: { name: string }[];
+  // Questionnaire d'inscription : { [questionId]: valeur }.
+  answers?: Record<string, string | number | string[]>;
 };
 
 // Une clé d'idempotence par tentative d'achat : un double clic ou un
@@ -83,6 +87,15 @@ export async function purchaseTickets(eventId: string, input: PurchaseInput, ide
 // authorizationUrl : page Paystack, ou chemin relatif de la page de paiement
 // simulée (/{slug}/pay/simulate?reference=SIM-…) en mode test du backend.
 type PaymentInit = { authorizationUrl: string; reference: string; simulated?: boolean };
+
+// Paiement simulé (mode test du backend) validé sans quitter la page.
+export async function confirmSimulatedPayment(reference: string, outcome: "success" | "failed") {
+  const { data } = await api.post<ApiResponse<PaymentStatusResult>>(
+    `/payments/simulate/${encodeURIComponent(reference)}`,
+    { outcome }
+  );
+  return data.data as PaymentStatusResult;
+}
 
 export async function initializePayment(orderId: string) {
   const { data } = await api.post<ApiResponse<PaymentInit>>("/payments/initialize", { orderId });

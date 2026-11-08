@@ -21,6 +21,7 @@ import { defaultTemplateFor } from "@/lib/ticket-templates";
 import { cn } from "@/lib/utils";
 import { durationLabel, newId, type EditorForm } from "./editor-model";
 import { EventPageExtras } from "./step-infos-page";
+import { LocationPicker } from "./location-picker";
 
 type Props = {
   form: EditorForm;
@@ -488,6 +489,17 @@ export function StepInfos({ form, set, soldCount, orgName: _orgName, onOpenPoste
             <EvInput value={form.city} maxLength={120} onChange={(e) => set({ city: e.target.value })} />
           </label>
         </div>
+        {form.format !== "ONLINE" && (
+          <div className="flex flex-col gap-2">
+            <EvLabel>Emplacement sur la carte</EvLabel>
+            <LocationPicker
+              value={form.coords}
+              defaultQuery={[form.venueName, form.city].filter((s) => s.trim()).join(", ")}
+              onChange={(coords) => set({ coords })}
+              onCity={(city) => !form.city.trim() && set({ city })}
+            />
+          </div>
+        )}
       </section>
 
       <EvHr />

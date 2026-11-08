@@ -20,7 +20,6 @@ import { cn } from "@/lib/utils";
 
 // Offre Business : plusieurs organisations sous un même compte.
 function BusinessDialog() {
-  const router = useRouter();
   const open = useShellStore((s) => s.businessOpen);
   const setOpen = useShellStore((s) => s.setBusinessOpen);
   const { tenant } = useTenantSector();
@@ -66,15 +65,9 @@ function BusinessDialog() {
               <button type="button" onClick={() => setOpen(false)} className="h-12 rounded-[10px] border border-ev-border px-5 text-sm font-medium">
                 Plus tard
               </button>
-              <button
-                type="button"
-                onClick={() => {
-                  setOpen(false);
-                  router.push(`${BASE}/settings?rubrique=abonnement`);
-                }}
-                className="h-12 flex-1 rounded-[10px] bg-ev-primary text-sm font-semibold text-white hover:bg-ev-primary-hover"
-              >
-                Passer à Business
+              {/* Formule Business pas encore ouverte. */}
+              <button type="button" disabled className="h-12 flex-1 cursor-not-allowed rounded-[10px] border border-dashed border-ev-border bg-ev-soft text-sm font-semibold text-ev-ink2">
+                Bientôt disponible
               </button>
             </div>
           </div>

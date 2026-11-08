@@ -79,3 +79,27 @@ export const changePasswordSchema = z
   });
 
 export type ChangePasswordInput = z.infer<typeof changePasswordSchema>;
+
+// Mot de passe oublié : adresse, puis code reçu par e-mail + nouveau mot de passe.
+export const forgotPasswordSchema = z.object({
+  email: z.string().trim().email("Adresse e-mail invalide").max(254),
+});
+
+export const resetPasswordSchema = z
+  .object({
+    code: z.string().regex(/^[0-9]{6}$/, "Le code comporte 6 chiffres"),
+    newPassword: z
+      .string()
+      .min(8, "8 caractères minimum")
+      .max(128, "128 caractères maximum")
+      .regex(/[A-Z]/, "Au moins une majuscule")
+      .regex(/[0-9]/, "Au moins un chiffre"),
+    confirm: z.string(),
+  })
+  .refine((v) => v.newPassword === v.confirm, {
+    message: "Les mots de passe ne correspondent pas",
+    path: ["confirm"],
+  });
+
+export type ForgotPasswordInput = z.infer<typeof forgotPasswordSchema>;
+export type ResetPasswordInput = z.infer<typeof resetPasswordSchema>;

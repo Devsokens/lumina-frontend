@@ -48,7 +48,9 @@ const csp = [
   `img-src 'self' https: ${apiOrigin} ${imageOrigins} data: blob:`,
   // data: / blob: : moteur PDF des factures (@react-pdf charge son module
   // wasm depuis une data URL) et images déjà présentes dans la page.
-  `connect-src 'self' ${apiOrigin} ${wsOrigin} data: blob:${isDev ? " ws:" : ""}`,
+  // nominatim.openstreetmap.org : recherche d'adresse de la carte du lieu
+  // (éditeur d'événement).
+  `connect-src 'self' ${apiOrigin} ${wsOrigin} https://nominatim.openstreetmap.org data: blob:${isDev ? " ws:" : ""}`,
   // Worker du moteur PDF, créé depuis un blob local.
   "worker-src 'self' blob:",
   "font-src 'self'",

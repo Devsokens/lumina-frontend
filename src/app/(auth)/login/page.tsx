@@ -16,6 +16,7 @@ import { useAuthStore, type AuthUser } from "@/stores/useAuthStore";
 import { Button } from "@/components/ui/button";
 import { FloatingField } from "@/components/shared/floating-field";
 import { API_URL } from "@/lib/constants";
+import { FEATURES } from "@/lib/features";
 
 // Accès démo sans backend : uniquement si NEXT_PUBLIC_DEMO_MODE=true
 // (prévisualisation des écrans). Jamais en production.
@@ -23,7 +24,9 @@ const DEMO_MODE = process.env.NEXT_PUBLIC_DEMO_MODE === "true";
 
 // Retours d'échec du parcours Google (redirections de l'API).
 const GOOGLE_ERRORS: Record<string, string> = {
-  google_no_email: "Google n'a pas communiqué d'adresse e-mail vérifiée. Utilisez le formulaire ou le code SMS.",
+  google_no_email: FEATURES.sms
+    ? "Google n'a pas communiqué d'adresse e-mail vérifiée. Utilisez le formulaire ou le code SMS."
+    : "Google n'a pas communiqué d'adresse e-mail vérifiée. Utilisez le formulaire avec votre e-mail.",
   google_failed: "La connexion Google a été annulée ou a échoué. Réessayez, ou utilisez votre e-mail.",
   google_session: "Session Google non ouverte (cookies bloqués ?). Réessayez ou connectez-vous par e-mail.",
 };
@@ -49,6 +52,7 @@ function LoginContent() {
   const {
     register,
     handleSubmit,
+    getValues,
     formState: { errors },
   } = useForm<LoginInput>({
     resolver: zodResolver(loginSchema),
@@ -204,14 +208,32 @@ function LoginContent() {
               }
               {...register("password")}
             />
-            <div className="mt-2 flex justify-end">
-              <button
-                type="button"
-                onClick={() => setMode("otp")}
+            <div className="mt-2 flex items-center justify-between gap-3">
+              {/* Connexion par code SMS : seulement avec un fournisseur SMS. */}
+              {FEATURES.sms ? (
+                <button
+                  type="button"
+                  onClick={() => setMode("otp")}
+                  className="text-xs font-medium text-muted-foreground underline-offset-4 hover:text-foreground hover:underline"
+                >
+                  Recevoir un code SMS
+                </button>
+              ) : (
+                <span />
+              )}
+              {/* Code par e-mail ; l'adresse saisie est reprise. */}
+              <Link
+                href="/forgot-password"
+                onClick={(e) => {
+                  const id = (getValues("identifier") ?? "").trim();
+                  if (!id.includes("@")) return;
+                  e.preventDefault();
+                  router.push(`/forgot-password?email=${encodeURIComponent(id)}`);
+                }}
                 className="text-xs font-medium text-primary underline-offset-4 hover:underline"
               >
-                Mot de passe oublié ? Recevoir un code SMS
-              </button>
+                Mot de passe oublié ?
+              </Link>
             </div>
           </div>
 

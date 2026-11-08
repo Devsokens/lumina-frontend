@@ -9,10 +9,11 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { api, apiError, type ApiResponse } from "@/lib/api";
+import { homePathFor, useAuth } from "@/hooks/useAuth";
 
 // Invitation d'un membre (lien reçu par WhatsApp ou e-mail) : il choisit son
-// mot de passe, puis se connecte normalement. Routes : GET / POST
-// /auth/invitations/:token (docs/API_CONTRACT.md §11).
+// mot de passe et arrive directement dans son espace, déjà connecté. Routes :
+// GET / POST /auth/invitations/:token (docs/API_CONTRACT.md §11).
 
 const STRONG = /^(?=.*[A-Z])(?=.*\d).{8,}$/;
 
@@ -21,6 +22,7 @@ type Invite = { fullName: string | null; businessName: string; login: string | n
 export default function InvitationPage({ params }: { params: Promise<{ token: string }> }) {
   const { token } = use(params);
   const router = useRouter();
+  const { acceptInvitation } = useAuth();
   const [password, setPassword] = useState("");
   const [confirm, setConfirm] = useState("");
   const [busy, setBusy] = useState(false);
@@ -38,14 +40,21 @@ export default function InvitationPage({ params }: { params: Promise<{ token: st
     if (!STRONG.test(password)) return void toast.error("8 caractères minimum, dont une majuscule et un chiffre.");
     if (password !== confirm) return void toast.error("Les deux mots de passe ne correspondent pas.");
     setBusy(true);
+    let user;
     try {
-      await api.post(`/auth/invitations/${encodeURIComponent(token)}`, { password });
-      toast.success("Accès activé : connectez-vous avec votre nouveau mot de passe.");
-      router.replace(`/login${data?.login ? `?login=${encodeURIComponent(data.login)}` : ""}`);
+      user = await acceptInvitation(token, password);
     } catch (err) {
       toast.error(apiError(err, "Activation impossible : le lien a peut-être expiré."));
       setBusy(false);
+      return;
     }
+    if (!user) {
+      toast.success("Accès activé : connectez-vous avec votre nouveau mot de passe.");
+      router.replace(`/login${data?.login ? `?login=${encodeURIComponent(data.login)}` : ""}`);
+      return;
+    }
+    toast.success(`Bienvenue dans l'équipe de ${data?.businessName ?? "votre organisation"} !`);
+    router.replace(await homePathFor(user));
   }
 
   if (isLoading) return <p className="text-sm text-muted-foreground">Vérification de l&apos;invitation…</p>;
@@ -69,8 +78,8 @@ export default function InvitationPage({ params }: { params: Promise<{ token: st
       <div className="space-y-1.5">
         <h1 className="font-display text-2xl font-bold">Rejoindre {data.businessName}</h1>
         <p className="text-sm text-muted-foreground">
-          Bonjour {data.fullName ?? ""}, choisissez votre mot de passe. Vous vous connecterez ensuite avec{" "}
-          <strong className="text-foreground">{data.login}</strong>.
+          Bonjour {data.fullName ?? ""}, choisissez votre mot de passe : vous arriverez directement dans votre espace. Pour vos prochaines
+          connexions, votre identifiant est <strong className="text-foreground">{data.login}</strong>.
         </p>
       </div>
       <div className="space-y-1.5">
@@ -83,7 +92,7 @@ export default function InvitationPage({ params }: { params: Promise<{ token: st
         <Input id="confirm" type="password" autoComplete="new-password" className="h-11 rounded-xl" value={confirm} onChange={(e) => setConfirm(e.target.value)} />
       </div>
       <Button type="submit" className="h-11 w-full rounded-xl" disabled={busy}>
-        {busy ? "Activation…" : "Activer mon accès"}
+        {busy ? "Ouverture de votre espace…" : "Activer mon accès"}
       </Button>
     </form>
   );

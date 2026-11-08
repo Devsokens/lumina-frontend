@@ -63,9 +63,13 @@ export function OrgMenuContent({ tenant, isOwner }: { tenant: Tenant | undefined
           </div>
           <span className="rounded-full bg-[#F1EFE9] px-2.5 py-0.5 text-[11px] font-semibold text-ev-ink2 dark:bg-ev-line">{PLAN_NAME[plan] ?? plan}</span>
         </div>
+        {/* Formules payantes pas encore ouvertes : annonce, sans appel à payer. */}
         {isOwner && (plan === "FREE" || plan === "STANDARD") && (
-          <Link href={`${BASE}/settings?rubrique=abonnement`} className="flex h-10 items-center justify-center gap-2 rounded-[10px] bg-ev-primary text-sm font-semibold text-white hover:bg-ev-primary-hover">
-            <Star className="size-4" /> Passer à Pro
+          <Link
+            href={`${BASE}/settings?rubrique=abonnement`}
+            className="flex h-10 items-center justify-center gap-2 rounded-[10px] border border-dashed border-ev-border bg-ev-soft text-sm font-semibold text-ev-ink2 hover:bg-ev-line/60"
+          >
+            <Star className="size-4" /> Formule Pro : bientôt disponible
           </Link>
         )}
       </div>

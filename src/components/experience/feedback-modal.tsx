@@ -4,7 +4,24 @@ import { useEffect, useState } from "react";
 import { usePathname } from "next/navigation";
 import { Dialog as DialogPrimitive } from "radix-ui";
 import { toast } from "sonner";
-import { ArrowLeft, Check, ListChecks, Loader2, MessageSquareText, Sparkles, X } from "lucide-react";
+import {
+  Angry,
+  Annoyed,
+  ArrowLeft,
+  Bug,
+  Check,
+  Laugh,
+  Lightbulb,
+  ListChecks,
+  Loader2,
+  MessageCircle,
+  MessageSquareText,
+  Meh,
+  Smile,
+  Sparkles,
+  X,
+  type LucideIcon,
+} from "lucide-react";
 import { EV_PORTAL } from "@/components/events/ev-ui";
 import { GiyaxAvatar } from "@/components/ai/giyax-avatar";
 import { useExperience, useSendFeedback, useSnoozeFeedback, type FeedbackInput } from "@/hooks/useExperience";
@@ -26,20 +43,20 @@ const FLOW: Record<Mode, Step[]> = {
   both: ["rating", "nps", "likes", "improve", "free"],
 };
 
-const FACES = [
-  { v: 1, emoji: "😣", label: "Difficile" },
-  { v: 2, emoji: "😕", label: "Bof" },
-  { v: 3, emoji: "😐", label: "Correct" },
-  { v: 4, emoji: "🙂", label: "Bien" },
-  { v: 5, emoji: "😍", label: "J'adore" },
+const FACES: { v: number; icon: LucideIcon; label: string }[] = [
+  { v: 1, icon: Angry, label: "Difficile" },
+  { v: 2, icon: Annoyed, label: "Bof" },
+  { v: 3, icon: Meh, label: "Correct" },
+  { v: 4, icon: Smile, label: "Bien" },
+  { v: 5, icon: Laugh, label: "J'adore" },
 ];
 
 const LIKES = ["Billetterie en ligne", "Contrôle d'accès", "Mon site web", "Paiements Mobile Money", "Attestations", "Mon équipe", "GiyaX AI", "Statistiques"];
 const IMPROVE = ["Simplicité", "Rapidité", "Paiements et versements", "Design", "Fonctionnalités manquantes", "Support", "Application mobile", "Prix"];
-const CATEGORIES: { id: NonNullable<FeedbackInput["category"]>; label: string; emoji: string }[] = [
-  { id: "idee", label: "Une idée", emoji: "💡" },
-  { id: "probleme", label: "Un problème", emoji: "🐞" },
-  { id: "autre", label: "Autre chose", emoji: "💬" },
+const CATEGORIES: { id: NonNullable<FeedbackInput["category"]>; label: string; icon: LucideIcon }[] = [
+  { id: "idee", label: "Une idée", icon: Lightbulb },
+  { id: "probleme", label: "Un problème", icon: Bug },
+  { id: "autre", label: "Autre chose", icon: MessageCircle },
 ];
 
 const STEP_TITLE: Record<Exclude<Step, "intro" | "done">, string> = {
@@ -210,14 +227,11 @@ export function FeedbackModal() {
                     onClick={() => start(m)}
                     className="group flex items-center gap-4 rounded-[16px] border border-ev-border bg-ev-surface p-4 text-left transition-all hover:-translate-y-0.5 hover:border-ev-primary hover:shadow-[0_10px_30px_rgba(11,59,46,.12)]"
                   >
-                    <span className={cn("flex size-12 shrink-0 items-center justify-center rounded-[14px]", m === "both" ? "bg-[#F5B83D]/20 text-[#9A6A0A]" : "bg-ev-selected text-ev-primary")}>
+                    <span className="flex size-12 shrink-0 items-center justify-center rounded-[14px] bg-ev-selected text-ev-primary">
                       <Icon className="size-6" />
                     </span>
                     <span className="flex min-w-0 flex-1 flex-col gap-0.5">
-                      <span className="flex items-center gap-2 text-[15px] font-semibold">
-                        {title}
-                        {m === "both" && <span className="rounded-full bg-[#F5B83D] px-2 py-0.5 text-[10px] font-bold uppercase tracking-[0.06em] text-[#2A1F05]">Idéal</span>}
-                      </span>
+                      <span className="text-[15px] font-semibold">{title}</span>
                       <span className="text-[13px] text-ev-muted">{desc}</span>
                     </span>
                     <ArrowLeft className="size-4 rotate-180 text-ev-muted transition-transform group-hover:translate-x-1 group-hover:text-ev-primary" />
@@ -240,7 +254,7 @@ export function FeedbackModal() {
                       rating === f.v ? "scale-[1.04] border-ev-primary bg-ev-selected shadow-[0_8px_24px_rgba(11,59,46,.15)]" : "border-ev-border hover:border-ev-dash"
                     )}
                   >
-                    <span className={cn("text-[30px] leading-none transition-transform sm:text-[36px]", rating === f.v && "scale-110")}>{f.emoji}</span>
+                    <f.icon className={cn("size-8 transition-all sm:size-9", rating === f.v ? "scale-110 text-ev-primary" : "text-ev-muted")} strokeWidth={1.75} />
                     <span className={cn("text-[11px] sm:text-xs", rating === f.v ? "font-semibold text-ev-primary" : "text-ev-muted")}>{f.label}</span>
                   </button>
                 ))}
@@ -302,9 +316,9 @@ export function FeedbackModal() {
                       role="radio"
                       aria-checked={category === c.id}
                       onClick={() => setCategory(c.id)}
-                      className={cn("flex flex-col items-center gap-1 rounded-[14px] border py-3 text-[13px] transition-all", category === c.id ? "border-ev-primary bg-ev-selected font-semibold text-ev-primary" : "border-ev-border text-ev-ink2 hover:border-ev-dash")}
+                      className={cn("flex flex-col items-center gap-1.5 rounded-[14px] border py-3 text-[13px] transition-all", category === c.id ? "border-ev-primary bg-ev-selected font-semibold text-ev-primary" : "border-ev-border text-ev-ink2 hover:border-ev-dash")}
                     >
-                      <span className="text-xl leading-none">{c.emoji}</span>
+                      <c.icon className="size-5" strokeWidth={1.9} />
                       {c.label}
                     </button>
                   ))}

@@ -39,6 +39,8 @@ export type EditorForm = {
   endTime: string;
   venueName: string;
   city: string;
+  // Point sur la carte (facultatif).
+  coords: { lat: number; lng: number } | null;
   format: EventFormat;
   formulas: EditorFormula[];
   ticketTemplate: TicketTemplate;
@@ -98,6 +100,7 @@ export function formFromEvent(e: ApiEvent | null, issuer: string): EditorForm {
       endTime: "23:00",
       venueName: "",
       city: "Libreville",
+      coords: null,
       format: "ONSITE",
       formulas: [],
       ticketTemplate: defaultTemplateFor("CONCERT"),
@@ -141,6 +144,7 @@ export function formFromEvent(e: ApiEvent | null, issuer: string): EditorForm {
     endTime: end ? timeOf(end) : "",
     venueName: e.venueName ?? "",
     city: e.location ?? "",
+    coords: e.lat != null && e.lng != null ? { lat: e.lat, lng: e.lng } : null,
     format: s.format ?? "ONSITE",
     formulas: e.ticketTypes.map((t) => ({
       id: t.id,
@@ -207,6 +211,8 @@ export function toEventForm(form: EditorForm): Partial<Event> {
     endDate: toIso(form.endDay, form.endTime) ?? null,
     venueName: form.venueName.trim() || null,
     location: form.city.trim() || null,
+    lat: form.coords?.lat ?? null,
+    lng: form.coords?.lng ?? null,
     eventType: form.eventType ?? undefined,
     capacity: capacity > 0 ? capacity : null,
     ticketTypes: form.formulas,

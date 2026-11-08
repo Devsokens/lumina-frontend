@@ -59,6 +59,9 @@ export type ApiEvent = {
   endDate: string | null;
   location: string | null;
   venueName: string | null;
+  // Coordonnées du lieu (carte de la page publique).
+  lat?: number | null;
+  lng?: number | null;
   eventType: EventType | null;
   capacity: number | null;
   status: EventStatus;
@@ -171,6 +174,29 @@ export type PurchasedTicket = {
   qrCode: string;
   status: ApiTicketStatus;
   ticketTypeId: string;
+};
+
+// Questionnaire d'inscription : valeur d'une réponse (texte, choix, note…).
+export type AnswerValue = string | number | string[];
+
+// GET /admin/events/:id/responses : une réponse par commande confirmée.
+export type EventResponse = {
+  id: string;
+  orderNumber: string;
+  customerName: string | null;
+  customerEmail: string | null;
+  customerPhone: string | null;
+  createdAt: string;
+  answers: Record<string, AnswerValue>;
+  ticketTypes: string[];
+  tickets: number;
+  checkedIn: boolean;
+};
+
+export type EventResponses = {
+  // Inscriptions confirmées (payées ou gratuites), pour le taux de réponse.
+  orders: number;
+  responses: EventResponse[];
 };
 
 export type PurchaseResult = {

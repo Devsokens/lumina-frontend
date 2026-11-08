@@ -3,6 +3,7 @@ import { sidebarLinks, type NavLink } from "@/lib/navigation";
 import { useAdminTenantInfo } from "@/hooks/useAdmin";
 import { useAdminEvents } from "@/hooks/useEvents";
 import type { Role } from "@/lib/constants";
+import { FEATURES } from "@/lib/features";
 import type { Tenant } from "@/types/api";
 
 // Cadre du back-office événementiel (refonte 2026-11) : navigation groupée,
@@ -60,7 +61,12 @@ export function useSetupSteps(): { steps: SetupStep[]; done: number } {
     const steps: SetupStep[] = [
       { key: "identity", label: "Logo et présentation", done: !!logoOf(tenant) && str(config.description), href: `${BASE}/settings` },
       { key: "contact", label: "Coordonnées", done: str(config.phone) && str(config.address), href: `${BASE}/settings` },
-      { key: "payout", label: "Compte de versement vérifié", done: !!settings.payouts?.accounts?.some((a) => a.verifiedAt), href: `${BASE}/settings?rubrique=paiements` },
+      {
+        key: "payout",
+        label: FEATURES.sms ? "Compte de versement vérifié" : "Compte de versement ajouté",
+        done: !!settings.payouts?.accounts?.some((a) => a.verifiedAt || !FEATURES.sms),
+        href: `${BASE}/settings?rubrique=paiements`,
+      },
       { key: "event", label: "Premier événement publié", done: (events ?? []).some((e) => e.status !== "DRAFT"), href: `${BASE}/events` },
       { key: "site", label: "Mon site web publié", done: !!config.showcase, href: `${BASE}/showcase` },
     ];

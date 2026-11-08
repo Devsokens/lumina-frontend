@@ -2,11 +2,14 @@
 
 import { useState } from "react";
 import { motion } from "framer-motion";
-import { Check, ArrowRight } from "lucide-react";
+import { Check, ArrowRight, Clock } from "lucide-react";
 import Link from "next/link";
 import { Button } from "@/components/ui/button";
 import { siteAddressOffer } from "@/lib/tenant-url";
 
+// Formules payantes affichées « Bientôt disponible » tant que le paiement des
+// abonnements n'est pas ouvert (même réglage que Paramètres › Abonnement).
+const PAID_OPEN = false;
 
 const PLANS = [
   {
@@ -24,7 +27,7 @@ const PLANS = [
       "Mode PWA Hors-Ligne natif",
     ],
     cta: "Démarrer gratuitement",
-    highlight: false,
+    highlight: !PAID_OPEN,
     href: "/signup",
   },
   {
@@ -45,7 +48,7 @@ const PLANS = [
       "Support WhatsApp prioritaire 7j/7",
     ],
     cta: "Choisir le plan Pro",
-    highlight: true,
+    highlight: PAID_OPEN,
     href: "/signup?plan=pro",
   },
   {
@@ -92,12 +95,18 @@ export function PricingPreview() {
             transition={{ delay: 0.2 }}
             className="mt-3 text-base text-muted-foreground sm:text-lg"
           >
-            Aucun frais caché, aucun engagement. Vous ne payez que lorsque votre activité grandit.
+            {PAID_OPEN
+              ? "Aucun frais caché, aucun engagement. Vous ne payez que lorsque votre activité grandit."
+              : "Lancez-vous gratuitement dès aujourd'hui. Les formules Pro et Entreprise arrivent très prochainement."}
           </motion.p>
 
-          {/* Billing Switch */}
-          <div className="mt-8 flex items-center justify-center gap-3">
-            <span className={`text-sm font-medium ${!isAnnual ? "text-foreground font-semibold" : "text-muted-foreground"}`}>
+          {/* Billing Switch : masquée tant que les formules payantes ne sont pas ouvertes. */}
+          <div
+            className={`mt-8 items-center justify-center gap-3 ${PAID_OPEN ? "flex" : "hidden"}`}
+          >
+            <span
+              className={`text-sm font-medium ${!isAnnual ? "text-foreground font-semibold" : "text-muted-foreground"}`}
+            >
               Facturation Mensuelle
             </span>
             <button
@@ -112,8 +121,13 @@ export function PricingPreview() {
                 }`}
               />
             </button>
-            <span className={`text-sm font-medium ${isAnnual ? "text-foreground font-semibold" : "text-muted-foreground"}`}>
-              Facturation Annuelle <span className="rounded-full bg-emerald-500/15 px-2 py-0.5 text-xs font-mono font-bold text-emerald-600 dark:text-emerald-400">-20%</span>
+            <span
+              className={`text-sm font-medium ${isAnnual ? "text-foreground font-semibold" : "text-muted-foreground"}`}
+            >
+              Facturation Annuelle{" "}
+              <span className="rounded-full bg-emerald-500/15 px-2 py-0.5 text-xs font-mono font-bold text-emerald-600 dark:text-emerald-400">
+                -20%
+              </span>
             </span>
           </div>
         </div>
@@ -122,6 +136,7 @@ export function PricingPreview() {
         <div className="mt-14 grid gap-8 lg:grid-cols-3">
           {PLANS.map((plan, idx) => {
             const price = isAnnual ? plan.priceAnnual : plan.priceMonthly;
+            const soon = plan.priceMonthly > 0 && !PAID_OPEN;
             return (
               <motion.div
                 key={plan.name}
@@ -130,20 +145,32 @@ export function PricingPreview() {
                 viewport={{ once: true }}
                 transition={{ duration: 0.5, delay: idx * 0.15 }}
                 className={`relative flex flex-col justify-between rounded-3xl p-8 transition-all ${
-                  plan.highlight
-                    ? "border-2 border-primary bg-card shadow-2xl shadow-primary/10 glow-primary scale-105"
-                    : "border border-border/80 bg-card shadow-xs hover:border-primary/40 hover:shadow-lg"
+                  soon
+                    ? "border border-dashed border-border bg-muted/40 grayscale"
+                    : plan.highlight
+                      ? "border-2 border-primary bg-card shadow-2xl shadow-primary/10 glow-primary scale-105"
+                      : "border border-border/80 bg-card shadow-xs hover:border-primary/40 hover:shadow-lg"
                 }`}
               >
-                {plan.highlight && (
-                  <div className="absolute -top-4 left-1/2 -translate-x-1/2 whitespace-nowrap rounded-full bg-primary px-4 py-1 font-mono text-xs font-bold uppercase tracking-wider text-white shadow-md">
-                    Recommandé pour les PME
+                {soon ? (
+                  <div className="absolute -top-4 left-1/2 flex -translate-x-1/2 items-center gap-1.5 whitespace-nowrap rounded-full border border-border bg-background px-4 py-1 font-mono text-xs font-bold uppercase tracking-wider text-muted-foreground shadow-sm">
+                    <Clock className="size-3.5" /> Bientôt disponible
                   </div>
+                ) : (
+                  plan.highlight && (
+                    <div className="absolute -top-4 left-1/2 -translate-x-1/2 whitespace-nowrap rounded-full bg-primary px-4 py-1 font-mono text-xs font-bold uppercase tracking-wider text-white shadow-md">
+                      {PAID_OPEN
+                        ? "Recommandé pour les PME"
+                        : "Disponible maintenant"}
+                    </div>
+                  )
                 )}
 
-                <div>
+                <div className={soon ? "opacity-60" : undefined}>
                   <div className="flex items-center justify-between">
-                    <h3 className="font-display text-xl font-bold text-foreground">{plan.name}</h3>
+                    <h3 className="font-display text-xl font-bold text-foreground">
+                      {plan.name}
+                    </h3>
                     <span className="rounded-full bg-muted px-2.5 py-0.5 font-mono text-xs text-muted-foreground">
                       {plan.badge}
                     </span>
@@ -154,15 +181,29 @@ export function PricingPreview() {
                   </p>
 
                   <div className="mt-6 border-y border-border/60 py-4">
-                    <div className="flex items-baseline gap-1">
-                      <span className="font-mono text-4xl font-extrabold text-foreground">
-                        {price.toLocaleString()}
-                      </span>
-                      <span className="font-mono text-xs text-muted-foreground">FCFA / mois</span>
-                    </div>
+                    {soon ? (
+                      <div className="flex flex-col gap-0.5">
+                        <span className="font-display text-3xl font-extrabold text-foreground">
+                          Bientôt
+                        </span>
+                        <span className="text-xs text-muted-foreground">
+                          Tarif communiqué à l&apos;ouverture
+                        </span>
+                      </div>
+                    ) : (
+                      <div className="flex items-baseline gap-1">
+                        <span className="font-mono text-4xl font-extrabold text-foreground">
+                          {price.toLocaleString()}
+                        </span>
+                        <span className="font-mono text-xs text-muted-foreground">
+                          FCFA / mois
+                        </span>
+                      </div>
+                    )}
                     {isAnnual && price > 0 && (
                       <span className="text-[11px] font-mono text-emerald-600 dark:text-emerald-400">
-                        Facturé annuellement (soit {(price * 12).toLocaleString()} FCFA/an)
+                        Facturé annuellement (soit{" "}
+                        {(price * 12).toLocaleString()} FCFA/an)
                       </span>
                     )}
                   </div>
@@ -174,27 +215,42 @@ export function PricingPreview() {
                         <div className="flex size-4 shrink-0 items-center justify-center rounded-full bg-emerald-500/15 text-emerald-600 mt-0.5">
                           <Check className="size-2.5" />
                         </div>
-                        <span className="text-foreground/90 font-medium">{feat}</span>
+                        <span className="text-foreground/90 font-medium">
+                          {feat}
+                        </span>
                       </li>
                     ))}
                   </ul>
                 </div>
 
                 <div className="mt-8 pt-4">
-                  <Button
-                    asChild
-                    size="lg"
-                    className={`w-full rounded-2xl font-semibold transition-all ${
-                      plan.highlight
-                        ? "bg-primary text-white hover:bg-primary/90 shadow-lg shadow-primary/25"
-                        : "bg-muted text-foreground hover:bg-muted/80"
-                    }`}
-                  >
-                    <Link href={plan.href} className="flex items-center justify-center gap-2">
-                      <span>{plan.cta}</span>
-                      <ArrowRight className="size-4" />
-                    </Link>
-                  </Button>
+                  {soon ? (
+                    <Button
+                      size="lg"
+                      disabled
+                      className="w-full rounded-2xl border border-dashed border-border bg-background font-semibold text-muted-foreground"
+                    >
+                      Bientôt disponible
+                    </Button>
+                  ) : (
+                    <Button
+                      asChild
+                      size="lg"
+                      className={`w-full rounded-2xl font-semibold transition-all ${
+                        plan.highlight
+                          ? "bg-primary text-white hover:bg-primary/90 shadow-lg shadow-primary/25"
+                          : "bg-muted text-foreground hover:bg-muted/80"
+                      }`}
+                    >
+                      <Link
+                        href={plan.href}
+                        className="flex items-center justify-center gap-2"
+                      >
+                        <span>{plan.cta}</span>
+                        <ArrowRight className="size-4" />
+                      </Link>
+                    </Button>
+                  )}
                 </div>
               </motion.div>
             );

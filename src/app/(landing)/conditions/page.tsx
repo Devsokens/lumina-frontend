@@ -132,7 +132,7 @@ const sections: LegalSection[] = [
         <List
           items={[
             "Les paiements des Participants (carte, Mobile Money) sont traités par notre prestataire de paiement agréé. GiyaX n'est ni une banque ni un établissement de paiement et ne conserve aucune donnée de carte.",
-            "Les recettes, déduction faite des frais applicables, sont versées sur le compte Mobile Money vérifié par code SMS de l'Organisateur, selon la fréquence choisie (après l'événement ou chaque semaine).",
+            "Les recettes, déduction faite des frais applicables, sont versées sur le compte Mobile Money de l'Organisateur, confirmé avec lui avant le premier versement, selon la fréquence choisie (après l'événement ou chaque semaine).",
             "En cas de soupçon de fraude, de contestation de paiement ou de violation de ces conditions, nous pouvons suspendre un versement le temps de la vérification, en vous en informant.",
             "L'Organisateur reste seul responsable de ses obligations fiscales et sociales liées à ses ventes.",
           ]}

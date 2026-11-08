@@ -13,6 +13,7 @@ import type {
   AuditEntry,
   CertificateDispatchItem,
   EventOrder,
+  EventResponses,
   EventStats,
   Paginated,
   RefundResult,
@@ -35,6 +36,7 @@ const keys = {
   stats: (id?: string) => ["admin-event-stats", id ?? "all"] as const,
   tickets: (id: string) => ["admin-event-tickets", id] as const,
   orders: (id: string, page: number) => ["admin-event-orders", id, page] as const,
+  responses: (id: string) => ["admin-event-responses", id] as const,
   certificates: (id: string) => ["admin-event-certificates", id] as const,
 };
 
@@ -83,6 +85,17 @@ export function useEventOrders(eventId: string | null, page = 1, limit = 20) {
       return { data: data.data ?? [], meta: data.meta } as Paginated<EventOrder>;
     },
     enabled: !!eventId,
+    retry: false,
+  });
+}
+
+// Réponses au questionnaire d'inscription (une par commande confirmée).
+export function useEventResponses(eventId: string | null) {
+  return useQuery({
+    queryKey: keys.responses(eventId ?? ""),
+    queryFn: () => get<EventResponses>(`/admin/events/${eventId}/responses`),
+    enabled: !!eventId,
+    refetchInterval: LIVE_REFRESH_MS,
     retry: false,
   });
 }

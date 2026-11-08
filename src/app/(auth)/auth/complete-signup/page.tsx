@@ -17,6 +17,7 @@ import { APP_URL, ROOT_DOMAIN, SECTOR_LABELS, type Sector } from "@/lib/constant
 import { LEGAL_LINKS } from "@/lib/legal";
 import { publicSiteLabel, subdomainActive } from "@/lib/tenant-url";
 import { slugSchema } from "@/lib/validations";
+import { FEATURES } from "@/lib/features";
 import { cn } from "@/lib/utils";
 
 type Pending = { email: string; fullName: string; avatarUrl: string | null };
@@ -192,7 +193,7 @@ function CompleteSignup() {
           onChange={(e) => setPhone(e.target.value)}
         />
         <p className={cn("text-xs", phoneOk ? "text-muted-foreground" : "text-destructive")}>
-          {phoneOk ? "Permet aussi la connexion par code SMS." : "Numéro invalide (ex. +24177123456)."}
+          {phoneOk ? (FEATURES.sms ? "Permet aussi la connexion par code SMS." : "Pour vous joindre au sujet de votre compte.") : "Numéro invalide (ex. +24177123456)."}
         </p>
       </div>
       <label className="flex items-start gap-2 text-sm">
