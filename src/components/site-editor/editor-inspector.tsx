@@ -7,6 +7,8 @@ import { toast } from "sonner";
 
 import { FIELDS, SECTION_LABEL, SECTIONS, type SectionKey, type TextField } from "@/components/site-editor/editor-model";
 import { aiError, useAiText } from "@/hooks/useAi";
+import { GiyaxAvatar } from "@/components/ai/giyax-avatar";
+import { TypewriterText } from "@/components/ai/typewriter";
 import { FEATURES } from "@/lib/features";
 import { designPatch, lookOf, type HeadlineSize } from "@/lib/event-site-theme";
 import type { FAQItem, ShowcaseContent } from "@/stores/useShowcaseStore";
@@ -84,7 +86,7 @@ function AiSuggestions({ field, content, update }: { field: TextField; content: 
   return (
     <div className="flex flex-col gap-2.5 rounded-[12px] border border-[#D5E6DE] bg-ev-selected p-3.5 dark:border-ev-border">
       <span className="flex items-center gap-2 text-[13px] font-semibold text-ev-primary">
-        <Sparkles className="size-4" /> Suggestions de l&apos;IA
+        <GiyaxAvatar size={22} mood={ai.isPending ? "thinking" : "idle"} /> {ai.isPending ? "GiyaX AI réfléchit…" : "Suggestions de l'IA"}
       </span>
       {items.length === 0 ? (
         <button
@@ -99,12 +101,13 @@ function AiSuggestions({ field, content, update }: { field: TextField; content: 
       ) : (
         items.map((t, i) => (
           <button
-            key={i}
+            key={`${i}-${t}`}
             type="button"
             onClick={() => update({ [field]: t.slice(0, meta.max) }, `${field}-ai`)}
             className="flex items-center justify-between gap-2.5 rounded-[10px] border border-[#D5E6DE] bg-ev-surface px-3 py-2.5 text-left text-[13px] dark:border-ev-border"
           >
-            <span>{t}</span>
+            {/* Les variantes s'écrivent l'une après l'autre. */}
+            <TypewriterText text={t} delay={i * 450} />
             <span className="shrink-0 text-xs font-semibold text-ev-primary">Appliquer</span>
           </button>
         ))

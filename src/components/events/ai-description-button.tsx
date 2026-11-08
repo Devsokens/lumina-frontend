@@ -9,6 +9,8 @@ import { Textarea } from "@/components/ui/textarea";
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { aiError, isPlanLimited, useGenerateDescription, type DescriptionInput } from "@/hooks/useAi";
 import { PricingUpgradeModal } from "@/components/shared/pricing-upgrade-modal";
+import { GiyaxAvatar } from "@/components/ai/giyax-avatar";
+import { TypewriterText } from "@/components/ai/typewriter";
 import { cn } from "@/lib/utils";
 
 const TONES: { id: NonNullable<DescriptionInput["tone"]>; label: string }[] = [
@@ -32,6 +34,8 @@ export function AiDescriptionButton({ context, onApply, trigger }: Props) {
   const [tone, setTone] = useState<DescriptionInput["tone"]>("festif");
   const [notes, setNotes] = useState("");
   const [draft, setDraft] = useState("");
+  // Pendant que l'IA « écrit » la proposition (animation), puis modifiable.
+  const [writing, setWriting] = useState(false);
   const generate = useGenerateDescription();
 
   function openDialog() {
@@ -45,6 +49,7 @@ export function AiDescriptionButton({ context, onApply, trigger }: Props) {
   async function run() {
     try {
       setDraft(await generate.mutateAsync({ ...context, tone, notes: notes || undefined }));
+      setWriting(true);
     } catch (err) {
       if (isPlanLimited(err)) {
         setOpen(false);
@@ -97,10 +102,25 @@ export function AiDescriptionButton({ context, onApply, trigger }: Props) {
                 className="resize-none text-xs"
               />
             </div>
-            {draft && (
+            {generate.isPending && (
+              <p className="m-0 flex items-center gap-2 text-xs text-muted-foreground">
+                <GiyaxAvatar size={30} mood="thinking" /> GiyaX AI rédige votre description…
+              </p>
+            )}
+            {draft && !generate.isPending && (
               <div className="space-y-1">
-                <Label className="text-xs">Proposition (modifiable)</Label>
-                <Textarea rows={6} value={draft} onChange={(e) => setDraft(e.target.value)} className="text-xs leading-relaxed" />
+                <Label className="flex items-center gap-1.5 text-xs">
+                  {writing && <GiyaxAvatar size={22} mood="talking" />}
+                  {writing ? "GiyaX AI écrit…" : "Proposition (modifiable)"}
+                </Label>
+                {writing ? (
+                  // L'IA écrit sous vos yeux ; le texte devient modifiable ensuite.
+                  <div className="min-h-[148px] whitespace-pre-line rounded-md border border-input bg-transparent px-3 py-2 text-xs leading-relaxed">
+                    <TypewriterText text={draft} onDone={() => setWriting(false)} />
+                  </div>
+                ) : (
+                  <Textarea rows={6} value={draft} onChange={(e) => setDraft(e.target.value)} className="text-xs leading-relaxed" />
+                )}
               </div>
             )}
           </div>

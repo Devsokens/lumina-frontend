@@ -324,6 +324,7 @@ const sections: LegalSection[] = [
             ["Cookie de session (sécurisé, inaccessible aux scripts)", "Vous garder connecté de façon sûre", "7 jours"],
             ["Stockage local du navigateur", "Panier, préférences d'affichage (thème, menu replié), brouillons, indicateur de session sans jeton", "Jusqu'à effacement par vous"],
             ["Stockage local de l'application de contrôle", "Liste des billets de l'événement en cours, pour scanner même sans réseau", "Jusqu'à la fin du contrôle ou effacement"],
+            ["Stockage de session du navigateur", "Conversation avec GiyaX AI, pour la retrouver en changeant de page", "Jusqu'à la fermeture de l'onglet"],
           ]}
         />
         <p>Les polices de caractères sont servies par nos propres serveurs : aucune requête n&apos;est envoyée à un service tiers pour les afficher.</p>
@@ -339,6 +340,13 @@ const sections: LegalSection[] = [
           L&apos;assistant IA (rédaction de descriptions, de textes de site, traductions, images d&apos;affiche) ne fonctionne qu&apos;à votre demande. Les consignes envoyées aux
           fournisseurs d&apos;IA contiennent les informations de l&apos;événement, du texte à réécrire ou de l&apos;ambiance souhaitée, jamais les données de vos participants ou clients. Elles ne servent pas à entraîner des modèles.
           Les propositions sont des suggestions : vous les relisez et décidez de les publier.
+        </p>
+        <H3>GiyaX AI, l&apos;assistant conversationnel</H3>
+        <p>
+          Sur notre site et dans les espaces de gestion, GiyaX AI répond aux questions sur l&apos;application et peut conseiller les responsables. Vos messages sont transmis au
+          fournisseur d&apos;IA (Groq) pour produire la réponse, sans servir à entraîner des modèles. Pour les visiteurs non connectés, nous ne conservons pas la conversation
+          sur nos serveurs. Pour les membres connectés, la question et la réponse sont journalisées 12 mois (sécurité, suivi des coûts). N&apos;y indiquez pas de données
+          sensibles ni de données de vos clients. GiyaX AI n&apos;a pas accès aux données de votre compte et peut se tromper : vérifiez les informations importantes.
         </p>
         <p>
           Nous ne prenons aucune décision produisant des effets juridiques à votre égard sur le seul fondement d&apos;un traitement automatisé. Le contrôle d&apos;accès vérifie la

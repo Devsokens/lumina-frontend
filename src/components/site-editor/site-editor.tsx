@@ -37,6 +37,8 @@ import { MediaPanel, PagesPanel, SectionsPanel, ThemePanel } from "@/components/
 import { Inspector, type Selection } from "@/components/site-editor/editor-inspector";
 import { useSaveShowcase } from "@/hooks/useAdmin";
 import { aiError, useAiText } from "@/hooks/useAi";
+import { GiyaxAvatar } from "@/components/ai/giyax-avatar";
+import { TypewriterText, useTypewriter } from "@/components/ai/typewriter";
 import { usePastEvents, usePublicEvents } from "@/hooks/usePublicEvents";
 import { lookOf } from "@/lib/event-site-theme";
 import { eventSiteFontVariables } from "@/lib/event-site-fonts";
@@ -104,8 +106,13 @@ export function SiteEditor({ tenant }: { tenant: Tenant }) {
   const [proposal, setProposal] = useState<AiProposal>(null);
   const [sheet, setSheet] = useState<"panel" | "inspector" | null>(null);
 
-  // L'aperçu montre la proposition de l'IA en place, sans l'enregistrer.
-  const preview = useMemo(() => (proposal ? { ...content, ...proposalPatch(proposal, content, "faq-ai-preview") } : content), [content, proposal]);
+  // L'aperçu montre la proposition de l'IA en place, sans l'enregistrer ;
+  // le texte s'y écrit progressivement, comme tapé par l'IA.
+  const typed = useTypewriter(proposal?.text ?? "", { enabled: !!proposal });
+  const preview = useMemo(
+    () => (proposal ? { ...content, ...proposalPatch({ ...proposal, text: typed.shown }, content, "faq-ai-preview") } : content),
+    [content, proposal, typed.shown]
+  );
   const look = lookOf(content);
   const site = useMemo(() => buildSite(tenant, preview, publicEvents ?? [], true, pastEvents ?? []), [tenant, preview, publicEvents, pastEvents]);
   const pageEvent = page === "home" ? null : (site.events.find((e) => e.id === page) ?? (publicEvents ?? []).map(toSiteEvent).find((e) => e.id === page) ?? null);
@@ -660,6 +667,13 @@ function AiBar({
 }) {
   const ai = useAiText();
   const [prompt, setPrompt] = useState("");
+  // GiyaX AI « écrit » la proposition : animée jusqu'à la fin du texte.
+  const [writing, setWriting] = useState(false);
+  const [shownText, setShownText] = useState<string | null>(null);
+  if ((proposal?.text ?? null) !== shownText) {
+    setShownText(proposal?.text ?? null);
+    setWriting(!!proposal);
+  }
   const target: TextField = selection.field ?? (selection.section === "about" ? "aboutText" : "heroHeadline");
   const name = content.orgName || tenant.name;
 
@@ -724,12 +738,14 @@ function AiBar({
         <div role="region" aria-label="Proposition de l'IA" aria-live="polite" className="flex flex-col gap-2.5 rounded-[16px] bg-ev-surface p-3.5 shadow-[0_12px_40px_rgba(22,33,28,.2),0_0_0_1px_var(--ev-border)] sm:p-4">
           <div className="flex flex-wrap items-center justify-between gap-x-3 gap-y-0.5">
             <span className="flex items-center gap-2 text-[13px] font-semibold text-ev-primary">
-              <Sparkles className="size-4" /> Proposition de l&apos;IA · {proposal.field === "faq" ? "FAQ" : FIELDS[proposal.field].label}
+              <GiyaxAvatar size={24} mood={writing ? "talking" : "idle"} /> {writing ? "GiyaX AI écrit…" : "Proposition de l'IA"} · {proposal.field === "faq" ? "FAQ" : FIELDS[proposal.field].label}
             </span>
             <span className="text-xs text-ev-muted">Visible sur l&apos;aperçu, pas encore appliquée</span>
           </div>
           {proposal.question && <span className="text-[13px] font-semibold">{proposal.question}</span>}
-          <p className="m-0 max-h-28 overflow-y-auto whitespace-pre-line text-[13px] leading-relaxed text-ev-ink2 [scrollbar-width:thin] sm:max-h-36">{proposal.text}</p>
+          <p className="m-0 max-h-28 overflow-y-auto whitespace-pre-line text-[13px] leading-relaxed text-ev-ink2 [scrollbar-width:thin] sm:max-h-36">
+            <TypewriterText key={proposal.text} text={proposal.text} onDone={() => setWriting(false)} />
+          </p>
           <div className="flex items-center justify-end gap-2">
             <button type="button" onClick={onDismiss} className="h-9 rounded-[10px] border border-ev-border bg-ev-surface px-3.5 text-[13px] font-medium hover:bg-ev-soft">
               Ignorer
