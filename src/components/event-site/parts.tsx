@@ -71,9 +71,33 @@ export function eventHref(site: SiteData, e: SiteEvent) {
   return `${site.base ?? `/${site.slug}`}/events/${e.id}`;
 }
 
+// Itinéraire vers le point placé sur la carte, sinon recherche de l'adresse.
 export function mapsLink(e: SiteEvent) {
+  if (e.coords) return `https://www.google.com/maps/dir/?api=1&destination=${e.coords.lat},${e.coords.lng}`;
   const q = [e.venue, e.place].filter(Boolean).join(", ");
   return q ? `https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(q)}` : null;
+}
+
+// Carte intégrée (Google Maps, sans clé ; frame-src autorisé dans la CSP).
+// Uniquement quand l'organisateur a placé le lieu : une adresse libre peut
+// tomber à côté, le lien « Itinéraire » reste alors la seule aide.
+export function mapEmbed(e: SiteEvent) {
+  if (!e.coords) return null;
+  return `https://www.google.com/maps?q=${e.coords.lat},${e.coords.lng}&z=16&hl=fr&output=embed`;
+}
+
+export function EventMap({ event, className }: { event: SiteEvent; className?: string }) {
+  const src = mapEmbed(event);
+  if (!src) return null;
+  return (
+    <iframe
+      src={src}
+      title={`Carte : ${event.venue ?? event.title}`}
+      loading="lazy"
+      referrerPolicy="no-referrer-when-downgrade"
+      className={className}
+    />
+  );
 }
 
 // Questions fréquentes : la première ouverte.

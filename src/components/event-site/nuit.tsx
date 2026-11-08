@@ -17,6 +17,7 @@ import {
   Photo,
   eventHref,
   homeHref,
+  EventMap,
   mapsLink,
   shareOnWhatsApp,
 } from "@/components/event-site/parts";
@@ -541,9 +542,15 @@ export function NuitEvent({ site, event: e, preview }: { site: SiteData; event: 
             <section className="flex flex-col gap-6">
               <SectionHead kicker="LIEU" title="Comment venir" />
               <div className="flex flex-col overflow-hidden rounded-[24px] border border-(--s-line2) @3xl:flex-row">
-                <div className="flex min-h-[220px] items-center justify-center bg-(--s-surface) bg-[linear-gradient(var(--s-line)_1px,transparent_1px),linear-gradient(90deg,var(--s-line)_1px,transparent_1px)] bg-[size:34px_34px] @3xl:min-h-[260px] @3xl:flex-[1_1_380px]">
-                  <span className="size-[46px] -rotate-45 rounded-[999px_999px_999px_0] bg-(--s-accent) shadow-[0_0_0_10px_var(--s-accent-soft)]" />
-                </div>
+                {e.coords ? (
+                  <div className="relative min-h-[260px] bg-(--s-surface) @3xl:min-h-[300px] @3xl:flex-[1_1_380px]">
+                    <EventMap event={e} className="absolute inset-0 size-full border-0" />
+                  </div>
+                ) : (
+                  <div className="flex min-h-[220px] items-center justify-center bg-(--s-surface) bg-[linear-gradient(var(--s-line)_1px,transparent_1px),linear-gradient(90deg,var(--s-line)_1px,transparent_1px)] bg-[size:34px_34px] @3xl:min-h-[260px] @3xl:flex-[1_1_380px]">
+                    <span className="size-[46px] -rotate-45 rounded-[999px_999px_999px_0] bg-(--s-accent) shadow-[0_0_0_10px_var(--s-accent-soft)]" />
+                  </div>
+                )}
                 <div className="flex flex-col gap-2.5 bg-(--s-surface) p-7 @3xl:flex-[1_1_280px]">
                   <span className="font-(family-name:--s-font-display) text-[22px] font-bold leading-[1.2]">{e.venue || e.place}</span>
                   {e.venue && e.place && <span className="text-[15px] text-(--s-muted)">{e.place}</span>}

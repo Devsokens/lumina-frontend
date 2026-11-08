@@ -27,6 +27,7 @@ import { DEFAULT_MESSAGES, MESSAGE_META, MESSAGE_VARS } from "@/lib/event-messag
 import { apiError } from "@/lib/api";
 import { useAuthStore } from "@/stores/useAuthStore";
 import { cn } from "@/lib/utils";
+import { FEATURES } from "@/lib/features";
 import type { Tenant } from "@/types/api";
 
 // Rubriques des Paramètres (refonte 2026-11, écrans 23 à 25) : identité
@@ -140,7 +141,7 @@ function PayoutRow({ op, payouts, canEdit, last }: { op: (typeof OPERATORS)[numb
     const others = payouts.accounts.filter((a) => a.operator !== op.key).map(({ operator, phone: p, holderName }) => ({ operator, phone: p, holderName }));
     try {
       await savePayouts.mutateAsync({ frequency: payouts.frequency, accounts: [...others, { operator: op.key, phone: number, holderName: holder.trim() }] });
-      toast.success(`Compte ${op.name} enregistré : vérifiez-le par SMS.`);
+      toast.success(FEATURES.sms ? `Compte ${op.name} enregistré : vérifiez-le par SMS.` : `Compte ${op.name} enregistré.`);
     } catch (err) {
       toast.error(apiError(err, "Enregistrement impossible"));
     }
@@ -179,9 +180,15 @@ function PayoutRow({ op, payouts, canEdit, last }: { op: (typeof OPERATORS)[numb
     }
   }
 
+  // Sans SMS : le compte enregistré suffit (vérifié par l'équipe avant le
+  // premier versement).
   const state = saved?.verifiedAt ? (
     <StatePill tone="ok" dot>
       Vérifié
+    </StatePill>
+  ) : saved && !FEATURES.sms ? (
+    <StatePill tone="ok" dot>
+      Enregistré
     </StatePill>
   ) : saved ? (
     <StatePill tone="warn" dot>
@@ -232,7 +239,7 @@ function PayoutRow({ op, payouts, canEdit, last }: { op: (typeof OPERATORS)[numb
                 <EvButton variant="primary" className="h-[42px] px-4" disabled={savePayouts.isPending} onClick={() => void save()}>
                   Enregistrer
                 </EvButton>
-              ) : saved?.verifiedAt ? (
+              ) : saved?.verifiedAt || !FEATURES.sms ? (
                 <EvButton className="h-[42px] px-4" disabled={savePayouts.isPending} onClick={() => void remove()}>
                   Retirer
                 </EvButton>
@@ -262,7 +269,7 @@ function PayoutRow({ op, payouts, canEdit, last }: { op: (typeof OPERATORS)[numb
 export function SettingsPayments({ tenant, canEdit }: { tenant: Tenant; canEdit: boolean }) {
   const payouts = payoutsOf(tenant);
   const savePayouts = useSavePayouts();
-  const verified = payouts.accounts.filter((a) => a.verifiedAt).length;
+  const verified = payouts.accounts.filter((a) => a.verifiedAt || !FEATURES.sms).length;
 
   async function setFrequency(frequency: Payouts["frequency"]) {
     if (frequency === payouts.frequency) return;
@@ -277,14 +284,18 @@ export function SettingsPayments({ tenant, canEdit }: { tenant: Tenant; canEdit:
   return (
     <>
       <SettingsHeading title="Paiements" sub="Les participants paient par Mobile Money. Les fonds sont reversés sur les comptes ci-dessous." />
-      <InfoNote>Les encaissements sont traités par notre prestataire de paiement sécurisé. Vos recettes sont reversées sur votre compte vérifié, selon la fréquence choisie.</InfoNote>
+      <InfoNote>
+        Les encaissements sont traités par notre prestataire de paiement sécurisé. Vos recettes sont reversées sur votre compte, selon la fréquence choisie.
+        {!FEATURES.sms && " Notre équipe confirme le numéro de versement avec vous avant le premier virement."}
+      </InfoNote>
       {!canEdit && <p className="m-0 text-[13px] text-ev-muted">Seul l&apos;organisateur peut modifier les comptes de versement.</p>}
       <SettingsCard className="overflow-hidden">
         <div className="flex items-center justify-between border-b border-ev-line px-5 py-[18px] sm:px-6">
           <div className="flex flex-col gap-0.5">
             <span className="text-[15px] font-semibold">Comptes de versement</span>
             <span className="text-[13px] text-ev-muted">
-              {verified} compte{verified > 1 ? "s" : ""} vérifié{verified > 1 ? "s" : ""} sur {OPERATORS.length}
+              {verified} compte{verified > 1 ? "s" : ""} {FEATURES.sms ? "vérifié" : "enregistré"}
+              {verified > 1 ? "s" : ""} sur {OPERATORS.length}
             </span>
           </div>
         </div>

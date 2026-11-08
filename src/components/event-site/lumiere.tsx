@@ -18,6 +18,7 @@ import {
   copyLink,
   eventHref,
   homeHref,
+  EventMap,
   mapsLink,
   shareOnWhatsApp,
 } from "@/components/event-site/parts";
@@ -606,9 +607,15 @@ export function LumiereEvent({ site, event: e, preview }: { site: SiteData; even
               <section className="flex flex-col gap-[18px]">
                 <H2Small>Lieu</H2Small>
                 <div className="flex flex-col overflow-hidden rounded-[24px] border border-(--s-line) @3xl:flex-row">
-                  <div className="flex min-h-[220px] flex-1 items-center justify-center bg-[#EEF1EC] bg-[linear-gradient(#E1E6DF_1px,transparent_1px),linear-gradient(90deg,#E1E6DF_1px,transparent_1px)] bg-[size:32px_32px] @3xl:min-h-[240px]">
-                    <span className="size-11 -rotate-45 rounded-[999px_999px_999px_0] bg-(--s-accent) shadow-[0_6px_16px_rgba(0,0,0,.2)]" />
-                  </div>
+                  {e.coords ? (
+                    <div className="relative min-h-[260px] flex-1 bg-[#EEF1EC] @3xl:min-h-[280px]">
+                      <EventMap event={e} className="absolute inset-0 size-full border-0" />
+                    </div>
+                  ) : (
+                    <div className="flex min-h-[220px] flex-1 items-center justify-center bg-[#EEF1EC] bg-[linear-gradient(#E1E6DF_1px,transparent_1px),linear-gradient(90deg,#E1E6DF_1px,transparent_1px)] bg-[size:32px_32px] @3xl:min-h-[240px]">
+                      <span className="size-11 -rotate-45 rounded-[999px_999px_999px_0] bg-(--s-accent) shadow-[0_6px_16px_rgba(0,0,0,.2)]" />
+                    </div>
+                  )}
                   <div className="flex flex-col gap-2.5 p-7 @3xl:w-[320px]">
                     <span className="text-lg font-extrabold">{e.venue || e.place}</span>
                     {e.venue && e.place && <span className="text-[15px] text-(--s-muted)">{e.place}</span>}

@@ -92,10 +92,10 @@ const sections: LegalSection[] = [
         <Table
           head={["Finalité", "Base légale"]}
           rows={[
-            ["Créer et sécuriser votre compte, vous connecter (mot de passe, code SMS ou Google)", "Exécution du contrat"],
+            ["Créer et sécuriser votre compte, vous connecter (e-mail et mot de passe, ou Google), réinitialiser un mot de passe oublié", "Exécution du contrat"],
             ["Fournir le service : vente et envoi des billets, contrôle d'accès, commandes, réservations, sites publics, attestations", "Exécution du contrat (pour le compte de l'organisateur)"],
             ["Encaisser les paiements et verser les recettes aux comptes vérifiés", "Exécution du contrat ; obligations légales"],
-            ["Envoyer les e-mails et SMS liés au service : billets, confirmations, rappels, codes de vérification, invitations d'équipe", "Exécution du contrat ; intérêt légitime de l'organisateur à informer ses participants"],
+            ["Envoyer les e-mails liés au service (et, lorsqu'ils seront activés, les SMS) : billets, confirmations, rappels, codes de vérification, invitations d'équipe", "Exécution du contrat ; intérêt légitime de l'organisateur à informer ses participants"],
             ["Prévenir la fraude (billets falsifiés ou réutilisés), protéger la plateforme, tenir un journal d'audit", "Intérêt légitime ; obligations légales"],
             ["Tenir la comptabilité et répondre aux autorités", "Obligation légale"],
             ["Répondre à vos demandes de support", "Exécution du contrat ; intérêt légitime"],
@@ -202,9 +202,11 @@ const sections: LegalSection[] = [
             ["Vercel", "Hébergement des pages web", "Réseau mondial (États-Unis, UE)"],
             ["Paystack", "Paiements en ligne (carte, Mobile Money)", "Nigeria, Afrique du Sud"],
             ["Google", "Connexion avec Google, envoi des e-mails (API Gmail)", "États-Unis et monde"],
-            ["Prestataire SMS", "Codes de vérification et notifications par SMS", "Selon le prestataire retenu"],
+            ["Prestataire SMS (pas encore activé)", "Codes de vérification et notifications par SMS", "Selon le prestataire retenu"],
             ["Groq", "Assistant IA (rédaction de textes)", "États-Unis — les consignes ne contiennent pas de données personnelles"],
             ["Cloudflare", "Assistant IA (images d'affiche)", "Réseau mondial — les consignes ne contiennent pas de données personnelles"],
+            ["Google Maps", "Carte du lieu sur la page publique d'un événement", "États-Unis et monde"],
+            ["OpenStreetMap (fondation OSMF)", "Fond de carte et recherche d'adresse dans l'éditeur d'événement", "Royaume-Uni et Union européenne"],
           ]}
         />
         <p>
@@ -237,7 +239,7 @@ const sections: LegalSection[] = [
             ["Billets, commandes et réservations des participants", "Durée fixée par l'organisateur ; au plus 3 ans après l'événement ou la commande, puis suppression ou anonymisation"],
             ["Pièces comptables et factures", "10 ans (obligation légale, droit comptable OHADA)"],
             ["Journaux de sécurité et d'audit", "12 mois"],
-            ["Codes de vérification (SMS, versements)", "5 à 10 minutes"],
+            ["Codes de vérification (mot de passe oublié, versements)", "15 minutes au plus"],
             ["Liens d'invitation d'équipe", "7 jours"],
             ["Session de connexion (cookie)", "7 jours, renouvelée à chaque visite"],
             ["Autorisation Gmail", "Jusqu'à la déconnexion ; supprimée immédiatement ensuite"],
@@ -261,7 +263,7 @@ const sections: LegalSection[] = [
             "Cloisonnement de chaque organisation jusque dans la base de données (sécurité au niveau des lignes).",
             "Billets signés électroniquement (Ed25519) pour empêcher les faux et les copies.",
             "Accès par rôles (propriétaire, manager, contrôleur…), journal d'audit des actions sensibles, limitation des tentatives de connexion.",
-            "Vérification par code SMS des comptes qui reçoivent les versements.",
+            "Confirmation, avec l'organisateur, du compte qui reçoit les versements avant le premier virement.",
             "Sauvegardes régulières et surveillance de la plateforme.",
           ]}
         />
@@ -330,6 +332,13 @@ const sections: LegalSection[] = [
           ]}
         />
         <p>Les polices de caractères sont servies par nos propres serveurs : aucune requête n&apos;est envoyée à un service tiers pour les afficher.</p>
+        <p>
+          <strong>Cartes.</strong> Lorsque l&apos;organisateur a placé le lieu sur une carte, la page de l&apos;événement affiche une carte Google Maps : votre navigateur contacte
+          alors Google, qui reçoit votre adresse IP et peut déposer ses propres cookies, selon{" "}
+          <Ext href="https://policies.google.com/privacy">les règles de confidentialité de Google</Ext>. Dans l&apos;éditeur, le fond de carte et la recherche d&apos;adresse sont
+          fournis par OpenStreetMap, qui reçoit votre adresse IP et le texte recherché (<Ext href="https://osmfoundation.org/wiki/Privacy_Policy">politique de
+          l&apos;OSMF</Ext>).
+        </p>
       </>
     ),
   },

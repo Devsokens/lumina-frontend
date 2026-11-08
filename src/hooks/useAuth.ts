@@ -147,6 +147,30 @@ export function useAuth() {
     }
   }, [setStatus, fetchMe, logout]);
 
+  // Invitation : le membre choisit son mot de passe et sa session s'ouvre
+  // aussitôt (le lien à usage unique prouve son identité).
+  const acceptInvitation = useCallback(
+    async (token: string, password: string) => {
+      const { data } = await api.post<ApiResponse<SessionResponse>>(`/auth/invitations/${encodeURIComponent(token)}`, {
+        password,
+      });
+      // Ancienne API (sans session dans la réponse) : null → page de connexion.
+      return data.data?.accessToken ? openSession(data.data) : null;
+    },
+    [openSession]
+  );
+
+  // Mot de passe oublié : code par e-mail (réponse identique que l'adresse
+  // ait un compte ou non), puis nouveau mot de passe. Toutes les sessions
+  // sont fermées par le backend.
+  const requestPasswordReset = useCallback(async (email: string) => {
+    await api.post("/auth/password/forgot", { email });
+  }, []);
+
+  const resetPassword = useCallback(async (payload: { email: string; code: string; newPassword: string }) => {
+    await api.post("/auth/password/reset", payload);
+  }, []);
+
   const changePassword = useCallback(
     async (currentPassword: string, newPassword: string) => {
       // Le backend ferme toutes les sessions : reconnexion obligatoire.
@@ -178,6 +202,9 @@ export function useAuth() {
     accountChoices,
     selectAccount,
     restoreSession,
+    acceptInvitation,
+    requestPasswordReset,
+    resetPassword,
     changePassword,
     fetchMe,
     signOut,

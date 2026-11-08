@@ -12,19 +12,20 @@ import { eventSiteFontVariables } from "@/lib/event-site-fonts";
 import { buildSite, toSiteEvent, type SiteData, type SiteEvent } from "@/components/event-site/site-data";
 import { NuitEvent, NuitHome } from "@/components/event-site/nuit";
 import { LumiereEvent, LumiereHome } from "@/components/event-site/lumiere";
+import { DEFAULT_LOOK, SiteLookContext } from "@/components/event-site/site-look";
 import { cn } from "@/lib/utils";
 
 // Site vitrine public d'un organisateur (refonte 2026-11) : modèle Nuit ou
 // Lumière, palette et typographie choisies dans l'éditeur du site.
 
-export const DEFAULT_LOOK: SiteLook = { model: "nuit", palette: "amber", typo: "expressive", radius: "arrondis" };
+export { DEFAULT_LOOK };
 
 // Cadre commun : polices, jetons de couleur, conteneur de référence des
 // requêtes @container (largeur du site, ou de l'aperçu dans l'éditeur).
 export function SiteFrame({ look, children, className }: { look: SiteLook; children: ReactNode; className?: string }) {
   return (
     <div style={siteStyle(look)} data-radius={look.radius} className={cn(eventSiteFontVariables, "@container min-h-dvh bg-(--s-bg) font-(family-name:--s-font-body) text-(--s-text) antialiased", className)}>
-      {children}
+      <SiteLookContext.Provider value={look}>{children}</SiteLookContext.Provider>
     </div>
   );
 }

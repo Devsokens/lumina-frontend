@@ -26,6 +26,8 @@ export function toUiEvent(event: ApiEvent, stats?: EventStats): Event {
     endDate: event.endDate,
     location: event.location,
     venueName: event.venueName,
+    lat: event.lat ?? null,
+    lng: event.lng ?? null,
     capacity: event.capacity,
     status: event.status,
     createdAt: event.createdAt,
@@ -118,6 +120,9 @@ export type EventPayload = {
   endDate?: string;
   location?: string;
   venueName?: string;
+  // null : repère retiré de la carte.
+  lat?: number | null;
+  lng?: number | null;
   eventType?: string;
   capacity?: number;
   settings?: EventSettings;
@@ -194,6 +199,7 @@ export function toEventPayload(form: Partial<Event>): EventPayload {
     ...(form.endDate ? { endDate: form.endDate } : {}),
     ...(form.location ? { location: form.location } : {}),
     ...(form.venueName ? { venueName: form.venueName } : {}),
+    ...(form.lat !== undefined ? { lat: form.lat, lng: form.lng ?? null } : {}),
     ...(form.eventType ? { eventType: form.eventType } : {}),
     ...(form.capacity ? { capacity: form.capacity } : {}),
     ...(form.notifyParticipants !== undefined ? { notifyParticipants: form.notifyParticipants } : {}),

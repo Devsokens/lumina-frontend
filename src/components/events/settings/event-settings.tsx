@@ -8,6 +8,7 @@ import { PLAN_LABELS, SettingsLegal, SettingsMessages, SettingsPayments, Setting
 import { useAdminTenantInfo } from "@/hooks/useAdmin";
 import { useAuthStore } from "@/stores/useAuthStore";
 import { cn } from "@/lib/utils";
+import { FEATURES } from "@/lib/features";
 import type { Tenant } from "@/types/api";
 
 // Paramètres du back-office événementiel (refonte Claude Design 2026-11,
@@ -29,7 +30,7 @@ function groups(tenant: Tenant | undefined): { title: string; items: Item[] }[] 
     {
       title: "BILLETTERIE",
       items: [
-        { key: "paiements", label: "Paiements", ...(tenant && !payoutsOf(tenant).accounts.some((a) => a.verifiedAt) ? { badge: "À configurer", tone: "warn" as const } : {}) },
+        { key: "paiements", label: "Paiements", ...(tenant && !payoutsOf(tenant).accounts.some((a) => a.verifiedAt || !FEATURES.sms) ? { badge: "À configurer", tone: "warn" as const } : {}) },
         { key: "messages", label: "E-mails et messages" },
         { key: "securite", label: "Sécurité des billets" },
       ],

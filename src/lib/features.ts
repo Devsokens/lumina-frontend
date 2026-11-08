@@ -17,6 +17,9 @@
 //   Cloudflare Workers AI côté serveur). Active par défaut ; « no-ai-poster »
 //   la coupe (seules restent les affiches « Graphique » et « Typographique »,
 //   dessinées dans le navigateur).
+// - sms : codes par SMS (connexion « mot de passe oublié », vérification des
+//   comptes de versement). Coupé tant qu'aucun fournisseur SMS n'est branché
+//   (SMS_PROVIDER côté serveur) ; « sms » le réactive.
 const flags = new Set((process.env.NEXT_PUBLIC_FEATURES ?? "").split(/[\s,]+/).filter(Boolean));
 
 export const FEATURES = {
@@ -25,4 +28,5 @@ export const FEATURES = {
   showcaseSections: !flags.has("no-showcase-sections"),
   eventExtras: !flags.has("no-event-extras"),
   aiPoster: !flags.has("no-ai-poster"),
+  sms: flags.has("sms"),
 };

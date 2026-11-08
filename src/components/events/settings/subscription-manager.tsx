@@ -4,6 +4,7 @@ import { useState } from "react";
 import {
   Check,
   ChevronDown,
+  Clock,
   ChevronUp,
   CreditCard,
   HelpCircle,
@@ -23,6 +24,10 @@ import { cn } from "@/lib/utils";
 import type { Tenant } from "@/types/api";
 
 type BillingPeriod = "monthly" | "yearly";
+
+// Formules payantes (Pro, Business) : affichées « Bientôt disponible » tant
+// que le paiement des abonnements n'est pas ouvert. Passer à true à l'ouverture.
+const PAID_OPEN = false;
 
 type PlanId = "FREE" | "PRO" | "BUSINESS";
 
@@ -115,8 +120,8 @@ const PLANS: PlanDef[] = [
 
 const FAQS = [
   {
-    q: "Puis-je changer de formule à tout moment ?",
-    a: "Oui, vous pouvez passer à une formule supérieure dès que vos besoins grandissent. Le passage est immédiat.",
+    q: "Quand les formules Pro et Business seront-elles disponibles ?",
+    a: "Très prochainement. D'ici là, la formule Gratuite vous donne accès à la billetterie, au contrôle d'accès, aux attestations, à votre site web et à GiyaX AI. Vous pourrez ensuite passer à une formule supérieure à tout moment.",
   },
   {
     q: "Comment fonctionnent les quotas de certificats ?",
@@ -202,14 +207,10 @@ export function SubscriptionManager({ tenant }: { tenant: Tenant }) {
             </div>
 
             {currentPlan === "FREE" && (
-              <button
-                type="button"
-                onClick={handleLaunchCheckout}
-                className="inline-flex items-center gap-2 rounded-xl bg-ev-primary px-4 py-2 text-xs font-semibold text-white shadow-sm hover:bg-ev-primary-hover"
-              >
-                <Zap className="size-4" />
-                Découvrir l&apos;offre Pro
-              </button>
+              <span className="inline-flex items-center gap-2 rounded-xl border border-dashed border-ev-border bg-ev-soft px-3.5 py-2 text-xs font-semibold text-ev-ink2">
+                <Clock className="size-4" />
+                Pro et Business : très bientôt
+              </span>
             )}
           </div>
         </div>
@@ -282,12 +283,12 @@ export function SubscriptionManager({ tenant }: { tenant: Tenant }) {
       {/* Plan selection header & Billing switch */}
       <div className="flex flex-col items-center justify-center gap-4 text-center">
         <div>
-          <h3 className="text-lg font-bold text-ev-ink">Choisissez la formule adaptée à vos ambitions</h3>
-          <p className="text-xs text-ev-ink2">Faites évoluer votre compte à tout moment selon la taille de votre structure.</p>
+          <h3 className="text-lg font-bold text-ev-ink">Les formules</h3>
+          <p className="text-xs text-ev-ink2">La formule Gratuite est disponible dès aujourd&apos;hui. Les formules Pro et Business arrivent très prochainement.</p>
         </div>
 
-        {/* Toggle Mensuel / Annuel */}
-        <div className="inline-flex items-center rounded-xl border border-ev-border bg-ev-soft p-1">
+        {/* Toggle Mensuel / Annuel : masqué tant que les formules payantes ne sont pas ouvertes. */}
+        <div className={cn("inline-flex items-center rounded-xl border border-ev-border bg-ev-soft p-1", !PAID_OPEN && "hidden")}>
           <button
             type="button"
             onClick={() => setPeriod("monthly")}
@@ -318,24 +319,30 @@ export function SubscriptionManager({ tenant }: { tenant: Tenant }) {
       <div className="grid gap-6 md:grid-cols-3">
         {PLANS.map((plan) => {
           const isCurrent = currentPlan === plan.id;
+          // Formules payantes : affichées grisées tant qu'elles ne sont pas ouvertes.
+          const soon = plan.id !== "FREE" && !PAID_OPEN;
 
           return (
             <div
               key={plan.id}
               className={cn(
                 "relative flex flex-col justify-between rounded-2xl border p-6 transition-all duration-200",
-                plan.highlight
-                  ? "border-ev-primary bg-white shadow-md ring-2 ring-ev-primary/20"
-                  : "border-ev-border bg-white shadow-sm hover:border-ev-ink2/30",
+                soon
+                  ? "border-dashed border-ev-border bg-ev-soft/60 grayscale"
+                  : plan.highlight || plan.id === "FREE"
+                    ? "border-ev-primary bg-white shadow-md ring-2 ring-ev-primary/20"
+                    : "border-ev-border bg-white shadow-sm hover:border-ev-ink2/30",
               )}
             >
-              {plan.badge && (
+              {soon ? (
+                <span className="absolute -top-3 right-6 rounded-full border border-ev-border bg-white px-3 py-0.5 text-[11px] font-bold text-ev-ink2 shadow-sm">Bientôt disponible</span>
+              ) : plan.badge && (
                 <span className="absolute -top-3 right-6 rounded-full bg-ev-primary px-3 py-0.5 text-[11px] font-bold text-white shadow-sm">
                   {plan.badge}
                 </span>
               )}
 
-              <div>
+              <div className={cn(soon && "opacity-60")}>
                 <div className="flex items-center justify-between">
                   <h4 className="text-lg font-bold text-ev-ink">{plan.name}</h4>
                 </div>
@@ -343,10 +350,8 @@ export function SubscriptionManager({ tenant }: { tenant: Tenant }) {
 
                 {/* Price display */}
                 <div className="mt-4 border-t border-b border-ev-border/60 py-3">
-                  <div className="text-2xl font-extrabold text-ev-ink">
-                    {period === "monthly" ? plan.priceMonthly : plan.priceYearly}
-                  </div>
-                  <div className="text-[11px] font-medium text-ev-ink2">{plan.periodLabel}</div>
+                  <div className="text-2xl font-extrabold text-ev-ink">{soon ? "Bientôt" : period === "monthly" ? plan.priceMonthly : plan.priceYearly}</div>
+                  <div className="text-[11px] font-medium text-ev-ink2">{soon ? "Disponible très prochainement" : plan.periodLabel}</div>
                 </div>
 
                 {/* Feature list */}
@@ -369,6 +374,10 @@ export function SubscriptionManager({ tenant }: { tenant: Tenant }) {
                     className="w-full rounded-xl border border-ev-border bg-ev-soft py-2.5 text-xs font-semibold text-ev-ink2"
                   >
                     Formule actuelle
+                  </button>
+                ) : soon ? (
+                  <button type="button" disabled className="w-full cursor-not-allowed rounded-xl border border-dashed border-ev-border bg-white/60 py-2.5 text-xs font-semibold text-ev-ink2">
+                    Bientôt disponible
                   </button>
                 ) : plan.id === "PRO" ? (
                   <button

@@ -73,8 +73,7 @@ export function TicketPurchase({ event }: { event: PublicEvent }) {
       const order = await purchaseTickets(
         event.id,
         {
-          ticketTypeId: selected.id,
-          quantity,
+          items: [{ ticketTypeId: selected.id, quantity }],
           customerPhone,
           ...(name.trim() ? { customerName: name.trim() } : {}),
           ...(email.trim() ? { customerEmail: email.trim() } : {}),

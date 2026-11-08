@@ -38,6 +38,8 @@ Base URL frontend : `NEXT_PUBLIC_API_URL` (ex: `https://api.giya.com/v1`).
 | POST | `/auth/logout` | Bearer | — | `{}` + suppression cookie `refresh_token` |
 | GET | `/auth/me` | Bearer | — | `{ user: { id, email, phone, fullName, role, tenantId, mustChangePassword } }` |
 | POST | `/auth/change-password` | Bearer | `{ currentPassword, newPassword }` | `{}` — **toutes les sessions sont fermées** (cookie supprimé) : rediriger vers `/login` |
+| POST | `/auth/password/forgot` | non | `{ email }` | `{}` (même réponse que l'adresse ait un compte ou non) — **503** si aucune adresse d'envoi n'est connectée en production |
+| POST | `/auth/password/reset` | non | `{ email, code, newPassword }` | `{}` — mot de passe changé pour tous les comptes de l'adresse, sessions fermées — **401** `"Code invalide ou expiré."` / `"Trop de tentatives. Demandez un nouveau code."` |
 | GET | `/auth/google` | non | — | 302 → écran de consentement Google. Le frontend fait un lien/redirection classique vers cette URL, **pas un fetch AJAX**. |
 | GET | `/auth/google/callback` | non (appelé par Google) | — | 302 vers le frontend, jamais de JSON direct — voir ci-dessous |
 | POST | `/auth/google/complete` | non (protégé par le `token` à usage unique) | `{ token, businessName, slug, sector, acceptedTerms: true }` | `{ accessToken, user }` + Set-Cookie `refresh_token` |
@@ -73,13 +75,18 @@ n'est envoyé sans compte). **503** uniquement si aucun fournisseur SMS n'est co
 production. Un échec d'envoi n'est pas signalé (il révélerait que le compte existe) : prévoir un
 bouton « renvoyer le code ».
 
+**Mot de passe oublié** : code à 6 chiffres envoyé par e-mail depuis l'adresse GiyaX, valable
+15 minutes, 5 essais (le code est ensuite invalidé). Un envoi par minute et 5 par jour pour une même
+adresse : au-delà, `{}` sans envoi. Un nouveau code remplace le précédent. L'adresse est comparée
+sans tenir compte de la casse.
+
 **Compte désactivé** : login → 401 `"Identifiants incorrects."` (message générique), refresh et
 toute requête Bearer → 401.
 
 **Sécurité attendue** (voir `GIYA_Audit_Menaces_Complet.md` 3.1, 3.5) :
 - Access token : 15 min. Refresh token : 7 jours, httpOnly, rotation à chaque usage.
 - Redis blacklist des JWT révoqués (JTI).
-- Rate limit 5 tentatives / 15 min / IP sur `/auth/login` et `/auth/otp/*` ; 20/min sur `/auth/google*`.
+- Rate limit 5 tentatives / 15 min / IP sur `/auth/login`, `/auth/otp/*` et `/auth/password/forgot` ; 10 / 15 min sur `/auth/password/reset` ; 20/min sur `/auth/google*`.
 
 ---
 
@@ -391,7 +398,7 @@ sur `POST` et `PATCH /admin/users/:id`. Chaque membre renvoyé porte `eventIds` 
 |---|---|---|---|
 | POST | `/admin/users/:id/invite` | Bearer (OWNER) | — → `{ inviteUrl }` (l'ancien lien ne marche plus) |
 | GET | `/auth/invitations/:token` | Public, 20/15 min | → `{ fullName, businessName, login }` ; 404 si invalide ou expiré |
-| POST | `/auth/invitations/:token` | Public, 5/15 min | `{ password }` (8+, une majuscule, un chiffre) → `{ login }` |
+| POST | `/auth/invitations/:token` | Public, 5/15 min | `{ password }` (8+, une majuscule, un chiffre) → `{ login, accessToken, user }` + Set-Cookie `refresh_token` : le membre est connecté directement |
 
 Scanner (STAFF) limité à des événements (`eventIds` non vide) : `GET /admin/events` ne renvoie que
 ceux-là ; `GET /admin/events/:id`, `/tickets`, `/scan-manifest`, `/certificates` → 404 pour les
@@ -443,8 +450,9 @@ avant. Seules `GET /events` et `GET /events/:id` consomment `req.tenant` ; `/ten
 reste le fallback et **prime toujours sur le Host**. Conséquence cache : suspension d'un tenant ou
 changement de `customDomain` effectif après au plus 5 min. `ROOT_DOMAIN` doit valoir le domaine
 racine de prod (ex. `giyax.ga`).
-| POST | `/events/:id/tickets` | non, header `X-Idempotency-Key` | `{ ticketTypeId, quantity (1-10), customerPhone, customerName?, customerEmail? }` | `Order` (`type: "EVENT"`) + `tickets: [{ id, qrCode, status, ticketTypeId }]` |
+| POST | `/events/:id/tickets` | non, header `X-Idempotency-Key` | `{ items: [{ ticketTypeId, quantity }] (ou `ticketTypeId` + `quantity` pour une seule formule ; 10 billets au plus au total), customerPhone, customerName?, customerEmail?, attendees?: [{ name }], answers?: { [questionId]: string \| number \| string[] } }` | `Order` (`type: "EVENT"`) + `tickets: [{ id, qrCode, status, ticketTypeId }]` — **400** `"Réponse requise : « … »."` / `"Réponse invalide : « … »."` |
 | GET | `/tickets/:qrCode/pdf` | non (le `qrCode` sert de secret) | — | **PDF binaire** (pas d'enveloppe JSON). 404 si le billet n'est pas `VALID`/`USED` |
+| GET | `/tickets/pdf?codes=c1,c2…` | non (chaque code sert de secret, 10 au plus) | — | **PDF binaire** : les billets fournis, un par page. 404 si aucun n'est `VALID`/`USED` |
 
 Achat : prix recalculé serveur, places réservées de façon atomique (**409** si plus assez).
 - Billets **payants** : commande `PENDING`, billets `PENDING` (non scannables) → enchaîner sur
@@ -452,6 +460,17 @@ Achat : prix recalculé serveur, places réservées de façon atomique (**409** 
   rendues, commande `CANCELLED`).
 - Billets **gratuits** (total 0) : commande `PAID`, billets `VALID` immédiatement, PDF envoyé par e-mail.
 - `customerEmail` fortement recommandé : c'est là que les billets PDF sont envoyés.
+
+**Réservation (page publique)** : une commande peut mêler plusieurs formules (`items`). Si une
+formule manque de places, toute la commande est refusée (**409**). `attendees` donne un nom par
+billet, dans l'ordre des `items` (billet 1 = l'acheteur, au plus le nombre de billets ; à défaut,
+`customerName`). Tous les billets partent à
+`customerEmail`, en un seul PDF (une page par billet), avec la facture si la commande est payée.
+`answers` : réponses au questionnaire d'inscription (`Event.settings.questionnaire`, si
+`questionnaireEnabled`), contrôlées serveur selon le type de question (choix parmi les options, notes
+1 à 5, date `AAAA-MM-JJ`…) et enregistrées sur la commande (`Order.answers`). Une question
+obligatoire sans réponse refuse la commande (400) avant toute réservation de places.
+
 
 **Admin**
 
@@ -471,6 +490,7 @@ Achat : prix recalculé serveur, places réservées de façon atomique (**409** 
 | DELETE | `/admin/events/:id` | Bearer (OWNER/MANAGER) | — | `{}` — **409** si billet émis/réservé/remboursé ou commande payée/remboursée (archiver via `PATCH` `status: CANCELLED`) |
 | GET | `/admin/events/:id/tickets` | Bearer (OWNER/MANAGER/STAFF) | — | `Ticket[]` (+ `ticketType: { name, price }`) |
 | GET | `/admin/events/:id/orders?page=&limit=` | Bearer (OWNER/MANAGER) | — | `[{ id, orderNumber, status, paymentStatus, paymentMethod, total, customerName, customerPhone, customerEmail, createdAt, tickets: [{ id, status, scannedAt, ticketType: { name } }] }]` + `meta` — commandes de billets de l'événement (réservations, remboursements) |
+| GET | `/admin/events/:id/responses` | Bearer (OWNER/MANAGER) | — | `{ orders, responses: [{ id, orderNumber, customerName, customerEmail, customerPhone, createdAt, answers, ticketTypes: string[], tickets, checkedIn }] }` — réponses au questionnaire, une par commande confirmée ; `orders` = inscriptions confirmées (taux de réponse) ; 5000 commandes au plus |
 | POST | `/admin/events/:id/ticket-types` | Bearer (OWNER/MANAGER) | `{ name, price, quantity, description?, saleEndsAt?, template?, maxPerOrder?, visible? }` | `TicketType` |
 | PATCH | `/admin/ticket-types/:id` | Bearer (OWNER/MANAGER) | `{ name?, price?, quantity?, description?, saleEndsAt?, template?, maxPerOrder?, visible? }` | `TicketType` — **409** si `quantity` < vendus |
 | DELETE | `/admin/ticket-types/:id` | Bearer (OWNER/MANAGER) | — | `{}` — **409** si `sold` > 0 ou si des billets de ce type existent |
