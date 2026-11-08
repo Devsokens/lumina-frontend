@@ -4,7 +4,7 @@ import { Suspense, useState } from "react";
 import Link from "next/link";
 import { useRouter, useSearchParams } from "next/navigation";
 import { useQuery } from "@tanstack/react-query";
-import { FlaskConical, Smartphone } from "lucide-react";
+import { FlaskConical } from "lucide-react";
 import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
 import { useTenant } from "@/hooks/useTenant";
@@ -12,6 +12,7 @@ import { api, type ApiResponse } from "@/lib/api";
 import { apiErrorMessage, formatXaf } from "@/lib/events";
 import { PublicTopBar } from "@/components/vitrine/public-top-bar";
 import type { PaymentStatusResult } from "@/types/events";
+import { OperatorLogo } from "@/components/shared/operator-logo";
 
 // Page de paiement simulée (mode test du backend, sans Paystack) : remplace
 // la page Paystack pour tester tout le parcours de réservation. Le backend
@@ -95,7 +96,7 @@ function SimulatedCheckout() {
                 operator === op ? "border-primary bg-primary/10 text-primary" : "border-border"
               }`}
             >
-              <Smartphone className="size-4" />
+              <OperatorLogo operator={op} decorative className="size-7" />
               {op === "AIRTEL" ? "Airtel Money" : "Moov Money"}
             </button>
           ))}

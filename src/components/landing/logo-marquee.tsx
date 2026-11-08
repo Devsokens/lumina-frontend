@@ -1,17 +1,19 @@
 "use client";
 
 import { motion } from "framer-motion";
+import { OperatorLogo, type MobileMoneyOperator } from "@/components/shared/operator-logo";
 
 interface Partner {
   name: string;
   category: string;
   logoText: string;
   badge?: string;
+  operator?: MobileMoneyOperator;
 }
 
 const PARTNERS: Partner[] = [
-  { name: "Airtel Money", category: "Mobile Money", logoText: "airtel money" },
-  { name: "Moov Africa", category: "Mobile Money", logoText: "moov money" },
+  { name: "Airtel Money", category: "Mobile Money", logoText: "airtel money", operator: "AIRTEL" },
+  { name: "Moov Africa", category: "Mobile Money", logoText: "moov money", operator: "MOOV" },
   { name: "Paystack", category: "Passerelle Paiement", logoText: "paystack" },
   { name: "BGFIBank", category: "Banque Partenaire", logoText: "BGFIBank" },
   { name: "Visa", category: "Carte Bancaire", logoText: "VISA" },
@@ -48,6 +50,7 @@ export function LogoMarquee() {
               className="group flex items-center gap-2.5 shrink-0 opacity-65 grayscale hover:grayscale-0 hover:opacity-100 transition-all duration-300 cursor-pointer"
             >
               <div className="flex items-center justify-center rounded-xl border border-border/80 bg-card/60 px-4 py-2 shadow-xs group-hover:border-primary/40 group-hover:bg-card">
+                {partner.operator && <OperatorLogo operator={partner.operator} decorative className="mr-2 size-7 rounded-md" />}
                 <span className="font-display text-sm sm:text-base font-extrabold tracking-tight text-foreground group-hover:text-primary transition-colors">
                   {partner.logoText}
                 </span>

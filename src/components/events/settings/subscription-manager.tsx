@@ -22,6 +22,7 @@ import { useMembers } from "@/hooks/useAdmin";
 import { useShellStore } from "@/stores/useShellStore";
 import { cn } from "@/lib/utils";
 import type { Tenant } from "@/types/api";
+import { OperatorLogo } from "@/components/shared/operator-logo";
 
 type BillingPeriod = "monthly" | "yearly";
 
@@ -491,7 +492,7 @@ export function SubscriptionManager({ tenant }: { tenant: Tenant }) {
                             : "border-ev-border bg-white text-ev-ink2 hover:border-ev-ink2/40",
                         )}
                       >
-                        <Smartphone className="size-5" />
+                        <OperatorLogo operator="AIRTEL" decorative className="size-8" />
                         <span className="text-[11px]">Airtel Money</span>
                       </button>
 
@@ -505,7 +506,7 @@ export function SubscriptionManager({ tenant }: { tenant: Tenant }) {
                             : "border-ev-border bg-white text-ev-ink2 hover:border-ev-ink2/40",
                         )}
                       >
-                        <Smartphone className="size-5" />
+                        <OperatorLogo operator="MOOV" decorative className="size-8" />
                         <span className="text-[11px]">Moov Money</span>
                       </button>
 

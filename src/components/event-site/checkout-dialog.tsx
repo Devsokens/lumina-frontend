@@ -3,7 +3,7 @@
 import { useEffect, useRef, useState, type ReactNode } from "react";
 import { Dialog as DialogPrimitive } from "radix-ui";
 import { QRCodeSVG } from "qrcode.react";
-import { Check, CreditCard, Download, FileText, FlaskConical, Loader2, ShieldCheck, Smartphone, Star, X } from "lucide-react";
+import { Check, CreditCard, Download, FileText, FlaskConical, Loader2, ShieldCheck, Star, X } from "lucide-react";
 import { toast } from "sonner";
 import { API_URL } from "@/lib/constants";
 import { apiErrorMessage, normalizePhone, ticketNumber } from "@/lib/events";
@@ -15,6 +15,7 @@ import { useSiteLook } from "@/components/event-site/site-look";
 import type { PublicEvent, PurchasedTicket } from "@/types/events";
 import type { QuestionnaireQuestion } from "@/types/api";
 import { cn } from "@/lib/utils";
+import { OperatorLogo } from "@/components/shared/operator-logo";
 
 // Réservation sans quitter la page de l'événement : participants (acheteur +
 // un nom par billet), questionnaire de l'organisateur s'il est activé, moyen
@@ -579,10 +580,13 @@ function PaymentStep({
       <SectionTitle>Moyen de paiement</SectionTitle>
       <div className="grid gap-2.5 sm:grid-cols-2">
         <button type="button" role="radio" aria-checked={mobile} onClick={() => setMethod(mobile ? method : "AIRTEL")} className={card(mobile)}>
-          <Smartphone className="size-6 shrink-0" />
-          <span className="flex flex-col">
+          <span className="flex shrink-0 gap-1">
+            <OperatorLogo operator="AIRTEL" decorative />
+            <OperatorLogo operator="MOOV" decorative />
+          </span>
+          <span className="flex min-w-0 flex-col">
             <span className="font-semibold">Mobile Money</span>
-            <span className="text-xs text-(--s-muted)">Airtel Money · Moov Money</span>
+            <span className="text-xs text-(--s-muted)">Airtel · Moov</span>
           </span>
         </button>
         <button type="button" role="radio" aria-checked={!mobile} onClick={() => setMethod("CARD")} className={card(!mobile)}>
@@ -605,11 +609,12 @@ function PaymentStep({
                 aria-checked={method === op}
                 onClick={() => setMethod(op)}
                 className={cn(
-                  "h-10 flex-1 rounded-full border text-sm font-semibold",
-                  method === op ? (nuit ? "border-(--s-accent) bg-(--s-accent) text-(--s-accent-ink)" : "border-(--s-dark) bg-(--s-dark) text-(--s-dark-ink)") : "border-(--s-line2)"
+                  "flex h-[60px] min-w-0 flex-1 items-center gap-2.5 rounded-[14px] border px-2.5 text-left text-sm font-semibold transition-colors",
+                  method === op ? (nuit ? "border-(--s-accent) bg-(--s-accent-tint) ring-1 ring-(--s-accent)" : "border-(--s-dark) bg-(--s-surface2) ring-1 ring-(--s-dark)") : "border-(--s-line2) hover:bg-(--s-surface2)"
                 )}
               >
-                {op === "AIRTEL" ? "Airtel Money" : "Moov Money"}
+                <OperatorLogo operator={op} decorative className="size-10" />
+                <span className="min-w-0 truncate">{op === "AIRTEL" ? "Airtel Money" : "Moov Money"}</span>
               </button>
             ))}
           </div>
