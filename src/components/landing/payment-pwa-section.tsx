@@ -2,6 +2,7 @@
 
 import { motion } from "framer-motion";
 import { Smartphone, WifiOff, CheckCircle, Database } from "lucide-react";
+import { OperatorLogo } from "@/components/shared/operator-logo";
 
 
 export function PaymentPwaSection() {
@@ -103,12 +104,12 @@ export function PaymentPwaSection() {
               {/* Badges Grid */}
               <div className="mt-6 grid grid-cols-2 gap-3 sm:grid-cols-3">
                 <div className="flex flex-col items-center justify-center rounded-2xl border border-red-500/20 bg-red-500/5 p-4 text-center">
-                  <span className="font-mono text-base font-black text-red-600 dark:text-red-400">airtel</span>
+                  <OperatorLogo operator="AIRTEL" decorative className="size-12 rounded-xl" />
                   <span className="text-[11px] font-semibold text-foreground mt-1">Airtel Money</span>
                 </div>
 
-                <div className="flex flex-col items-center justify-center rounded-2xl border border-blue-500/20 bg-blue-500/5 p-4 text-center">
-                  <span className="font-mono text-base font-black text-blue-600 dark:text-blue-400">moov</span>
+                <div className="flex flex-col items-center justify-center rounded-2xl border border-orange-500/20 bg-orange-500/5 p-4 text-center">
+                  <OperatorLogo operator="MOOV" decorative className="size-12 rounded-xl" />
                   <span className="text-[11px] font-semibold text-foreground mt-1">Moov Money</span>
                 </div>
 

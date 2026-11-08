@@ -26,6 +26,7 @@ import {
 import { DEFAULT_MESSAGES, MESSAGE_META, MESSAGE_VARS } from "@/lib/event-messages";
 import { apiError } from "@/lib/api";
 import { useAuthStore } from "@/stores/useAuthStore";
+import { OperatorLogo } from "@/components/shared/operator-logo";
 import { cn } from "@/lib/utils";
 import { FEATURES } from "@/lib/features";
 import type { Tenant } from "@/types/api";
@@ -102,9 +103,9 @@ export function payoutsOf(tenant: Tenant): Payouts {
   return { frequency: raw?.frequency ?? "AFTER_EVENT", accounts: Array.isArray(raw?.accounts) ? raw.accounts : [] };
 }
 
-const OPERATORS: { key: PayoutOperator; name: string; letter: string; color: string; optional?: boolean; placeholder: string }[] = [
-  { key: "AIRTEL", name: "Airtel Money", letter: "A", color: "#C8102E", placeholder: "07 00 00 00" },
-  { key: "MOOV", name: "Moov Money", letter: "M", color: "#1F5FAD", optional: true, placeholder: "06 00 00 00" },
+const OPERATORS: { key: PayoutOperator; name: string; optional?: boolean; placeholder: string }[] = [
+  { key: "AIRTEL", name: "Airtel Money", placeholder: "07 00 00 00" },
+  { key: "MOOV", name: "Moov Money", optional: true, placeholder: "06 00 00 00" },
 ];
 
 function toPhone(raw: string) {
@@ -205,9 +206,7 @@ function PayoutRow({ op, payouts, canEdit, last }: { op: (typeof OPERATORS)[numb
   return (
     <div className={cn("flex flex-col gap-4 px-5 py-[22px] sm:px-6", !last && "border-b border-ev-line")}>
       <div className="flex items-center gap-3.5">
-        <span className="flex size-10 shrink-0 items-center justify-center rounded-[10px] border border-ev-line bg-ev-bg text-[13px] font-bold" style={{ color: op.color }}>
-          {op.letter}
-        </span>
+        <OperatorLogo operator={op.key} decorative className="size-10 rounded-[10px]" />
         <div className="flex min-w-0 flex-1 flex-col gap-0.5">
           <span className="text-[15px] font-semibold">{op.name}</span>
           <span className="text-[13px] text-ev-muted">Compte marchand Gabon</span>

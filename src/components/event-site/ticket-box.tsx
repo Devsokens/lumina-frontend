@@ -5,6 +5,7 @@ import { formatPrice } from "@/components/event-site/site-data";
 import { CheckoutDialog } from "@/components/event-site/checkout-dialog";
 import type { PublicEvent } from "@/types/events";
 import { cn } from "@/lib/utils";
+import { OperatorLogo } from "@/components/shared/operator-logo";
 
 // Boîte « Billets » des pages événement (modèles Nuit et Lumière) : nombre de
 // billets par formule (plusieurs formules possibles dans une commande), puis
@@ -29,6 +30,8 @@ export function TicketBox({ event, variant, preview }: { event: PublicEvent; var
   const qty = lines.reduce((n, l) => n + l.quantity, 0);
   const total = lines.reduce((sum, l) => sum + l.ticket.price * l.quantity, 0);
   const full = qty >= MAX_PER_ORDER;
+  // Rien à payer : sélection gratuite, ou événement sans billet payant.
+  const freeOnly = qty > 0 ? total === 0 : event.ticketTypes.every((t) => t.price === 0);
 
   function change(t: Ticket, delta: number) {
     const current = sel[t.id] ?? 0;
@@ -153,17 +156,16 @@ export function TicketBox({ event, variant, preview }: { event: PublicEvent; var
         Continuer
       </button>
 
-      {qty > 0 && total === 0 ? (
+      {freeOnly ? (
         <span className="text-center text-[13px] text-(--s-muted)">Inscription gratuite · billet envoyé par e-mail</span>
-      ) : nuit ? (
-        <span className="text-center text-[13px] text-(--s-muted)">Mobile Money ou carte · billets envoyés par e-mail</span>
       ) : (
-        <div className="flex justify-center gap-2 text-[13px]">
-          {["Mobile Money", "Carte bancaire"].map((m) => (
-            <span key={m} className="flex h-7 items-center rounded-lg bg-(--s-chip) px-2.5 font-semibold">
-              {m}
-            </span>
-          ))}
+        <div className="flex flex-col items-center gap-2">
+          <div className="flex items-center justify-center gap-2 text-[13px]">
+            <OperatorLogo operator="AIRTEL" />
+            <OperatorLogo operator="MOOV" />
+            <span className="flex h-8 items-center rounded-lg bg-(--s-chip) px-2.5 font-semibold">Carte bancaire</span>
+          </div>
+          <span className="text-center text-[13px] text-(--s-muted)">Billets envoyés par e-mail</span>
         </div>
       )}
 

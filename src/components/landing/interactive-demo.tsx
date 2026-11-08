@@ -15,9 +15,9 @@ import {
   ChefHat,
   Zap,
   Shirt,
-  Circle,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
+import { OperatorLogo } from "@/components/shared/operator-logo";
 
 
 type DemoTab = "restaurant" | "event" | "shop";
@@ -436,16 +436,16 @@ export function InteractiveDemo() {
                         disabled={payingWith !== null}
                         className="py-5 rounded-xl border border-red-500/30 bg-red-500/10 text-red-700 dark:text-red-400 hover:bg-red-500/20 font-bold"
                       >
-                        {payingWith === "airtel" ? "Validation..." : <><Circle className="size-3 fill-current" /> Airtel Money</>}
+                        {payingWith === "airtel" ? "Validation..." : <><OperatorLogo operator="AIRTEL" decorative className="size-6 rounded-md" /> Airtel Money</>}
                       </Button>
 
                       <Button
                         type="button"
                         onClick={() => triggerPayment("moov")}
                         disabled={payingWith !== null}
-                        className="py-5 rounded-xl border border-blue-500/30 bg-blue-500/10 text-blue-700 dark:text-blue-400 hover:bg-blue-500/20 font-bold"
+                        className="py-5 rounded-xl border border-orange-500/30 bg-orange-500/10 text-orange-700 dark:text-orange-400 hover:bg-orange-500/20 font-bold"
                       >
-                        {payingWith === "moov" ? "Validation..." : <><Circle className="size-3 fill-current" /> Moov Money</>}
+                        {payingWith === "moov" ? "Validation..." : <><OperatorLogo operator="MOOV" decorative className="size-6 rounded-md" /> Moov Money</>}
                       </Button>
                     </div>
 
