@@ -1,6 +1,6 @@
 "use client";
 
-import { useMutation } from "@tanstack/react-query";
+import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { isAxiosError } from "axios";
 import { api, apiError, type ApiResponse } from "@/lib/api";
 import type { EventType } from "@/types/api";
@@ -65,10 +65,37 @@ export type ChatMessage = { role: "user" | "assistant"; content: string };
 
 export function useAssistant(mode: "public" | "admin") {
   return useMutation({
-    mutationFn: async (body: { messages: ChatMessage[]; page?: string }) => {
-      const { data } = await api.post<ApiResponse<{ reply: string }>>(mode === "admin" ? "/admin/ai/assistant" : "/ai/assistant", body, { timeout: 45_000 });
-      return (data.data?.reply ?? "").trim();
+    mutationFn: async (body: { messages: ChatMessage[]; page?: string; conversationId?: string }) => {
+      const { data } = await api.post<ApiResponse<{ reply: string; conversationId?: string }>>(mode === "admin" ? "/admin/ai/assistant" : "/ai/assistant", body, { timeout: 45_000 });
+      return { reply: (data.data?.reply ?? "").trim(), conversationId: data.data?.conversationId ?? null };
     },
+  });
+}
+
+// Historique des conversations (membres connectés, enregistré par le serveur).
+export type ConversationSummary = { id: string; title: string; updatedAt: string; count: number; preview: string };
+
+export function useAssistantConversations(enabled: boolean) {
+  return useQuery({
+    queryKey: ["ai-conversations"],
+    queryFn: async () => {
+      const { data } = await api.get<ApiResponse<ConversationSummary[]>>("/admin/ai/conversations");
+      return data.data ?? [];
+    },
+    enabled,
+  });
+}
+
+export async function fetchConversation(id: string) {
+  const { data } = await api.get<ApiResponse<{ id: string; title: string; messages: ChatMessage[] }>>(`/admin/ai/conversations/${encodeURIComponent(id)}`);
+  return data.data;
+}
+
+export function useDeleteConversation() {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: (id: string) => api.delete(`/admin/ai/conversations/${encodeURIComponent(id)}`),
+    onSuccess: () => qc.invalidateQueries({ queryKey: ["ai-conversations"] }),
   });
 }
 

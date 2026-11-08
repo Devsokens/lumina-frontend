@@ -63,14 +63,15 @@ export function DashboardHeader() {
   const sector = tenantSector ?? urlSector;
   const currentSector = (sector ?? "event").toLowerCase();
   const isEvent = currentSector === "event";
+  // États déclarés avant le retour anticipé : le secteur peut changer pendant
+  // le chargement (URL puis compte), l'ordre des hooks doit rester le même.
+  const [searchQuery, setSearchQuery] = useState("");
+  const [showSearchDropdown, setShowSearchDropdown] = useState(false);
+  const [logoutModalOpen, setLogoutModalOpen] = useState(false);
 
   if (isEvent) {
     return <EventHeader />;
   }
-
-  const [searchQuery, setSearchQuery] = useState("");
-  const [showSearchDropdown, setShowSearchDropdown] = useState(false);
-  const [logoutModalOpen, setLogoutModalOpen] = useState(false);
 
   async function handleConfirmSignOut() {
     setLogoutModalOpen(false);
@@ -122,9 +123,6 @@ export function DashboardHeader() {
                 setTimeout(() => setShowSearchDropdown(false), 200);
               }}
             />
-            <kbd className="absolute right-2.5 top-1/2 -translate-y-1/2 hidden sm:inline-flex items-center rounded border border-border bg-muted px-1.5 py-0.5 text-[10px] font-mono text-muted-foreground">
-              ⌘K
-            </kbd>
           </div>
 
           {/* Quick Search Floating Results */}

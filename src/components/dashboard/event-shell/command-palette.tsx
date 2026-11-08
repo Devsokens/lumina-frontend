@@ -5,7 +5,7 @@ import { useRouter } from "next/navigation";
 import { Dialog as DialogPrimitive } from "radix-ui";
 import { BarChart3, CalendarDays, Globe, Plus, ScanLine, Search, Settings, User, UserPlus } from "lucide-react";
 import { EV_PORTAL } from "@/components/events/ev-ui";
-import { BASE, GO_KEYS, NAV_ICON, keyOf, navGroups } from "@/components/dashboard/event-shell/shell-model";
+import { BASE, NAV_ICON, keyOf, navGroups } from "@/components/dashboard/event-shell/shell-model";
 import { NavIcon } from "@/components/dashboard/event-sidebar";
 import { STATUS_META } from "@/lib/event-meta";
 import { useAdminEvents } from "@/hooks/useEvents";
@@ -15,7 +15,7 @@ import { useShellStore } from "@/stores/useShellStore";
 import { publicSiteUrl } from "@/lib/tenant-url";
 import { cn } from "@/lib/utils";
 
-// Palette « Rechercher ou aller à… » (⌘K, refonte 2026-11) : événements,
+// Palette « Rechercher ou aller à… » (refonte 2026-11) : événements,
 // pages et actions, au clavier (↑ ↓, Entrée, Échap).
 
 type Item = { id: string; section: "ÉVÉNEMENTS" | "PAGES" | "ACTIONS"; title: string; sub?: string; icon: ReactNode; hint?: string; run: () => void };
@@ -95,7 +95,7 @@ function PaletteBody({ close }: { close: () => void }) {
       for (const l of g.links) {
         if (!match(l.label)) continue;
         const key = keyOf(l.href);
-        list.push({ id: `n-${l.href}`, section: "PAGES", title: l.label, sub: l.hint, icon: <NavIcon d={NAV_ICON[key]} size={16} />, hint: `G ${GO_KEYS[key]}`, run: go(l.href) });
+        list.push({ id: `n-${l.href}`, section: "PAGES", title: l.label, sub: l.hint, icon: <NavIcon d={NAV_ICON[key]} size={16} />, run: go(l.href) });
       }
     }
     if (q && isOwner) {
@@ -199,7 +199,7 @@ function PaletteBody({ close }: { close: () => void }) {
       <div className="flex shrink-0 items-center gap-4 border-t border-ev-line bg-ev-soft px-4 py-2.5 text-xs text-ev-muted">
         <span>↑ ↓ naviguer</span>
         <span>↵ ouvrir</span>
-        <span>⌘K fermer</span>
+        <span>Échap fermer</span>
       </div>
     </div>
   );
