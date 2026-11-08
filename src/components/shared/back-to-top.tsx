@@ -20,7 +20,8 @@ export function BackToTop() {
       type="button"
       onClick={() => window.scrollTo({ top: 0, behavior: "smooth" })}
       aria-label="Retour en haut de la page"
-      className={`fixed right-5 bottom-5 z-40 flex size-11 items-center justify-center rounded-full bg-primary text-white shadow-lg shadow-primary/30 transition-all duration-300 hover:bg-primary/90 hover:scale-105 sm:right-8 sm:bottom-8 ${
+      // Au-dessus du lanceur de GiyaX AI (coin bas droit).
+      className={`fixed right-[26px] bottom-[92px] z-40 flex size-11 items-center justify-center rounded-full bg-primary text-white shadow-lg shadow-primary/30 transition-all duration-300 hover:bg-primary/90 hover:scale-105 sm:right-[32px] sm:bottom-[112px] ${
         visible ? "translate-y-0 opacity-100" : "pointer-events-none translate-y-3 opacity-0"
       }`}
     >

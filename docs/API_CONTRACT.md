@@ -337,9 +337,13 @@ audit `REFUND_PARTIAL_REVIEW` pour revue manuelle. `refund.pending` / `refund.pr
 |---|---|---|---|
 | POST | `/ai/generate` | Bearer (OWNER, MANAGER), 10/min/tenant | `{ prompt (≤ 500), language?: "fr" | "en" }` → `{ text, cached? }` |
 | POST | `/admin/ai/event-description` | Bearer (OWNER, MANAGER), 10/min | `{ title (2-200), eventType?, venueName? (≤ 200), startDate? (ISO), tone?: "festif" \| "professionnel" \| "premium", notes? (≤ 1000) }` → `{ description }` (texte brut, 2-3 paragraphes) |
-| POST | `/admin/ai/event-visual` | Bearer (OWNER, MANAGER), 5/min | `{ title (2-200), eventType?, style: "photo" \| "affiche-concert" \| "elegant" \| "afro-moderne" \| "corporate" \| "neon" \| "minimal", prompt? (≤ 400, ambiance) }` → `{ url }` : data URL JPEG 1080 × 1350 (≤ 450 000 caractères). Cloudflare Workers AI (FLUX.1 schnell) ; **429** au-delà de `AI_IMAGE_DAILY_PER_TENANT` (défaut 10/jour/organisateur) ou `AI_IMAGE_DAILY_TOTAL` (140/jour), **503** si non configuré |
+| POST | `/admin/ai/event-visual` | Bearer (OWNER, MANAGER), 12/min | `{ title (2-200), eventType?, style: "photo" \| "affiche-concert" \| "elegant" \| "afro-moderne" \| "corporate" \| "neon" \| "minimal", prompt? (≤ 400, ambiance) }` → `{ url }` : data URL JPEG 1080 × 1350 (≤ 450 000 caractères). Cloudflare Workers AI (FLUX.1 schnell) ; **429** au-delà de `AI_IMAGE_DAILY_PER_TENANT` (défaut 24/jour/organisateur) ou `AI_IMAGE_DAILY_TOTAL` (160/jour), **503** si non configuré |
+| POST | `/ai/assistant` | public, 20/10 min/IP + plafond `AI_ASSISTANT_PUBLIC_DAILY` (défaut 400/jour) | `{ messages: [{ role: "user" \| "assistant", content (≤ 4000) }] (1-30, le dernier = user), page? }` → `{ reply }` — GiyaX AI pour les visiteurs (page d'accueil) ; conversation non conservée côté serveur |
+| POST | `/admin/ai/assistant` | Bearer (tous rôles), 40/10 min | même corps → `{ reply }` — contexte : organisation, secteur, formule, rôle, page ; échange journalisé (`AIPromptLog`, préfixe `[assistant]`) |
 
 Fournisseur : `GROQ_API_KEY` seul (Groq, `llama-3.3-70b-versatile`) ou `OPENAI_API_KEY` (+ `OPENAI_BASE_URL`). Erreurs : **429** si le fournisseur limite (Groq gratuit), **503** si l'IA n'est pas configurée ou ne répond pas.
+
+GiyaX AI : base de connaissances `src/modules/ai/assistant-knowledge.ts` (backend), à tenir à jour avec le produit. Modèle : `AI_ASSISTANT_MODEL` sinon celui du texte. Le studio d'affiche appelle `event-visual` 4 fois en parallèle (une image par mise en page) et `/ai/generate` pour l'accroche.
 
 Utilisé par l'éditeur du site vitrine (`src/components/site-editor`, hook `useAiText`) :
 variantes d'un texte, réécriture, présentation « À propos », question de FAQ, traduction.
@@ -591,6 +595,8 @@ coordonnée client renvoyée.
 
 ## Historique
 
+- **2026-11-08** — GiyaX AI : `POST /ai/assistant` (public) et `POST /admin/ai/assistant` (§9).
+  Images d'affiche à 4 étapes, quotas 24/jour/organisateur et 160/jour, `event-visual` 12/min.
 - **2026-11-07** — Affiches IA : `POST /admin/ai/event-visual` (Cloudflare Workers AI). Frontend :
   pages `/confidentialite` et `/conditions` (alias `/privacy`, `/terms`, `/cgu`), slugs réservés
   côté backend (`confidentialite`, `conditions`, `privacy`, `terms`, `cgu`, `legal`, `pricing`…).
