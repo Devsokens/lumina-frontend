@@ -18,6 +18,8 @@ const MAX_PER_ORDER = 10;
 
 type Ticket = PublicEvent["ticketTypes"][number];
 const closed = (t: Ticket) => t.remaining === 0 || (!!t.saleEndsAt && new Date(t.saleEndsAt).getTime() <= Date.now());
+// Places restantes, dans la limite fixée par formule (contrôlée aussi par l'API).
+const capOf = (t: Ticket) => Math.min(t.remaining, t.maxPerOrder ?? MAX_PER_ORDER);
 
 export function TicketBox({ event, variant, preview }: { event: PublicEvent; variant: "nuit" | "lumiere"; preview?: boolean }) {
   const nuit = variant === "nuit";
@@ -36,7 +38,7 @@ export function TicketBox({ event, variant, preview }: { event: PublicEvent; var
   function change(t: Ticket, delta: number) {
     const current = sel[t.id] ?? 0;
     // Plafond : places restantes de la formule et 10 billets en tout.
-    const max = Math.min(t.remaining, current + MAX_PER_ORDER - qty);
+    const max = Math.min(capOf(t), current + MAX_PER_ORDER - qty);
     const next = Math.max(0, Math.min(max, current + delta));
     setSel((prev) => {
       const rest = { ...prev };
@@ -76,7 +78,7 @@ export function TicketBox({ event, variant, preview }: { event: PublicEvent; var
             const q = sel[t.id] ?? 0;
             const active = q > 0;
             const off = closed(t);
-            const max = Math.min(t.remaining, q + MAX_PER_ORDER - qty);
+            const max = Math.min(capOf(t), q + MAX_PER_ORDER - qty);
             return (
               <div
                 key={t.id}

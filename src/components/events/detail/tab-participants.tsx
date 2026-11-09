@@ -38,7 +38,7 @@ import {
 } from "@/components/events/ev-ui";
 import { useCheckIn, useRefundOrder } from "@/hooks/useEvents";
 import { api } from "@/lib/api";
-import { API_URL } from "@/lib/constants";
+import { downloadTickets } from "@/lib/download";
 import { apiErrorMessage, normalizePhone } from "@/lib/events";
 import { amount, formulaColor, pct } from "@/lib/event-meta";
 import type { ApiEvent, ApiTicket, EventStats } from "@/types/events";
@@ -427,14 +427,8 @@ export function TabParticipants({ event, stats, tickets }: Props) {
                       </DropdownMenuTrigger>
                       <DropdownMenuContent align="end" className={`${EV_PORTAL} w-56 rounded-xl`}>
                         {t.qrCode && !isRefunded && (
-                          <DropdownMenuItem asChild>
-                            <a
-                              href={`${API_URL}/tickets/${encodeURIComponent(t.qrCode)}/pdf`}
-                              target="_blank"
-                              rel="noreferrer"
-                            >
-                              Télécharger le billet (PDF)
-                            </a>
+                          <DropdownMenuItem onClick={() => void downloadTickets([t.qrCode!]).catch(() => toast.error("Téléchargement impossible, réessayez."))}>
+                            Télécharger le billet (PDF)
                           </DropdownMenuItem>
                         )}
                         {t.status === "VALID" && (
@@ -609,14 +603,8 @@ export function TabParticipants({ event, stats, tickets }: Props) {
                             className={`${EV_PORTAL} w-56 rounded-xl`}
                           >
                             {t.qrCode && !isRefunded && (
-                              <DropdownMenuItem asChild>
-                                <a
-                                  href={`${API_URL}/tickets/${encodeURIComponent(t.qrCode)}/pdf`}
-                                  target="_blank"
-                                  rel="noreferrer"
-                                >
-                                  Télécharger le billet (PDF)
-                                </a>
+                              <DropdownMenuItem onClick={() => void downloadTickets([t.qrCode!]).catch(() => toast.error("Téléchargement impossible, réessayez."))}>
+                                Télécharger le billet (PDF)
                               </DropdownMenuItem>
                             )}
                             {t.status === "VALID" && (
@@ -725,7 +713,7 @@ function InviteParticipantDialog({
         .toString(36)
         .slice(2, 7)}`;
       const { data } = await api.post(
-        `/events/${event.id}/tickets`,
+        `/admin/events/${event.id}/invitations`,
         {
           ticketTypeId: selectedFormula.id,
           quantity: 1,

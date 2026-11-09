@@ -450,8 +450,8 @@ reste le fallback et **prime toujours sur le Host**. Conséquence cache : suspen
 changement de `customDomain` effectif après au plus 5 min. `ROOT_DOMAIN` doit valoir le domaine
 racine de prod (ex. `giyax.ga`).
 | POST | `/events/:id/tickets` | non, header `X-Idempotency-Key` | `{ items: [{ ticketTypeId, quantity }] (ou `ticketTypeId` + `quantity` pour une seule formule ; 10 billets au plus au total), customerPhone, customerName?, customerEmail?, attendees?: [{ name }], answers?: { [questionId]: string \| number \| string[] } }` | `Order` (`type: "EVENT"`) + `tickets: [{ id, qrCode, status, ticketTypeId }]` — **400** `"Réponse requise : « … »."` / `"Réponse invalide : « … »."` |
-| GET | `/tickets/:qrCode/pdf` | non (le `qrCode` sert de secret) | — | **PDF binaire** (pas d'enveloppe JSON). 404 si le billet n'est pas `VALID`/`USED` |
-| GET | `/tickets/pdf?codes=c1,c2…` | non (chaque code sert de secret, 10 au plus) | — | **PDF binaire** : les billets fournis, un par page. 404 si aucun n'est `VALID`/`USED` |
+| POST | `/admin/events/:id/invitations` | OWNER, MANAGER | comme l'achat, `X-Idempotency-Key` requis | Billet émis par l'organisateur : seule voie vers une formule masquée ou aux ventes closes |
+| POST | `/tickets/pdf` | non (chaque code sert de secret, 10 au plus) | `{ codes: string[] }` | **PDF binaire** (`attachment`, pas d'enveloppe JSON) : les billets fournis, un par page. 404 si aucun n'est `VALID`/`USED`. Le code d'un billet vaut le billet : jamais dans une adresse |
 
 Achat : prix recalculé serveur, places réservées de façon atomique (**409** si plus assez).
 - Billets **payants** : commande `PENDING`, billets `PENDING` (non scannables) → enchaîner sur

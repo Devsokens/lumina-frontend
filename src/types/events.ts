@@ -156,6 +156,7 @@ export type AuditEntry = {
 
 // Vitrine publique
 export type PublicTicketType = {
+  maxPerOrder?: number | null;
   id: string;
   name: string;
   price: number;
