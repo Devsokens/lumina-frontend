@@ -26,6 +26,8 @@ import {
 import { DEFAULT_MESSAGES, MESSAGE_META, MESSAGE_VARS } from "@/lib/event-messages";
 import { apiError } from "@/lib/api";
 import { useAuthStore } from "@/stores/useAuthStore";
+import { DownloadButton } from "@/components/shared/download-button";
+import { downloadTenantExport } from "@/lib/download";
 import { OperatorLogo } from "@/components/shared/operator-logo";
 import { cn } from "@/lib/utils";
 import { FEATURES } from "@/lib/features";
@@ -731,6 +733,30 @@ export function SettingsSecurity() {
 // ---------- Mon profil ----------
 
 const ROLE_LABELS: Record<string, string> = { OWNER: "Organisateur (propriétaire)", MANAGER: "Manager", STAFF: "Scanner" };
+
+export function SettingsData({ canEdit }: { canEdit: boolean }) {
+  return (
+    <>
+      <SettingsHeading title="Mes données" sub="Elles vous appartiennent : récupérez-en une copie quand vous voulez." />
+      <SettingsCard>
+        <SettingsRow title="Télécharger mes données" desc="Participants, commandes, billets, événements et images, dans un fichier ZIP." last>
+          <div className="flex flex-col items-start gap-2">
+            {canEdit ? (
+              <DownloadButton action={downloadTenantExport} className="inline-flex h-9 items-center gap-2 rounded-[10px] border border-ev-border bg-ev-surface px-3.5 text-[13px] font-medium transition-colors hover:bg-ev-soft disabled:opacity-60">
+                Télécharger le fichier
+              </DownloadButton>
+            ) : (
+              <span className="text-sm text-ev-muted">Réservé au propriétaire du compte.</span>
+            )}
+            <span className="text-[13px] text-ev-muted">
+              Ce fichier contient les données personnelles de vos participants : gardez-le en lieu sûr. Trois téléchargements par heure au plus.
+            </span>
+          </div>
+        </SettingsRow>
+      </SettingsCard>
+    </>
+  );
+}
 
 export function SettingsProfile() {
   const user = useAuthStore((s) => s.user);
