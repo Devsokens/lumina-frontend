@@ -17,8 +17,8 @@ export const LEGAL = {
   privacyEmail: "supportsokensdigital@gmail.com",
   phone: "+241 60 00 13 33",
   // Version en vigueur des deux documents.
-  effectiveDate: "8 novembre 2026",
-  version: "1.1",
+  effectiveDate: "9 novembre 2026",
+  version: "1.2",
 } as const;
 
 export const LEGAL_LINKS = {

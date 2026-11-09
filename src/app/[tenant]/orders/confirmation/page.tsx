@@ -9,12 +9,12 @@ import { usePaymentStatus } from "@/hooks/usePublicEvents";
 import { formatXaf } from "@/lib/events";
 import { OrderDocumentButton } from "@/components/vitrine/order-document-button";
 
-// Retour de Paystack pour une commande (restaurant / boutique) :
+// Attente du paiement d'une commande (restaurant / boutique) :
 // ?reference=… — même statut public que la billetterie (§8).
 function OrderConfirmation() {
   const tenant = useTenant();
   const params = useSearchParams();
-  const reference = params.get("reference") ?? params.get("trxref");
+  const reference = params.get("reference");
   const { data, isLoading, isError } = usePaymentStatus(reference);
   const back = (
     <Link href={`/${tenant.slug}/menu`} className="text-sm text-primary underline">
@@ -28,7 +28,7 @@ function OrderConfirmation() {
         <XCircle className="size-10 text-destructive" />
         <p className="font-semibold">Paiement introuvable.</p>
         <p className="text-sm text-muted-foreground">
-          Si vous avez été débité, présentez votre reçu Paystack à l&apos;établissement.
+          Si vous avez été débité, présentez votre reçu de paiement à l&apos;établissement.
         </p>
         {back}
       </div>
@@ -40,7 +40,7 @@ function OrderConfirmation() {
       <div className="space-y-3">
         <Clock className="size-10 animate-pulse text-warning" />
         <p className="font-semibold">Confirmation du paiement en cours…</p>
-        <p className="text-sm text-muted-foreground">Cela peut prendre quelques secondes.</p>
+        <p className="text-sm text-muted-foreground">Si vous payez par Mobile Money, validez la demande reçue sur votre téléphone.</p>
       </div>
     );
   }

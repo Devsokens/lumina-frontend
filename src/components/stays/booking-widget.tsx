@@ -18,7 +18,7 @@ import type { PublicListing } from "@/types/stays";
 const PHONE = /^\+?[0-9]{8,15}$/;
 
 // Réservation d'un séjour : dates → voyageurs → prix (calculé par le
-// serveur) → coordonnées → paiement (Paystack ou page simulée).
+// serveur) → coordonnées → paiement (PVit ou page simulée).
 export function BookingWidget({ slug, listing }: { slug: string; listing: PublicListing }) {
   const [range, setRange] = useState<{ checkIn: string | null; checkOut: string | null }>({ checkIn: null, checkOut: null });
   const [guests, setGuests] = useState(1);

@@ -139,7 +139,7 @@ export type RefundResult = {
   orderId: string;
   paymentStatus: "REFUNDED";
   amount: number;
-  paystackStatus: string;
+  providerStatus: string;
   refundedTickets: number;
   releasedSeats: number;
 };

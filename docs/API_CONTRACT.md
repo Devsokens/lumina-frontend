@@ -290,21 +290,26 @@ Usage MVP restauration : validation de table/commande. Réutilisé en V1 pour le
 
 | Méthode | Route | Auth | Body | Réponse `data` |
 |---|---|---|---|---|
-| POST | `/payments/initialize` | non (suit la création de commande) | `{ orderId }` | `{ authorizationUrl: string, reference: string, simulated: boolean }` — rappelable (nouvelle référence à chaque tentative), **409** si déjà payée ou annulée (réservation de billets expirée) |
+| POST | `/payments/initialize` | non (suit la création de commande) | `{ orderId, method?: "AIRTEL" \| "MOOV" \| "CARD", phone? }` | `{ authorizationUrl, reference, simulated, flow?: "PUSH" \| "REDIRECT" }` — rappelable (nouvelle référence à chaque tentative, 6 au plus par commande), **400** numéro ou montant refusé (Mobile Money : 150 à 500 000 F), **409** déjà payée, remboursée ou annulée, **503** moyen indisponible |
 
 Au paiement confirmé : reçu par e-mail si `customerEmail` est renseigné ; pour une commande de
 billets (`type: "EVENT"`), les billets passent `VALID` et le PDF est envoyé par e-mail.
 
 | GET | `/payments/status/:reference` | non (rate limit 30/min) | — | `{ orderId, orderNumber, type, status, paymentStatus, total, documentToken, tickets: [{ id, qrCode, status, ticketTypeId }] }` — `tickets` vide et `documentToken: null` tant que non payé ; **404** référence inconnue |
 
-Le frontend redirige `window.location.href` vers `authorizationUrl` (Paystack hosted checkout).
-Paystack renvoie ensuite le client sur `${FRONTEND_URL}/{slug}/events/confirmation?reference=...`
-(billets, `type: "EVENT"`) ou `${FRONTEND_URL}/{slug}/orders/confirmation?reference=...` (autres
-commandes). URL construite serveur, jamais fournie par le client. Cette page appelle `/payments/status/:reference` ; si le webhook n'est pas encore
-arrivé, le backend vérifie la transaction auprès de Paystack avant de répondre.
+Prestataire : **MyPVIT** (https://docs.mypvit.pro). Sans `method`, l'opérateur est déduit du numéro
+de la commande (07 : Airtel, 06 : Moov).
+
+- `flow: "PUSH"` (Mobile Money) : la demande part sur le téléphone du client. `authorizationUrl` est
+  la page d'attente de la vitrine (`/{slug}/{events|stays|orders}/confirmation?reference=…`) ; la
+  fenêtre de réservation interroge directement `/payments/status/:reference`.
+- `flow: "REDIRECT"` (carte) : `authorizationUrl` est le formulaire bancaire de PVit, ouvert dans un
+  nouvel onglet ; fin de parcours sur `/pay/return/success` ou `/pay/return/failed`.
+- `/payments/status/:reference` relit le statut chez PVit (au plus toutes les 10 s) tant que le
+  paiement est en attente. `paymentStatus: "FAILED"` : le client peut relancer `initialize`.
 
 **Paiement simulé (tests)** — actif si `PAYMENT_SIMULATION=true`, ou par défaut tant que
-`PAYSTACK_SECRET_KEY` est absente ; `PAYMENT_SIMULATION=false` le coupe (sans clé : 503).
+les codes `PVIT_*` sont absents ; `PAYMENT_SIMULATION=false` le coupe (sans codes : 503).
 `initialize` renvoie alors
 `simulated: true`, une référence `SIM-…` et un `authorizationUrl` **relatif**
 `/{slug}/pay/simulate?reference=SIM-…` (page de la vitrine). Cette page confirme ou refuse :
@@ -312,29 +317,23 @@ arrivé, le backend vérifie la transaction auprès de Paystack avant de répond
 | POST | `/payments/simulate/:reference` | non (rate limit 10/min) | `{ outcome: "success" \| "failed" }` | même forme que `/payments/status/:reference` — `success` : commande payée (`MOBILE_MONEY`), billets délivrés et envoyés comme un vrai paiement ; `failed` : `paymentStatus: "FAILED"` ; **404** hors mode simulation ou référence non `SIM-` ; **409** commande annulée |
 
 À couper avant d'encaisser de vrais clients : une commande simulée délivre de vrais billets.
-Le webhook Paystack (`POST /webhooks/paystack`) est **interne au backend**, jamais appelé par le
-frontend — voir `GIYA_BACKEND_CONTEXT.md` 4.6.
+Le webhook PVit (`POST /webhooks/pvit`) est **interne au backend**, jamais appelé par le frontend.
 
 ### Remboursement (billets)
 
 | Méthode | Route | Auth | Body | Réponse `data` |
 |---|---|---|---|---|
-| POST | `/admin/orders/:id/refund` | Bearer (OWNER, MANAGER) | `{ releaseSeats?: boolean }` (défaut `true`) | `{ orderId, paymentStatus: "REFUNDED", amount, paystackStatus, refundedTickets, releasedSeats }` |
+| POST | `/admin/orders/:id/refund` | Bearer (OWNER, MANAGER) | `{ releaseSeats?: boolean }` (défaut `true`) | `{ orderId, paymentStatus: "REFUNDED", amount, providerStatus, refundedTickets, releasedSeats }` |
 
-- Commande `type: "EVENT"`, `paymentStatus: "PAID"`, payée via Paystack uniquement — sinon **409** ;
-  **404** si la commande n'est pas au tenant ; **502** si Paystack refuse.
+- Commande `type: "EVENT"`, `paymentStatus: "PAID"`, payée en ligne par Mobile Money — sinon **409** (carte : remboursement manuel) ;
+  **404** si la commande n'est pas au tenant ; **502** si PVit refuse ou si le résultat est incertain.
 - Montant remboursé = `order.total`, toujours (aucun montant accepté dans le body → 400).
 - Double appel : **409** (« déjà en cours » ou « déjà remboursée »), jamais deux remboursements.
 - Effet : commande `REFUNDED`, billets `VALID` → `REFUNDED` (le scan répond `invalid`), places rendues
   (`sold -= n`) sauf `releaseSeats: false`. Les billets `USED` restent `USED`.
-- Écart Paystack : le remboursement est **asynchrone** (`POST /refund` répond `pending`). Les billets
-  sont invalidés dès que Paystack accepte la demande, sans attendre `refund.processed` (anti-fraude).
-  Un `refund.failed` ultérieur est journalisé (`REFUND_FAILED`) pour action manuelle — les billets
-  ne sont pas réactivés automatiquement.
-
-Webhook (interne) : `refund.processed` (ex. remboursement fait depuis le dashboard Paystack) applique
-le même effet, places rendues, de façon idempotente. Remboursement partiel → aucun billet touché,
-audit `REFUND_PARTIAL_REVIEW` pour revue manuelle. `refund.pending` / `refund.processing` ignorés.
+- Le client est reversé sur le numéro qui a payé (`GIVE_CHANGE`, résultat immédiat). Tout refus ou
+  résultat incertain est journalisé (`REFUND_FAILED`) et les billets restent valides. Un résultat
+  incertain bloque un nouvel essai, pour ne jamais payer deux fois.
 
 ---
 
@@ -549,7 +548,7 @@ PARKING, POOL, HOT_WATER, GENERATOR, SECURITY, WORKSPACE, BREAKFAST` ; `photos` 
 | GET | `/admin/stays/stats` | Bearer (OWNER/MANAGER) | — | `{ publishedListings, inHouse, upcomingBookings, revenueThisMonth, occupancyNext30, arrivalsToday[], departuresToday[] }` |
 
 `Booking.status` : `PENDING` (non payée, dates retenues 30 min puis libérées) → `CONFIRMED`
-(paiement reçu, e-mail de confirmation) → `CHECKED_IN` → `CHECKED_OUT`. Retour Paystack :
+(paiement reçu, e-mail de confirmation) → `CHECKED_IN` → `CHECKED_OUT`. Attente du paiement :
 `/{slug}/stays/confirmation`. Annuler une réservation payée ne rembourse pas automatiquement.
 
 ## 16. Factures & additions (`/admin/invoices`, `/orders/:id/document`)

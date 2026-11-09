@@ -9,7 +9,7 @@ import { API_URL } from "@/lib/constants";
 import { apiErrorMessage, normalizePhone, ticketNumber } from "@/lib/events";
 import { siteStyle } from "@/lib/event-site-theme";
 import { eventSiteFontVariables } from "@/lib/event-site-fonts";
-import { confirmSimulatedPayment, initializePayment, purchaseTickets } from "@/hooks/usePublicEvents";
+import { confirmSimulatedPayment, fetchPaymentStatus, initializePayment, purchaseTickets } from "@/hooks/usePublicEvents";
 import { formatPrice } from "@/components/event-site/site-data";
 import { useSiteLook } from "@/components/event-site/site-look";
 import type { PublicEvent, PurchasedTicket } from "@/types/events";
@@ -33,6 +33,21 @@ type Done = { tickets: PurchasedTicket[]; orderId: string | null; documentToken:
 const STEP_LABEL: Record<Step, string> = { people: "Participants", questions: "Questions", payment: "Paiement" };
 const PHONE_FORMAT = /^\+?[0-9]{8,15}$/;
 const EMAIL_FORMAT = /^[^\s@]+@[^\s@]+\.[^\s@]{2,}$/;
+
+// Limites Mobile Money de PVit, en francs.
+const MOMO_MIN = 150;
+const MOMO_MAX = 500_000;
+const POLL_MS = 3_000;
+const POLL_SLOW_AFTER = 30; // ~1 min 30 : proposer de renvoyer la demande
+const POLL_MAX = 100; // ~5 min
+
+// Opérateur d'après le numéro : Airtel 07, Moov 06.
+function operatorOf(phone: string): "AIRTEL" | "MOOV" | null {
+  const digits = normalizePhone(phone).replace(/^\+/, "").replace(/^(00)?241/, "");
+  if (/^0?7/.test(digits)) return "AIRTEL";
+  if (/^0?6/.test(digits)) return "MOOV";
+  return null;
+}
 
 const filled = (v: AnswerValue | undefined) =>
   v !== undefined && (Array.isArray(v) ? v.length > 0 : typeof v === "number" ? true : v.trim() !== "");
@@ -73,6 +88,9 @@ export function CheckoutDialog({
   const [busy, setBusy] = useState(false);
   const [orderId, setOrderId] = useState<string | null>(null);
   const [simulation, setSimulation] = useState<string | null>(null);
+  // Paiement parti : on attend la validation (téléphone ou onglet de la banque).
+  const [waiting, setWaiting] = useState<{ reference: string; card: boolean } | null>(null);
+  const [slow, setSlow] = useState(false);
   const [failed, setFailed] = useState(false);
   const [done, setDone] = useState<Done | null>(null);
   const key = useRef<string | null>(null);
@@ -83,7 +101,42 @@ export function CheckoutDialog({
   // Nouvelle étape (ou résultat) : retour en haut de la fenêtre.
   useEffect(() => {
     body.current?.scrollTo({ top: 0 });
-  }, [step, done, simulation]);
+  }, [step, done, simulation, waiting]);
+
+  // Attente du résultat, sans quitter la page.
+  useEffect(() => {
+    if (!waiting) return;
+    let stopped = false;
+    let tries = 0;
+    let timer: ReturnType<typeof setTimeout>;
+    const tick = async () => {
+      tries += 1;
+      try {
+        const status = await fetchPaymentStatus(waiting.reference);
+        if (stopped) return;
+        if (status.paymentStatus === "PAID") {
+          setWaiting(null);
+          setDone({ tickets: status.tickets, orderId: status.orderId, documentToken: status.documentToken, paid: true });
+          return;
+        }
+        if (status.paymentStatus === "FAILED") {
+          setWaiting(null);
+          setFailed(true);
+          return;
+        }
+      } catch {
+        // Coupure passagère : on réessaie au tour suivant.
+      }
+      if (stopped) return;
+      if (tries === POLL_SLOW_AFTER) setSlow(true);
+      if (tries < POLL_MAX) timer = setTimeout(() => void tick(), POLL_MS);
+    };
+    timer = setTimeout(() => void tick(), POLL_MS);
+    return () => {
+      stopped = true;
+      clearTimeout(timer);
+    };
+  }, [waiting]);
 
   // Une correction efface l'erreur du champ concerné.
   function clearError(name: string) {
@@ -115,8 +168,23 @@ export function CheckoutDialog({
 
   function validatePayment() {
     const e: Record<string, string> = {};
-    if (method !== "CARD" && !PHONE_FORMAT.test(normalizePhone(momo))) e.momo = "Numéro Mobile Money invalide.";
+    if (method !== "CARD") {
+      const francs = total / 100;
+      const operator = operatorOf(momo);
+      if (!PHONE_FORMAT.test(normalizePhone(momo))) e.momo = "Numéro Mobile Money invalide.";
+      else if (operator !== method) e.momo = `Ce numéro n'est pas un numéro ${method === "AIRTEL" ? "Airtel Money" : "Moov Money"}.`;
+      else if (francs > MOMO_MAX) e.momo = "Mobile Money est limité à 500 000 F par paiement : réduisez le nombre de billets ou payez par carte.";
+      else if (francs < MOMO_MIN) e.momo = "Mobile Money demande un paiement d'au moins 150 F.";
+    }
     return e;
+  }
+
+  // L'opérateur suit le numéro saisi.
+  function changeMomo(value: string) {
+    clearError("momo");
+    setMomo(value);
+    const operator = operatorOf(value);
+    if (operator) setMethod((m) => (m === "CARD" ? m : operator));
   }
 
   function next() {
@@ -129,7 +197,7 @@ export function CheckoutDialog({
     }
     if (last) return void submit();
     const following = steps[index + 1];
-    if (following === "payment" && !momo) setMomo(buyer.phone);
+    if (following === "payment" && !momo) changeMomo(buyer.phone);
     setStep(following);
   }
 
@@ -137,8 +205,11 @@ export function CheckoutDialog({
   // billets émis tout de suite.
   async function submit() {
     if (preview) return void toast.info("Aperçu : la réservation fonctionne sur le site publié.");
+    // Ouvert dès le clic : un onglet ouvert plus tard serait bloqué.
+    const cardTab = paid && method === "CARD" ? window.open("about:blank", "_blank") : null;
     setBusy(true);
     setFailed(false);
+    setSlow(false);
     try {
       let id = orderId;
       if (!id) {
@@ -157,21 +228,31 @@ export function CheckoutDialog({
           key.current
         );
         if (order.paymentStatus === "PAID") {
+          cardTab?.close();
           setDone({ tickets: order.tickets, orderId: order.id, documentToken: null, paid: false });
           return;
         }
         id = order.id;
         setOrderId(id);
       }
-      // Le numéro Mobile Money et l'opérateur seront transmis au prestataire
-      // de paiement lors de son intégration.
-      const payment = await initializePayment(id);
+      const payment = await initializePayment(id, { method, phone: normalizePhone(method === "CARD" ? buyer.phone : momo) });
       if (payment.simulated) {
+        cardTab?.close();
         setSimulation(payment.reference);
         return;
       }
-      window.location.assign(payment.authorizationUrl);
+      if (payment.flow === "REDIRECT") {
+        if (cardTab) {
+          cardTab.opener = null;
+          cardTab.location.href = payment.authorizationUrl;
+        } else {
+          window.location.assign(payment.authorizationUrl);
+          return;
+        }
+      }
+      setWaiting({ reference: payment.reference, card: payment.flow === "REDIRECT" });
     } catch (err) {
+      cardTab?.close();
       if (!orderId) key.current = null;
       toast.error(apiErrorMessage(err, paid ? "Réservation impossible, réessayez." : "Inscription impossible, réessayez."));
     } finally {
@@ -253,6 +334,8 @@ export function CheckoutDialog({
           <div ref={body} className="min-h-0 flex-1 overflow-y-auto border-t border-(--s-line) px-5 py-6 sm:px-7">
             {done ? (
               <DoneView done={done} email={buyer.email.trim()} nuit={nuit} typeName={(id) => lines.find((l) => l.ticket.id === id)?.ticket.name ?? null} />
+            ) : waiting ? (
+              <WaitingView card={waiting.card} method={method} phone={momo} total={total} slow={slow} />
             ) : simulation ? (
               <div className="flex flex-col gap-4">
                 <div className="flex items-start gap-3 rounded-[18px] border border-[#E9B949]/50 bg-[#E9B949]/12 p-4 text-sm leading-relaxed">
@@ -269,7 +352,7 @@ export function CheckoutDialog({
             ) : step === "questions" ? (
               <QuestionsStep questions={questions} answers={answers} setAnswers={setAnswers} errors={errors} clearError={clearError} nuit={nuit} />
             ) : (
-              <PaymentStep method={method} setMethod={setMethod} momo={momo} setMomo={(v) => (clearError("momo"), setMomo(v))} errors={errors} lines={lines} total={total} failed={failed} nuit={nuit} />
+              <PaymentStep method={method} setMethod={setMethod} momo={momo} setMomo={changeMomo} errors={errors} lines={lines} total={total} failed={failed} nuit={nuit} />
             )}
           </div>
 
@@ -279,6 +362,22 @@ export function CheckoutDialog({
               <button type="button" className={primary} onClick={() => onClose(true)}>
                 Terminé
               </button>
+            ) : waiting ? (
+              slow ? (
+                <>
+                  <button type="button" className={secondary} disabled={busy} onClick={() => setWaiting(null)}>
+                    Changer de moyen
+                  </button>
+                  <button type="button" className={primary} disabled={busy} onClick={() => void submit()}>
+                    {busy && <Loader2 className="size-4 animate-spin" />}
+                    Renvoyer la demande
+                  </button>
+                </>
+              ) : (
+                <span className="flex h-[52px] flex-1 items-center justify-center gap-2 text-sm font-semibold text-(--s-muted)">
+                  <Loader2 className="size-4 animate-spin" /> En attente de votre confirmation…
+                </span>
+              )
             ) : simulation ? (
               <>
                 <button type="button" className={secondary} disabled={busy} onClick={() => void simulate("failed")}>
@@ -630,6 +729,35 @@ function PaymentStep({
       <span className="flex items-center gap-2 text-xs text-(--s-muted)">
         <ShieldCheck className="size-4 shrink-0" /> Paiement sécurisé. Vos billets et votre facture arrivent par e-mail dès la confirmation.
       </span>
+    </div>
+  );
+}
+
+// ---------- Attente de la validation ----------
+
+function WaitingView({ card, method, phone, total, slow }: { card: boolean; method: Method; phone: string; total: number; slow: boolean }) {
+  const operator = method === "MOOV" ? "MOOV" : "AIRTEL";
+  return (
+    <div className="flex flex-col items-center gap-4 py-6 text-center">
+      {card ? <Loader2 className="size-10 animate-spin text-(--s-muted)" /> : <OperatorLogo operator={operator} className="size-16 rounded-[16px]" />}
+      <span className="font-(family-name:--s-font-display) text-2xl font-extrabold tracking-[-0.02em]">
+        {card ? "Terminez le paiement dans l'onglet ouvert" : "Validez sur votre téléphone"}
+      </span>
+      <p className="m-0 max-w-[420px] text-sm leading-relaxed text-(--s-body)">
+        {card ? (
+          <>Une fois le paiement de <strong className="text-(--s-text)">{formatPrice(total)}</strong> validé, vos billets s&apos;afficheront ici.</>
+        ) : (
+          <>
+            Une demande de <strong className="text-(--s-text)">{formatPrice(total)}</strong> vient d&apos;être envoyée au <strong className="text-(--s-text)">{phone}</strong>. Saisissez votre code secret
+            {operator === "AIRTEL" ? " Airtel Money" : " Moov Money"} pour confirmer.
+          </>
+        )}
+      </p>
+      {slow && (
+        <p className="m-0 max-w-[420px] rounded-[14px] bg-(--s-surface2) px-4 py-3 text-[13px] leading-relaxed text-(--s-body)">
+          {card ? "Toujours en attente de votre banque." : "Vous n'avez rien reçu ? Vérifiez que votre téléphone capte le réseau, puis renvoyez la demande."} Si le paiement a déjà abouti, vos billets arriveront par e-mail.
+        </p>
+      )}
     </div>
   );
 }
