@@ -200,7 +200,7 @@ const sections: LegalSection[] = [
             ["Supabase", "Base de données", "Selon la région du projet ; sauvegardes chiffrées"],
             ["Upstash", "Cache et files techniques (sessions, codes, quotas)", "Selon la région du service"],
             ["Vercel", "Hébergement des pages web", "Réseau mondial (États-Unis, UE)"],
-            ["Paystack", "Paiements en ligne (carte, Mobile Money)", "Nigeria, Afrique du Sud"],
+            ["PVit (BakoAI)", "Paiements en ligne (Mobile Money, carte) et vérification du numéro payeur", "Gabon ; hébergement OVHcloud et AWS"],
             ["Google", "Connexion avec Google, envoi des e-mails (API Gmail)", "États-Unis et monde"],
             ["Prestataire SMS (pas encore activé)", "Codes de vérification et notifications par SMS", "Selon le prestataire retenu"],
             ["Groq", "Assistant IA (rédaction de textes)", "États-Unis — les consignes ne contiennent pas de données personnelles"],

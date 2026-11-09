@@ -18,11 +18,11 @@ import { AnalyticsOverview } from "@/components/dashboard/analytics-overview";
 // GET /admin/analytics/events, rafraîchies toutes les 15 s.
 const MANUAL_CASE_LABELS: Record<(typeof MANUAL_CASE_ACTIONS)[number], { title: string; todo: string }> = {
   REFUND_FAILED: {
-    title: "Remboursement Paystack échoué",
-    todo: "Billets déjà invalidés : rembourser le client manuellement.",
+    title: "Remboursement non abouti",
+    todo: "Billets toujours valides : vérifier l'opération dans MyPVIT, puis rembourser le client.",
   },
   REFUND_PARTIAL_REVIEW: {
-    title: "Remboursement partiel (dashboard Paystack)",
+    title: "Remboursement partiel",
     todo: "Aucun billet annulé : décider lesquels invalider.",
   },
   TICKETS_REFUND_NEEDED: {

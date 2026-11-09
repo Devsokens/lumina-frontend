@@ -422,7 +422,7 @@ export function InteractiveDemo() {
                         <CreditCard className="size-5 text-accent" />
                         <span className="font-display text-sm font-bold">Encaissement Mobile Money</span>
                       </div>
-                      <span className="font-mono text-xs text-muted-foreground">Paystack / CLIKPAY</span>
+                      <span className="font-mono text-xs text-muted-foreground">PVit</span>
                     </div>
 
                     <p className="mt-4 text-xs text-muted-foreground">

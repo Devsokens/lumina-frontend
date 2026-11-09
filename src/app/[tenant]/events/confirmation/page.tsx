@@ -11,11 +11,11 @@ import { TicketDownloads } from "@/components/vitrine/ticket-downloads";
 import { formatXaf } from "@/lib/events";
 import { PublicTopBar } from "@/components/vitrine/public-top-bar";
 
-// Retour de Paystack : ?reference=… (et ?trxref=…, même valeur).
+// Attente du paiement : ?reference=…
 function Confirmation() {
   const tenant = useTenant();
   const params = useSearchParams();
-  const reference = params.get("reference") ?? params.get("trxref");
+  const reference = params.get("reference");
   const { data, isLoading, isError } = usePaymentStatus(reference);
 
   const back = (
@@ -31,7 +31,7 @@ function Confirmation() {
         <p className="font-semibold">Paiement introuvable.</p>
         <p className="text-sm text-muted-foreground">
           Si vous avez été débité, vos billets vous seront envoyés par e-mail. Sinon, contactez
-          l&apos;organisateur avec votre reçu Paystack.
+          l&apos;organisateur avec votre reçu de paiement.
         </p>
         {back}
       </div>
@@ -44,7 +44,7 @@ function Confirmation() {
         <Clock className="size-10 animate-pulse text-warning" />
         <p className="font-semibold">Confirmation du paiement en cours…</p>
         <p className="text-sm text-muted-foreground">
-          Cela peut prendre quelques secondes. Ne fermez pas cette page.
+          Si vous payez par Mobile Money, validez la demande reçue sur votre téléphone. Ne fermez pas cette page.
           {data && " Si l'attente se prolonge, vos billets arriveront par e-mail dès la confirmation."}
         </p>
       </div>

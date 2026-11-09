@@ -84,9 +84,11 @@ export async function purchaseTickets(eventId: string, input: PurchaseInput, ide
   return data.data as PurchaseResult;
 }
 
-// authorizationUrl : page Paystack, ou chemin relatif de la page de paiement
-// simulée (/{slug}/pay/simulate?reference=SIM-…) en mode test du backend.
-type PaymentInit = { authorizationUrl: string; reference: string; simulated?: boolean };
+// flow PUSH : demande envoyée sur le téléphone du client, authorizationUrl est
+// la page d'attente de la vitrine. REDIRECT : formulaire bancaire de PVit.
+// simulated : page de paiement simulée (/{slug}/pay/simulate?reference=SIM-…).
+type PaymentInit = { authorizationUrl: string; reference: string; simulated?: boolean; flow?: "PUSH" | "REDIRECT" };
+export type PaymentChoice = { method: "AIRTEL" | "MOOV" | "CARD"; phone: string };
 
 // Paiement simulé (mode test du backend) validé sans quitter la page.
 export async function confirmSimulatedPayment(reference: string, outcome: "success" | "failed") {
@@ -97,16 +99,21 @@ export async function confirmSimulatedPayment(reference: string, outcome: "succe
   return data.data as PaymentStatusResult;
 }
 
-export async function initializePayment(orderId: string) {
-  const { data } = await api.post<ApiResponse<PaymentInit>>("/payments/initialize", { orderId });
+// Sans choix (restaurant, séjour) : opérateur déduit du numéro de la commande.
+export async function initializePayment(orderId: string, choice?: PaymentChoice) {
+  const { data } = await api.post<ApiResponse<PaymentInit>>("/payments/initialize", { orderId, ...choice });
   return data.data as PaymentInit;
 }
 
-const STATUS_POLL_MS = 3_000;
-const STATUS_MAX_POLLS = 20; // ~1 min
+export async function fetchPaymentStatus(reference: string) {
+  const { data } = await api.get<ApiResponse<PaymentStatusResult>>(`/payments/status/${encodeURIComponent(reference)}`);
+  return data.data as PaymentStatusResult;
+}
 
-// Page de retour Paystack : interroge le statut tant que le paiement est en
-// attente (le webhook peut arriver quelques secondes après la redirection).
+const STATUS_POLL_MS = 3_000;
+const STATUS_MAX_POLLS = 60; // ~3 min : le temps de valider sur son téléphone
+
+// Page d'attente : interroge le statut tant que le paiement n'est pas validé.
 export function usePaymentStatus(reference: string | null) {
   return useQuery({
     queryKey: ["payment-status", reference],

@@ -9,11 +9,11 @@ import { OrderDocumentButton } from "@/components/vitrine/order-document-button"
 import { usePaymentStatus } from "@/hooks/usePublicEvents";
 import { formatXAF } from "@/lib/format";
 
-// Retour de Paystack (ou de la page simulée) après une réservation de séjour.
+// Attente du paiement (ou retour de la page simulée) d'une réservation de séjour.
 function Confirmation() {
   const tenant = useTenant();
   const params = useSearchParams();
-  const reference = params.get("reference") ?? params.get("trxref");
+  const reference = params.get("reference");
   const { data, isLoading, isError } = usePaymentStatus(reference);
   const back = (
     <Link href={`/${tenant.slug}`} className="text-sm text-primary underline">
@@ -37,7 +37,7 @@ function Confirmation() {
       <div className="space-y-3">
         <Clock className="size-10 animate-pulse text-warning" />
         <p className="font-semibold">Confirmation du paiement en cours…</p>
-        <p className="text-sm text-muted-foreground">Cela peut prendre quelques secondes. Ne fermez pas cette page.</p>
+        <p className="text-sm text-muted-foreground">Si vous payez par Mobile Money, validez la demande reçue sur votre téléphone. Ne fermez pas cette page.</p>
       </div>
     );
   }

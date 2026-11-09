@@ -14,7 +14,7 @@ interface Partner {
 const PARTNERS: Partner[] = [
   { name: "Airtel Money", category: "Mobile Money", logoText: "airtel money", operator: "AIRTEL" },
   { name: "Moov Africa", category: "Mobile Money", logoText: "moov money", operator: "MOOV" },
-  { name: "Paystack", category: "Passerelle Paiement", logoText: "paystack" },
+  { name: "PVit", category: "Passerelle Paiement", logoText: "PVit" },
   { name: "BGFIBank", category: "Banque Partenaire", logoText: "BGFIBank" },
   { name: "Visa", category: "Carte Bancaire", logoText: "VISA" },
   { name: "Mastercard", category: "Carte Bancaire", logoText: "mastercard" },

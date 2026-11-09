@@ -85,7 +85,7 @@ export function TicketPurchase({ event }: { event: PublicEvent }) {
         return;
       }
       const { authorizationUrl, simulated } = await initializePayment(order.id);
-      // Mode test : page de paiement simulée du site ; sinon page Paystack.
+      // Mode test : page de paiement simulée du site ; sinon attente de la validation ou formulaire bancaire.
       if (simulated) router.push(authorizationUrl);
       else window.location.assign(authorizationUrl);
     } catch (err) {

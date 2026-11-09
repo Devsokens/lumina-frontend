@@ -14,8 +14,8 @@ import { PublicTopBar } from "@/components/vitrine/public-top-bar";
 import type { PaymentStatusResult } from "@/types/events";
 import { OperatorLogo } from "@/components/shared/operator-logo";
 
-// Page de paiement simulée (mode test du backend, sans Paystack) : remplace
-// la page Paystack pour tester tout le parcours de réservation. Le backend
+// Page de paiement simulée (mode test du backend, sans PVit) : remplace
+// le vrai paiement pour tester tout le parcours de réservation. Le backend
 // marque la commande payée et délivre les billets comme un vrai paiement.
 function SimulatedCheckout() {
   const tenant = useTenant();

@@ -316,7 +316,7 @@ export function NewOrganizationDrawer() {
                           onChange={(e) => setCopyPayouts(e.target.checked)}
                           className="size-4 rounded border-ev-border text-ev-primary focus:ring-ev-primary"
                         />
-                        Comptes de paiement (Paystack / Mobile Money)
+                        Comptes de paiement (Mobile Money)
                       </label>
                       <label className="flex cursor-pointer items-center gap-2.5 text-xs font-medium text-ev-ink">
                         <input

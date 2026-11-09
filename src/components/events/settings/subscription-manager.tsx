@@ -130,7 +130,7 @@ const FAQS = [
   },
   {
     q: "Quels sont les moyens de paiement acceptés ?",
-    a: "Nous acceptons les paiements via Airtel Money Gabon, Moov Money Gabon, et par carte bancaire internationale (Visa, Mastercard) via notre partenaire sécurisé Paystack.",
+    a: "Nous acceptons les paiements via Airtel Money Gabon, Moov Money Gabon, et par carte bancaire internationale (Visa, Mastercard) via notre partenaire sécurisé PVit.",
   },
   {
     q: "Que se passe-t-il si j'atteins la limite de mon forfait ?",
@@ -544,7 +544,7 @@ export function SubscriptionManager({ tenant }: { tenant: Tenant }) {
 
                   {paymentMethod === "card" && (
                     <div className="rounded-xl border border-ev-border bg-ev-soft p-3 text-xs text-ev-ink2">
-                      Vous serez redirigé vers l&apos;interface sécurisée Paystack pour renseigner votre carte Visa ou
+                      Vous serez redirigé vers l&apos;interface sécurisée PVit pour renseigner votre carte Visa ou
                       Mastercard.
                     </div>
                   )}

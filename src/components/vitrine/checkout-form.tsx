@@ -36,7 +36,7 @@ const ONLINE: PaymentMethod[] = ["MOBILE_MONEY", "CARD"];
 const MAX_GUESTS = 30;
 
 // Commande vitrine (docs/API_CONTRACT.md §5) : le serveur recalcule le
-// montant ; paiement en ligne → Paystack (facture au retour), sinon
+// montant ; paiement en ligne → PVit (facture à la confirmation), sinon
 // paiement sur place (addition téléchargeable tout de suite).
 export function CheckoutForm() {
   const tenant = useTenant();
