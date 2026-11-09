@@ -20,6 +20,12 @@ export async function downloadTickets(codes: string[]) {
   saveBlob(data, codes.length > 1 ? "billets.pdf" : "billet.pdf");
 }
 
+// Toutes les données de l'organisation (propriétaire uniquement).
+export async function downloadTenantExport() {
+  const { data } = await api.get<Blob>("/admin/tenant/export", { responseType: "blob", timeout: 300_000 });
+  saveBlob(data, `export-giyax-${new Date().toISOString().slice(0, 10)}.zip`);
+}
+
 export async function downloadOrderDocument(orderId: string, token: string, kind: "INVOICE" | "BILL") {
   const { data } = await api.get<Blob>(`/orders/${encodeURIComponent(orderId)}/document`, {
     params: { token },

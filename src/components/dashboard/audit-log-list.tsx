@@ -8,7 +8,7 @@ import { useAuthStore } from "@/stores/useAuthStore";
 
 const FILTERS: { label: string; actions?: string }[] = [
   { label: "Tout" },
-  { label: "À traiter", actions: "REFUND_FAILED,REFUND_PARTIAL_REVIEW,TICKETS_REFUND_NEEDED" },
+  { label: "À traiter", actions: "REFUND_FAILED,REFUND_PARTIAL_REVIEW,TICKETS_REFUND_NEEDED,PAYMENT_DUPLICATE" },
   { label: "Paiements", actions: "PAYMENT_CONFIRMED,ORDER_REFUNDED,REFUND_FAILED" },
   { label: "Équipe", actions: "CREATE_USER,UPDATE_USER,RESET_USER_PASSWORD" },
 ];

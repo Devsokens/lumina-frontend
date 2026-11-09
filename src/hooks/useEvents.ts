@@ -106,6 +106,7 @@ export const MANUAL_CASE_ACTIONS = [
   "REFUND_FAILED",
   "REFUND_PARTIAL_REVIEW",
   "TICKETS_REFUND_NEEDED",
+  "PAYMENT_DUPLICATE",
 ] as const;
 
 export function useManualCases(enabled: boolean) {

@@ -29,6 +29,10 @@ const MANUAL_CASE_LABELS: Record<(typeof MANUAL_CASE_ACTIONS)[number], { title: 
     title: "Paiement reçu après expiration, plus de places",
     todo: "Rembourser le client (onglet Réservations).",
   },
+  PAYMENT_DUPLICATE: {
+    title: "Client débité deux fois",
+    todo: "Deux demandes de paiement ont abouti pour cette commande : contacter le support GiyaX pour rembourser la seconde.",
+  },
 };
 
 function pct(part: number, total: number) {

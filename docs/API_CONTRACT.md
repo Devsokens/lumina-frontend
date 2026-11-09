@@ -125,6 +125,7 @@ corps limité à 3 Mo sur cette seule route (100 ko ailleurs). Les événements 
 
 | Méthode | Route | Auth | Body → Réponse |
 |---|---|---|---|
+| GET | `/admin/tenant/export` | OWNER, 3/h | — | **ZIP binaire** (`attachment`, hors enveloppe JSON) : données de l'organisation en CSV, images, `manifest.json`. Sans mots de passe, codes de billets, signatures ni comptes de versement |
 | PUT | `/admin/tenant/emails` | Bearer (OWNER) | `{ senderName, replyTo ("" possible), templates: { ticket?, certificate?, reminder?, survey?: { subject, body, cta, enabled } } }` → `settings.emails` |
 | POST | `/admin/tenant/emails/test` | Bearer (OWNER), 5/15 min | `{ kind: "ticket" \| "certificate" \| "reminder" \| "survey" }` → `{ sentTo }` (e-mail du compte connecté) |
 | GET | `/admin/tenant/emails/gmail` | Bearer (OWNER) | → `{ connected, email, status: "ACTIVE" \| "ERROR" \| null, lastError, connectedAt, available, platformReady, sentToday, dailyLimit }` (Gmail de l'organisateur ; jamais de jeton) |
@@ -590,6 +591,8 @@ Administrateurs du SaaS (table `PlatformAdmin`, distincte de `User`). Jeton Bear
 | PATCH | `/vision/tenants/:id` | Vision | `{ status?: ACTIVE\|SUSPENDED, plan?, reason? }` | `{ id, status, plan }` |
 | GET | `/vision/users` | Vision | `?page&limit&search&activity=active\|passive\|disabled` | `{ data, meta }` |
 | PATCH | `/vision/users/:id` | Vision | `{ isActive, reason? }` | `{ id, isActive }` |
+| GET | `/vision/settings` | Vision | — | `{ ticketCommissionBps, isDefault, updatedAt, updatedBy }` (500 = 5 %, frais PVit compris) |
+| PATCH | `/vision/settings` | Vision | `{ ticketCommissionBps: 0…2000 }` | idem (journal `TICKET_COMMISSION_UPDATED`) |
 | GET | `/vision/logs` | Vision | `?page&limit` | `{ data, meta }` |
 | GET | `/vision/admins` | Vision | — | `[{ id, email, name, isActive, lastLoginAt, lockedUntil }]` |
 
