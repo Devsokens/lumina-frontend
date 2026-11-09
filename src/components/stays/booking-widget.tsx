@@ -14,12 +14,15 @@ import { initializePayment } from "@/hooks/usePublicEvents";
 import { StayCalendar, type CalendarMark } from "@/components/stays/stay-calendar";
 import { Counter } from "@/components/stays/counter";
 import type { PublicListing } from "@/types/stays";
+import { useSiteBase } from "@/hooks/useSiteBase";
+import { localSiteUrl } from "@/lib/tenant-url";
 
 const PHONE = /^\+?[0-9]{8,15}$/;
 
 // Réservation d'un séjour : dates → voyageurs → prix (calculé par le
 // serveur) → coordonnées → paiement (PVit ou page simulée).
 export function BookingWidget({ slug, listing }: { slug: string; listing: PublicListing }) {
+  const base = useSiteBase(slug);
   const [range, setRange] = useState<{ checkIn: string | null; checkOut: string | null }>({ checkIn: null, checkOut: null });
   const [guests, setGuests] = useState(1);
   const [step, setStep] = useState<"dates" | "details">("dates");
@@ -54,7 +57,7 @@ export function BookingWidget({ slug, listing }: { slug: string; listing: Public
         idempotencyKey.current
       );
       const payment = await initializePayment(result.id);
-      window.location.assign(payment.authorizationUrl);
+      window.location.assign(localSiteUrl(base, slug, payment.authorizationUrl));
     } catch (err) {
       idempotencyKey.current = null;
       toast.error(apiError(err, "Réservation impossible."));

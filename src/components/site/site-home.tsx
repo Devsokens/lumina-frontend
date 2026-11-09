@@ -4,6 +4,7 @@ import { useEffect, useState } from "react";
 import Link from "next/link";
 import { ArrowRight, Clock, Mail, MapPin, MessageCircle, Phone, ShoppingBag } from "lucide-react";
 import { useTenant } from "@/hooks/useTenant";
+import { useSiteBase } from "@/hooks/useSiteBase";
 import { useProducts } from "@/hooks/useMenu";
 import { formatXAF } from "@/lib/format";
 import { restaurantInfo } from "@/lib/order-document";
@@ -37,11 +38,12 @@ const PRESETS: Record<SiteLayout, { hero: Hero; featured: Featured; order: Block
 
 export function SiteHome() {
   const tenant = useTenant();
+  const base = useSiteBase(tenant.slug);
   const site = siteOf(tenant);
   const info = restaurantInfo(tenant);
   const description = (tenant.config as { description?: string }).description;
   const { data: products } = useProducts(tenant.slug);
-  const menu = `/${tenant.slug}/menu`;
+  const menu = `${base}/menu`;
   const isShop = tenant.sector === "SHOP";
   const wa = whatsappLink(site.whatsapp);
   const preset = PRESETS[site.layout];

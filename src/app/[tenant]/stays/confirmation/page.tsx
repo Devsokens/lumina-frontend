@@ -5,6 +5,7 @@ import Link from "next/link";
 import { useSearchParams } from "next/navigation";
 import { CheckCircle2, Clock, XCircle } from "lucide-react";
 import { useTenant } from "@/hooks/useTenant";
+import { useSiteBase } from "@/hooks/useSiteBase";
 import { OrderDocumentButton } from "@/components/vitrine/order-document-button";
 import { usePaymentStatus } from "@/hooks/usePublicEvents";
 import { formatXAF } from "@/lib/format";
@@ -12,11 +13,12 @@ import { formatXAF } from "@/lib/format";
 // Attente du paiement (ou retour de la page simulée) d'une réservation de séjour.
 function Confirmation() {
   const tenant = useTenant();
+  const base = useSiteBase(tenant.slug);
   const params = useSearchParams();
   const reference = params.get("reference");
   const { data, isLoading, isError } = usePaymentStatus(reference);
   const back = (
-    <Link href={`/${tenant.slug}`} className="text-sm text-primary underline">
+    <Link href={base || "/"} className="text-sm text-primary underline">
       Retour aux logements
     </Link>
   );

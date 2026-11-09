@@ -12,6 +12,8 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { useCartStore } from "@/stores/useCartStore";
 import { useTenant } from "@/hooks/useTenant";
+import { useSiteBase } from "@/hooks/useSiteBase";
+import { localSiteUrl } from "@/lib/tenant-url";
 import { freeSeats, usePublicTable } from "@/hooks/usePublicTable";
 import { TableStatusCard } from "@/components/vitrine/table-status-card";
 import { OrderDocumentButton } from "@/components/vitrine/order-document-button";
@@ -40,6 +42,7 @@ const MAX_GUESTS = 30;
 // paiement sur place (addition téléchargeable tout de suite).
 export function CheckoutForm() {
   const tenant = useTenant();
+  const base = useSiteBase(tenant.slug);
   const { items, tableId, clear } = useCartStore();
   const [type, setType] = useState<OrderType>(tableId ? "DINE_IN" : "TAKEAWAY");
   const [paymentMethod, setPaymentMethod] = useState<PaymentMethod>("MOBILE_MONEY");
@@ -74,7 +77,7 @@ export function CheckoutForm() {
         </p>
         <OrderDocumentButton orderId={placed.id} token={placed.documentToken} kind="BILL" />
         <Button asChild variant="outline" className="w-full">
-          <Link href={`/${tenant.slug}/menu`}>Retour au menu</Link>
+          <Link href={`${base}/menu`}>Retour au menu</Link>
         </Button>
       </div>
     );
@@ -121,7 +124,7 @@ export function CheckoutForm() {
         { orderId: order.id }
       );
       clear();
-      window.location.assign(init.data.data?.authorizationUrl ?? `/${tenant.slug}/menu`);
+      window.location.assign(localSiteUrl(base, tenant.slug, init.data.data?.authorizationUrl ?? `${base}/menu`));
     } catch (err) {
       setIdempotencyKey(null);
       toast.error(apiError(err, "Échec de la commande. Réessayez."));

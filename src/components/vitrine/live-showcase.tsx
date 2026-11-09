@@ -4,6 +4,7 @@ import { useMemo, useState } from "react";
 import { useRouter } from "next/navigation";
 import { ShowcaseCanvas } from "@/components/showcase/showcase-canvas";
 import { useTenant } from "@/hooks/useTenant";
+import { useSiteBase } from "@/hooks/useSiteBase";
 import { usePublicEvents } from "@/hooks/usePublicEvents";
 import { toShowcaseEvent } from "@/lib/events";
 import { showcaseFromConfig, useShowcaseStore } from "@/stores/useShowcaseStore";
@@ -13,6 +14,7 @@ import { showcaseFromConfig, useShowcaseStore } from "@/stores/useShowcaseStore"
 // « Réserver » qui mène à la page d'achat réelle (/{slug}/events/{id}).
 export function LiveShowcase() {
   const tenant = useTenant();
+  const base = useSiteBase(tenant.slug);
   const router = useRouter();
   const { data } = usePublicEvents(tenant.slug);
   const liveEvents = useMemo(() => (data ?? []).map(toShowcaseEvent), [data]);
@@ -36,8 +38,8 @@ export function LiveShowcase() {
     <ShowcaseCanvas
       isEditorMode={false}
       liveEvents={liveEvents}
-      onReserve={(evt) => router.push(`/${tenant.slug}/events/${evt.id}`)}
-      allEventsHref={`/${tenant.slug}/events`}
+      onReserve={(evt) => router.push(`${base}/events/${evt.id}`)}
+      allEventsHref={`${base}/events`}
     />
   );
 }

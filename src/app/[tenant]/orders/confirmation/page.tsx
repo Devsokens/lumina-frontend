@@ -5,6 +5,7 @@ import Link from "next/link";
 import { useSearchParams } from "next/navigation";
 import { CheckCircle2, Clock, XCircle } from "lucide-react";
 import { useTenant } from "@/hooks/useTenant";
+import { useSiteBase } from "@/hooks/useSiteBase";
 import { usePaymentStatus } from "@/hooks/usePublicEvents";
 import { formatXaf } from "@/lib/events";
 import { OrderDocumentButton } from "@/components/vitrine/order-document-button";
@@ -13,11 +14,12 @@ import { OrderDocumentButton } from "@/components/vitrine/order-document-button"
 // ?reference=… — même statut public que la billetterie (§8).
 function OrderConfirmation() {
   const tenant = useTenant();
+  const base = useSiteBase(tenant.slug);
   const params = useSearchParams();
   const reference = params.get("reference");
   const { data, isLoading, isError } = usePaymentStatus(reference);
   const back = (
-    <Link href={`/${tenant.slug}/menu`} className="text-sm text-primary underline">
+    <Link href={`${base}/menu`} className="text-sm text-primary underline">
       Retour au menu
     </Link>
   );

@@ -8,6 +8,7 @@ import { FlaskConical } from "lucide-react";
 import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
 import { useTenant } from "@/hooks/useTenant";
+import { useSiteBase } from "@/hooks/useSiteBase";
 import { api, type ApiResponse } from "@/lib/api";
 import { apiErrorMessage, formatXaf } from "@/lib/events";
 import { PublicTopBar } from "@/components/vitrine/public-top-bar";
@@ -19,6 +20,7 @@ import { OperatorLogo } from "@/components/shared/operator-logo";
 // marque la commande payée et délivre les billets comme un vrai paiement.
 function SimulatedCheckout() {
   const tenant = useTenant();
+  const base = useSiteBase(tenant.slug);
   const router = useRouter();
   const reference = useSearchParams().get("reference") ?? "";
   const [operator, setOperator] = useState<"AIRTEL" | "MOOV">("AIRTEL");
@@ -38,7 +40,7 @@ function SimulatedCheckout() {
 
   function confirmationUrl(type: string) {
     const page = type === "EVENT" ? "events" : type === "STAY" ? "stays" : "orders";
-    return `/${tenant.slug}/${page}/confirmation?reference=${encodeURIComponent(reference)}`;
+    return `${base}/${page}/confirmation?reference=${encodeURIComponent(reference)}`;
   }
 
   async function pay(outcome: "success" | "failed") {

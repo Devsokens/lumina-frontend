@@ -3,12 +3,14 @@
 import Link from "next/link";
 import { CalendarDays, MapPin } from "lucide-react";
 import { useTenant } from "@/hooks/useTenant";
+import { useSiteBase } from "@/hooks/useSiteBase";
 import { usePublicEvents } from "@/hooks/usePublicEvents";
 import { formatXaf } from "@/lib/events";
 import { PublicTopBar } from "@/components/vitrine/public-top-bar";
 
 export default function PublicEventsPage() {
   const tenant = useTenant();
+  const base = useSiteBase(tenant.slug);
   const { data: events, isLoading, isError } = usePublicEvents(tenant.slug);
 
   return (
@@ -37,7 +39,7 @@ export default function PublicEventsPage() {
           return (
             <li key={e.id}>
               <Link
-                href={`/${tenant.slug}/events/${e.id}`}
+                href={`${base}/events/${e.id}`}
                 className="block rounded-3xl border border-border bg-card p-4 transition-colors hover:border-primary/50"
               >
                 <p className="font-semibold text-foreground">{e.title}</p>
