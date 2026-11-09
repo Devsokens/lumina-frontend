@@ -590,6 +590,8 @@ Administrateurs du SaaS (table `PlatformAdmin`, distincte de `User`). Jeton Bear
 | PATCH | `/vision/tenants/:id` | Vision | `{ status?: ACTIVE\|SUSPENDED, plan?, reason? }` | `{ id, status, plan }` |
 | GET | `/vision/users` | Vision | `?page&limit&search&activity=active\|passive\|disabled` | `{ data, meta }` |
 | PATCH | `/vision/users/:id` | Vision | `{ isActive, reason? }` | `{ id, isActive }` |
+| GET | `/vision/settings` | Vision | — | `{ ticketCommissionBps, isDefault, updatedAt, updatedBy }` (500 = 5 %, frais PVit compris) |
+| PATCH | `/vision/settings` | Vision | `{ ticketCommissionBps: 0…2000 }` | idem (journal `TICKET_COMMISSION_UPDATED`) |
 | GET | `/vision/logs` | Vision | `?page&limit` | `{ data, meta }` |
 | GET | `/vision/admins` | Vision | — | `[{ id, email, name, isActive, lastLoginAt, lockedUntil }]` |
 
