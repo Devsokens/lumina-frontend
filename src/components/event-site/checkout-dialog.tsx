@@ -5,13 +5,14 @@ import { Dialog as DialogPrimitive } from "radix-ui";
 import { QRCodeSVG } from "qrcode.react";
 import { Check, CreditCard, Download, FileText, FlaskConical, Loader2, ShieldCheck, Star, X } from "lucide-react";
 import { toast } from "sonner";
-import { API_URL } from "@/lib/constants";
+import { downloadOrderDocument, downloadTickets } from "@/lib/download";
 import { apiErrorMessage, normalizePhone, ticketNumber } from "@/lib/events";
 import { siteStyle } from "@/lib/event-site-theme";
 import { eventSiteFontVariables } from "@/lib/event-site-fonts";
 import { confirmSimulatedPayment, fetchPaymentStatus, initializePayment, purchaseTickets } from "@/hooks/usePublicEvents";
 import { formatPrice } from "@/components/event-site/site-data";
 import { useSiteLook } from "@/components/event-site/site-look";
+import { DownloadButton } from "@/components/shared/download-button";
 import type { PublicEvent, PurchasedTicket } from "@/types/events";
 import type { QuestionnaireQuestion } from "@/types/api";
 import { cn } from "@/lib/utils";
@@ -765,7 +766,7 @@ function WaitingView({ card, method, phone, total, slow }: { card: boolean; meth
 // ---------- Billets ----------
 
 function DoneView({ done, email, nuit, typeName }: { done: Done; email: string; nuit: boolean; typeName: (ticketTypeId: string) => string | null }) {
-  const codes = done.tickets.map((t) => t.qrCode).join(",");
+  const codes = done.tickets.map((t) => t.qrCode);
   const many = done.tickets.length > 1;
   const action = cn(
     "flex h-12 items-center justify-center gap-2 rounded-full px-5 text-sm font-bold",
@@ -785,18 +786,16 @@ function DoneView({ done, email, nuit, typeName }: { done: Done; email: string; 
       </div>
 
       <div className="flex flex-col gap-2.5 sm:flex-row">
-        <a href={`${API_URL}/tickets/pdf?codes=${encodeURIComponent(codes)}`} target="_blank" rel="noopener noreferrer" className={cn(action, "flex-1")}>
+        <DownloadButton action={() => downloadTickets(codes)} className={cn(action, "flex-1 disabled:opacity-60")}>
           <Download className="size-4" /> {many ? "Mes billets (PDF)" : "Mon billet (PDF)"}
-        </a>
+        </DownloadButton>
         {done.paid && done.orderId && done.documentToken && (
-          <a
-            href={`${API_URL}/orders/${encodeURIComponent(done.orderId)}/document?token=${encodeURIComponent(done.documentToken)}`}
-            target="_blank"
-            rel="noopener noreferrer"
-            className="flex h-12 flex-1 items-center justify-center gap-2 rounded-full border border-(--s-line3) px-5 text-sm font-semibold"
+          <DownloadButton
+            action={() => downloadOrderDocument(done.orderId!, done.documentToken!, "INVOICE")}
+            className="flex h-12 flex-1 items-center justify-center gap-2 rounded-full border border-(--s-line3) px-5 text-sm font-semibold disabled:opacity-60"
           >
             <FileText className="size-4" /> Ma facture (PDF)
-          </a>
+          </DownloadButton>
         )}
       </div>
 
@@ -808,9 +807,9 @@ function DoneView({ done, email, nuit, typeName }: { done: Done; email: string; 
               Billet {i + 1}/{done.tickets.length}
               {typeName(t.ticketTypeId) ? ` · ${typeName(t.ticketTypeId)}` : ""} · N° {ticketNumber(t.id)}
             </span>
-            <a href={`${API_URL}/tickets/${encodeURIComponent(t.qrCode)}/pdf`} target="_blank" rel="noopener noreferrer" className="text-xs font-semibold underline underline-offset-4">
+            <DownloadButton action={() => downloadTickets([t.qrCode])} className="flex items-center gap-1.5 text-xs font-semibold underline underline-offset-4 disabled:opacity-60">
               Ce billet seul (PDF)
-            </a>
+            </DownloadButton>
           </li>
         ))}
       </ul>

@@ -1,6 +1,7 @@
 "use client";
 
 import { keepPreviousData, useQuery } from "@tanstack/react-query";
+import { saveBlob } from "@/lib/download";
 import { api } from "@/lib/api";
 import type { Order } from "@/types/api";
 
@@ -30,12 +31,5 @@ export function useInvoices(params: { page: number; type?: string; search?: stri
 // PDF authentifié : téléchargé en blob (le jeton d'accès voyage en en-tête).
 export async function downloadInvoice(row: Pick<InvoiceRow, "id" | "orderNumber">) {
   const { data } = await api.get<Blob>(`/admin/invoices/${row.id}/pdf`, { responseType: "blob", timeout: 60_000 });
-  const url = URL.createObjectURL(data);
-  const a = document.createElement("a");
-  a.href = url;
-  a.download = `facture-${row.orderNumber}.pdf`;
-  document.body.appendChild(a);
-  a.click();
-  a.remove();
-  setTimeout(() => URL.revokeObjectURL(url), 10_000);
+  saveBlob(data, `facture-${row.orderNumber}.pdf`);
 }
