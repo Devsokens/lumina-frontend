@@ -4,6 +4,7 @@ import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { ShoppingBag } from "lucide-react";
 import { useTenant } from "@/hooks/useTenant";
+import { useSiteBase } from "@/hooks/useSiteBase";
 import { useCartStore } from "@/stores/useCartStore";
 import { siteOf } from "@/lib/site";
 import { staySiteOf } from "@/lib/stay-site";
@@ -11,12 +12,13 @@ import { restaurantInfo } from "@/lib/order-document";
 
 export function VitrineHeader() {
   const tenant = useTenant();
+  const base = useSiteBase(tenant.slug);
   const pathname = usePathname();
   const items = useCartStore((s) => s.items);
   const count = items.reduce((sum, i) => sum + i.quantity, 0);
   const site = siteOf(tenant);
   const logo = restaurantInfo(tenant).logoUrl;
-  const home = `/${tenant.slug}`;
+  const home = base || "/";
   const isShop = tenant.sector === "SHOP";
   // RBNB : pas de carte ni de panier, on réserve depuis un logement.
   const isStay = tenant.sector === "ACCOMMODATION";
@@ -25,7 +27,7 @@ export function VitrineHeader() {
   const announcement = stay ? stay.announcement : site.announcement;
   const hasAbout = stay ? stay.sections.about && !!stay.aboutText : site.sections.about && !!site.aboutText;
   const links = [
-    isStay ? { href: `${home}#logements`, label: "Logements" } : { href: `${home}/menu`, label: isShop ? "Catalogue" : "La carte" },
+    isStay ? { href: `${home}#logements`, label: "Logements" } : { href: `${base}/menu`, label: isShop ? "Catalogue" : "La carte" },
     ...(hasAbout ? [{ href: `${home}#maison`, label: stay ? stay.aboutTitle || "La maison" : "La maison" }] : []),
     ...(!stay || stay.sections.contact ? [{ href: `${home}#infos`, label: stay ? "Contact" : "Infos" }] : []),
   ];
@@ -63,13 +65,13 @@ export function VitrineHeader() {
 
           <div className={`flex items-center gap-2 ${isStay ? "hidden" : ""}`}>
             <Link
-              href={`${home}/menu`}
+              href={`${base}/menu`}
               className="rounded-full border border-border px-4 py-2 text-sm font-medium md:hidden"
             >
               {isShop ? "Catalogue" : "La carte"}
             </Link>
             <Link
-              href={`${home}/cart`}
+              href={`${base}/cart`}
               aria-label={`Panier${count ? ` (${count})` : ""}`}
               className="relative inline-flex size-10 items-center justify-center rounded-full bg-primary text-primary-foreground transition-transform hover:scale-105"
             >

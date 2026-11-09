@@ -4,11 +4,13 @@ import Link from "next/link";
 import { Minus, Plus, Trash2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { useTenant } from "@/hooks/useTenant";
+import { useSiteBase } from "@/hooks/useSiteBase";
 import { useCartStore } from "@/stores/useCartStore";
 import { formatXAF } from "@/lib/format";
 
 export default function CartPage() {
   const tenant = useTenant();
+  const base = useSiteBase(tenant.slug);
   const { items, updateQuantity, removeItem, total } = useCartStore();
 
   if (items.length === 0) {
@@ -16,7 +18,7 @@ export default function CartPage() {
       <main className="mx-auto max-w-lg px-4 py-16 text-center">
         <p className="text-muted-foreground">Votre panier est vide.</p>
         <Button asChild className="mt-4">
-          <Link href={`/${tenant.slug}/menu`}>Voir le menu</Link>
+          <Link href={`${base}/menu`}>Voir le menu</Link>
         </Button>
       </main>
     );
@@ -70,7 +72,7 @@ export default function CartPage() {
       </div>
 
       <Button asChild size="lg" className="mt-6 w-full">
-        <Link href={`/${tenant.slug}/checkout`}>Commander</Link>
+        <Link href={`${base}/checkout`}>Commander</Link>
       </Button>
     </main>
   );

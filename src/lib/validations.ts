@@ -18,7 +18,7 @@ export const slugSchema = z
   .min(3, "3 caractères minimum")
   .max(50, "50 caractères maximum")
   .regex(/^[a-z0-9-]+$/, "Uniquement lettres minuscules, chiffres et tirets")
-  .regex(/^[a-z0-9](?:[a-z0-9-]*[a-z0-9])?$/, "Pas de tiret au début ni à la fin")
+  .regex(/^[a-z0-9]+(?:-[a-z0-9]+)*$/, "Pas de tiret au début, à la fin, ni deux à la suite")
   .refine((v) => !isReservedSlug(v), "Cette adresse est réservée, choisissez-en une autre");
 
 export const signupSchema = z.object({

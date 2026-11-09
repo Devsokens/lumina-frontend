@@ -23,11 +23,16 @@ export const TENANT_SUBDOMAINS = process.env.NEXT_PUBLIC_TENANT_SUBDOMAINS ?? "a
 // par l'application (giyax.vercel.app/login ne peut pas être un site public).
 // À garder aligné avec la validation du slug côté backend.
 export const RESERVED_SLUGS = [
-  "www", "app", "api", "admin", "mail", "smtp", "ftp", "cdn", "static", "assets", "status",
-  "login", "signup", "auth", "change-password", "logout", "register", "invitation",
-  "kitchen", "scan", "vision", "verify", "showcase", "pricing", "offline", "dashboard",
-  "brand", "icons", "images", "videos", "logos", "zxing", "manifest", "sw",
-  "confidentialite", "conditions", "privacy", "privacy-policy", "terms", "cgu", "legal", "mentions-legales",
+  "www", "app", "api", "admin", "mail", "webmail", "smtp", "ftp", "mx", "ns1", "ns2",
+  "autodiscover", "autoconfig", "cdn", "static", "assets", "status", "staging", "preview",
+  "webhook", "webhooks", "blog", "docs", "doc", "login", "signup", "auth", "logout",
+  "register", "change-password", "forgot-password", "complete-signup", "select-account",
+  "invitation", "pay", "kitchen", "scan", "vision", "verify", "showcase", "pricing", "offline",
+  "dashboard", "brand", "icons", "images", "videos", "logos", "zxing", "manifest", "sw",
+  "confidentialite", "conditions", "privacy", "privacy-policy", "terms", "cgu", "legal",
+  "mentions-legales", "giyax", "giya", "lumina", "support", "aide", "help", "contact",
+  "paiement", "paiements", "payment", "payments", "billing", "facture", "factures", "securite",
+  "security", "compte", "comptes", "account", "accounts", "airtel", "moov", "pvit", "mypvit",
 ] as const;
 
 // Rôles RBAC — voir LUMINA_Document_Maitre_v2.md section 12.

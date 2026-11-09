@@ -5,6 +5,7 @@ import Link from "next/link";
 import { useSearchParams } from "next/navigation";
 import { CheckCircle2, Clock, XCircle } from "lucide-react";
 import { useTenant } from "@/hooks/useTenant";
+import { useSiteBase } from "@/hooks/useSiteBase";
 import { OrderDocumentButton } from "@/components/vitrine/order-document-button";
 import { usePaymentStatus } from "@/hooks/usePublicEvents";
 import { TicketDownloads } from "@/components/vitrine/ticket-downloads";
@@ -14,12 +15,13 @@ import { PublicTopBar } from "@/components/vitrine/public-top-bar";
 // Attente du paiement : ?reference=…
 function Confirmation() {
   const tenant = useTenant();
+  const base = useSiteBase(tenant.slug);
   const params = useSearchParams();
   const reference = params.get("reference");
   const { data, isLoading, isError } = usePaymentStatus(reference);
 
   const back = (
-    <Link href={`/${tenant.slug}`} className="text-sm text-primary underline">
+    <Link href={base || "/"} className="text-sm text-primary underline">
       Retour à l&apos;accueil
     </Link>
   );

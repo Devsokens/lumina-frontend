@@ -4,6 +4,7 @@ import { useState } from "react";
 import { useParams } from "next/navigation";
 import { Bath, BedDouble, Clock, DoorOpen, MapPin, Users, X } from "lucide-react";
 import { useTenant } from "@/hooks/useTenant";
+import { useSiteBase } from "@/hooks/useSiteBase";
 import { usePublicListing } from "@/hooks/useStays";
 import { AMENITIES, LISTING_TYPE_LABELS } from "@/lib/stays";
 import { BookingWidget } from "@/components/stays/booking-widget";
@@ -13,6 +14,7 @@ import { cn } from "@/lib/utils";
 
 export default function StayPage() {
   const tenant = useTenant();
+  const base = useSiteBase(tenant.slug);
   const { id } = useParams<{ id: string }>();
   const { data: listing, isLoading, isError } = usePublicListing(tenant.slug, id);
   const [viewer, setViewer] = useState<number | null>(null);
@@ -29,7 +31,7 @@ export default function StayPage() {
     return (
       <main className="mx-auto w-full max-w-3xl px-4 py-16 text-center">
         <p className="font-semibold">Ce logement n&apos;est plus disponible.</p>
-        <Link href={`/${tenant.slug}`} className="mt-3 inline-block text-sm text-primary underline">
+        <Link href={base || "/"} className="mt-3 inline-block text-sm text-primary underline">
           Voir les autres logements
         </Link>
       </main>

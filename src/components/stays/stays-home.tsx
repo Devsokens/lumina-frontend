@@ -3,6 +3,7 @@
 import { useMemo, useState } from "react";
 import { ArrowDown, MapPin } from "lucide-react";
 import { useTenant } from "@/hooks/useTenant";
+import { useSiteBase } from "@/hooks/useSiteBase";
 import { usePublicListings } from "@/hooks/useStays";
 import { restaurantInfo } from "@/lib/order-document";
 import { staySiteOf, type StayLayout, type StaySiteConfig } from "@/lib/stay-site";
@@ -55,6 +56,7 @@ type HeroProps = {
 // Accueil du site d'un hébergeur, mis en forme selon config.staySite.
 export function StaysHome() {
   const tenant = useTenant();
+  const base = useSiteBase(tenant.slug);
   const site = staySiteOf(tenant);
   const info = restaurantInfo(tenant);
   const description = (tenant.config as { description?: string }).description;
@@ -70,7 +72,7 @@ export function StaysHome() {
     .map((id) => all.find((l) => l.id === id))
     .filter((l): l is PublicListing => !!l);
   const layout = LAYOUTS[site.layout];
-  const hrefOf = (id: string) => `/${tenant.slug}/stays/${id}`;
+  const hrefOf = (id: string) => `${base}/stays/${id}`;
   const cities = [...new Set(all.map((l) => l.city))];
 
   // Couvertures qui portent déjà les filtres : pas de doublon au-dessus des logements.

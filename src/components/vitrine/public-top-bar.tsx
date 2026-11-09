@@ -3,6 +3,7 @@
 import Link from "next/link";
 import { ChevronLeft, Home } from "lucide-react";
 import { useTenant } from "@/hooks/useTenant";
+import { useSiteBase } from "@/hooks/useSiteBase";
 
 type PublicTopBarProps = {
   // Niveau précédent (par défaut : l'accueil du site).
@@ -15,7 +16,8 @@ type PublicTopBarProps = {
 // accès direct à l'accueil, sur mobile comme sur ordinateur.
 export function PublicTopBar({ backHref, backLabel = "Retour" }: PublicTopBarProps) {
   const tenant = useTenant();
-  const home = `/${tenant.slug}`;
+  const base = useSiteBase(tenant.slug);
+  const home = base || "/";
   const config = tenant.config as { showcase?: { orgLogoUrl?: string | null } } | undefined;
   const logo = config?.showcase?.orgLogoUrl;
 

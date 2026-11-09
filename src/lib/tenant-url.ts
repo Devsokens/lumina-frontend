@@ -51,6 +51,12 @@ export function siteAddressOffer(): string {
   return `${subdomainActive() ? "Sous-domaine offert" : "Lien personnalisé offert"} (${publicSiteLabel("nom")})`;
 }
 
+// Adresse relative renvoyée par l'API (/nom/orders/…) : sans le préfixe sur
+// nom.giyax.com, inchangée si elle pointe ailleurs (page de paiement PVit).
+export function localSiteUrl(base: string, slug: string, url: string): string {
+  return url.startsWith(`/${slug}/`) ? `${base}${url.slice(slug.length + 1)}` : url;
+}
+
 const RESERVED = new Set<string>(RESERVED_SLUGS);
 
 export function isReservedSlug(slug: string): boolean {
