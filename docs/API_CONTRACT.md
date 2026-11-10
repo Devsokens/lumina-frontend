@@ -600,6 +600,13 @@ Administrateurs du SaaS (table `PlatformAdmin`, distincte de `User`). Jeton Bear
 | POST | `/vision/payouts/:id/retry` | Vision + code TOTP | `{ code }` | relit les parts incertaines, ne renvoie que les échecs certains |
 | POST | `/vision/payouts/:id/parts/:partId/resolve` | Vision + code TOTP | `{ outcome: SUCCESS\|FAILED, code }` | constat depuis l'espace MyPVIT |
 | POST | `/vision/payouts/:id/reject` | Vision | `{ reason }` | `{ rejected }` (recettes rendues au solde) |
+| GET | `/vision/payments` | Vision | `?page&limit&kind=PAYMENT\|REFUND\|DUPLICATE_REFUND&status&q` | `{ rows, page, limit, total }` (journal PVit ; `q` = référence, n° de commande ou téléphone ; numéros masqués) |
+| GET | `/vision/payments/issues` | Vision | — | `{ uncertain: [...], duplicates: [... , lastRefund] }` |
+| GET | `/vision/payments/treasury` | Vision, 30/15 min | — | `{ test, balanceConfigured, checkedAt, accounts: [{ code (4 derniers car.), channels, balance, owed, error }], owed: { airtel, moov, noAccount, total } }` (solde PVit, `PVIT_CODE_URL_BALANCE`) |
+| POST | `/vision/payments/:id/check` | Vision, 30/15 min | — | `{ status: SUCCESS\|FAILED\|PENDING\|UNKNOWN, message }` : redemande à PVit le résultat d'un remboursement incertain ; un succès confirmé rembourse la commande |
+| POST | `/vision/payments/:id/resolve` | Vision + code TOTP | `{ outcome: SUCCESS\|FAILED, code }` | constat depuis l'espace MyPVIT |
+| POST | `/vision/payments/:id/refund-duplicate` | Vision + code TOTP | `{ code }` | `{ status, message }` : rend un paiement en double au numéro qui a payé (Mobile Money seulement) |
+| POST | `/vision/payments/:id/settle-duplicate` | Vision + code TOTP | `{ code, note }` | doublon remboursé hors GiyaX (carte, virement) |
 | GET | `/vision/logs` | Vision | `?page&limit` | `{ data, meta }` |
 | GET | `/vision/admins` | Vision | — | `[{ id, email, name, isActive, lastLoginAt, lockedUntil }]` |
 

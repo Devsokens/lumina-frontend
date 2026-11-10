@@ -19,7 +19,7 @@ import { AnalyticsOverview } from "@/components/dashboard/analytics-overview";
 const MANUAL_CASE_LABELS: Record<(typeof MANUAL_CASE_ACTIONS)[number], { title: string; todo: string }> = {
   REFUND_FAILED: {
     title: "Remboursement non abouti",
-    todo: "Billets toujours valides : vérifier l'opération dans MyPVIT, puis rembourser le client.",
+    todo: "Billets toujours valides : GiyaX vérifie l'opération auprès de PVit. Si elle a échoué, vous pourrez relancer le remboursement.",
   },
   REFUND_PARTIAL_REVIEW: {
     title: "Remboursement partiel",
@@ -31,7 +31,7 @@ const MANUAL_CASE_LABELS: Record<(typeof MANUAL_CASE_ACTIONS)[number], { title: 
   },
   PAYMENT_DUPLICATE: {
     title: "Client débité deux fois",
-    todo: "Deux demandes de paiement ont abouti pour cette commande : contacter le support GiyaX pour rembourser la seconde.",
+    todo: "Deux demandes de paiement ont abouti pour cette commande : GiyaX rembourse la seconde au client.",
   },
 };
 
