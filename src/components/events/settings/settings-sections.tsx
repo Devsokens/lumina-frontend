@@ -307,8 +307,8 @@ export function SettingsPayments({ tenant, canEdit }: { tenant: Tenant; canEdit:
         ))}
       </SettingsCard>
       <SettingsCard>
-        <fieldset disabled={!canEdit || savePayouts.isPending} className="m-0 min-w-0 border-0 p-0">
-          <SettingsRow title="Fréquence des versements" desc="Quand les recettes sont reversées.">
+        <fieldset disabled={!canEdit || savePayouts.isPending || !!tenant.autoPayout} className="m-0 min-w-0 border-0 p-0">
+          <SettingsRow title="Fréquence des versements" desc={tenant.autoPayout ? "Versement automatique chaque jour, activé par GiyaX pour votre organisation." : "Quand les recettes sont reversées."}>
             <div role="radiogroup" aria-label="Fréquence" className="flex flex-col gap-2">
               <RadioCard name="freq" checked={payouts.frequency === "AFTER_EVENT"} title="Après chaque événement" desc="Sous 48 h après la fin de l'événement" onSelect={() => void setFrequency("AFTER_EVENT")} />
               <RadioCard name="freq" checked={payouts.frequency === "WEEKLY"} title="Chaque semaine" desc="Tous les lundis, ventes de la semaine précédente" onSelect={() => void setFrequency("WEEKLY")} />

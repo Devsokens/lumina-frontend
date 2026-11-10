@@ -356,6 +356,7 @@ function PayoutCard({
         </ul>
       )}
       {p.note && <p className="mt-3 text-xs text-muted-foreground">{p.note}</p>}
+      {p.approvedBy === "Automatique" && <p className="mt-1 text-xs text-muted-foreground">Envoyé automatiquement (réglage de l&apos;organisation).</p>}
 
       {["PENDING_APPROVAL", "FAILED", "REVIEW", "PROCESSING"].includes(p.status) && (
         <div className="mt-4 flex flex-wrap justify-end gap-2">

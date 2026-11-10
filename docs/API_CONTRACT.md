@@ -589,7 +589,7 @@ Administrateurs du SaaS (table `PlatformAdmin`, distincte de `User`). Jeton Bear
 | POST | `/vision/mail/test` | Vision, 5/15 min | `{ to }` | `{ sentTo }` (e-mail d'essai depuis l'adresse GiyaX) |
 | GET | `/vision/tenants` | Vision | `?page&limit&search&sector&status&plan` | `{ data: [{ …tenant, users, revenue30d, orders30d, lastLoginAt }], meta }` |
 | GET | `/vision/tenants/:id` | Vision | — | tenant + `users[]` (sans mot de passe) + `stats` |
-| PATCH | `/vision/tenants/:id` | Vision | `{ status?: ACTIVE\|SUSPENDED, plan?, reason? }` | `{ id, status, plan }` |
+| PATCH | `/vision/tenants/:id` | Vision | `{ status?: ACTIVE\|SUSPENDED, plan?, autoPayout?, reason? }` | `{ id, status, plan, autoPayout }` (autoPayout : versement quotidien sans validation ; restent manuels le premier versement vers un numéro, un titulaire non vérifié, plus de 1 000 000 F) |
 | GET | `/vision/users` | Vision | `?page&limit&search&activity=active\|passive\|disabled` | `{ data, meta }` |
 | PATCH | `/vision/users/:id` | Vision | `{ isActive, reason? }` | `{ id, isActive }` |
 | GET | `/vision/settings` | Vision | — | `{ ticketCommissionBps, isDefault, updatedAt, updatedBy }` (500 = 5 %, frais PVit compris) |

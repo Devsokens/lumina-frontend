@@ -29,6 +29,7 @@ type TenantRow = {
 };
 
 type TenantDetail = Omit<TenantRow, "users" | "revenue30d" | "orders30d" | "lastLoginAt"> & {
+  autoPayout: boolean;
   users: { id: string; email: string | null; phone: string | null; fullName: string | null; role: string; isActive: boolean; lastLoginAt: string | null }[];
   stats: { orders: number; settledOrders: number; revenue: number; customers: number; listings: number; events: number; products: number };
 };
@@ -146,9 +147,9 @@ export default function VisionTenantsPage() {
 function TenantSheet({ id, onClose }: { id: string; onClose: () => void }) {
   const qc = useQueryClient();
   const { data: t } = useQuery({ queryKey: ["vision-tenant", id], queryFn: () => visionGet<TenantDetail>(`/tenants/${id}`) });
-  const [confirm, setConfirm] = useState<null | { status?: string; plan?: string }>(null);
+  const [confirm, setConfirm] = useState<null | { status?: string; plan?: string; autoPayout?: boolean }>(null);
   const update = useMutation({
-    mutationFn: (body: { status?: string; plan?: string }) => visionApi.patch(`/tenants/${id}`, body),
+    mutationFn: (body: { status?: string; plan?: string; autoPayout?: boolean }) => visionApi.patch(`/tenants/${id}`, body),
     onSuccess: () => {
       toast.success("Compte mis à jour");
       setConfirm(null);
@@ -214,6 +215,21 @@ function TenantSheet({ id, onClose }: { id: string; onClose: () => void }) {
             </div>
 
             <div className="space-y-2">
+              <h3 className="text-sm font-semibold">Versements</h3>
+              <div className="flex items-center justify-between gap-3 rounded-xl border border-border p-3">
+                <span className="text-sm">
+                  <span className="block font-medium">Versement automatique quotidien</span>
+                  <span className="text-xs text-muted-foreground">
+                    {t.autoPayout ? "Activé : chaque jour, sans validation, dans les limites de sécurité." : "Désactivé : chaque versement attend votre validation."}
+                  </span>
+                </span>
+                <Button size="sm" variant={t.autoPayout ? "outline" : "default"} onClick={() => setConfirm({ autoPayout: !t.autoPayout })}>
+                  {t.autoPayout ? "Désactiver" : "Activer"}
+                </Button>
+              </div>
+            </div>
+
+            <div className="space-y-2">
               <h3 className="text-sm font-semibold">Utilisateurs ({t.users.length})</h3>
               <ul className="divide-y divide-border rounded-xl border border-border">
                 {t.users.map((u) => (
@@ -247,12 +263,20 @@ function TenantSheet({ id, onClose }: { id: string; onClose: () => void }) {
           pending={update.isPending}
           destructive={confirm?.status === "SUSPENDED"}
           first={{
-            title: confirm?.plan
+            title: confirm?.autoPayout !== undefined
+              ? confirm.autoPayout
+                ? `Verser automatiquement à « ${t.name} » ?`
+                : `Revenir à la validation manuelle pour « ${t.name} » ?`
+              : confirm?.plan
               ? `Passer « ${t.name} » en offre ${PLAN_LABELS[confirm.plan]} ?`
               : confirm?.status === "SUSPENDED"
                 ? `Suspendre « ${t.name} » ?`
                 : `Réactiver « ${t.name} » ?`,
-            description: confirm?.status === "SUSPENDED" ? "Son site public et son back-office deviendront inaccessibles." : "Le changement est immédiat.",
+            description: confirm?.autoPayout
+              ? "Ses recettes partiront chaque jour sans votre validation. Restent manuels : le premier versement vers un numéro, un titulaire non vérifié et les montants au-delà de 1 000 000 F."
+              : confirm?.status === "SUSPENDED"
+                ? "Son site public et son back-office deviendront inaccessibles."
+                : "Le changement est immédiat.",
             confirmLabel: "Continuer",
           }}
           second={{
