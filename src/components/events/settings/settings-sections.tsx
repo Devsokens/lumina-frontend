@@ -27,6 +27,7 @@ import { DEFAULT_MESSAGES, MESSAGE_META, MESSAGE_VARS } from "@/lib/event-messag
 import { apiError } from "@/lib/api";
 import { useAuthStore } from "@/stores/useAuthStore";
 import { DownloadButton } from "@/components/shared/download-button";
+import { PayoutBalance } from "@/components/events/settings/payout-balance";
 import { downloadTenantExport } from "@/lib/download";
 import { OperatorLogo } from "@/components/shared/operator-logo";
 import { cn } from "@/lib/utils";
@@ -287,8 +288,9 @@ export function SettingsPayments({ tenant, canEdit }: { tenant: Tenant; canEdit:
       <SettingsHeading title="Paiements" sub="Les participants paient par Mobile Money. Les fonds sont reversés sur les comptes ci-dessous." />
       <InfoNote>
         Les encaissements sont traités par notre prestataire de paiement sécurisé. Vos recettes sont reversées sur votre compte, selon la fréquence choisie.
-        {!FEATURES.sms && " Notre équipe confirme le numéro de versement avec vous avant le premier virement."}
+        {!FEATURES.sms && " Notre équipe confirme le numéro de versement avec vous avant le premier virement."} Un numéro modifié n&apos;est utilisable qu&apos;après 48 h, pour votre sécurité.
       </InfoNote>
+      {canEdit && <PayoutBalance />}
       {!canEdit && <p className="m-0 text-[13px] text-ev-muted">Seul l&apos;organisateur peut modifier les comptes de versement.</p>}
       <SettingsCard className="overflow-hidden">
         <div className="flex items-center justify-between border-b border-ev-line px-5 py-[18px] sm:px-6">
@@ -305,8 +307,8 @@ export function SettingsPayments({ tenant, canEdit }: { tenant: Tenant; canEdit:
         ))}
       </SettingsCard>
       <SettingsCard>
-        <fieldset disabled={!canEdit || savePayouts.isPending} className="m-0 min-w-0 border-0 p-0">
-          <SettingsRow title="Fréquence des versements" desc="Quand les recettes sont reversées.">
+        <fieldset disabled={!canEdit || savePayouts.isPending || !!tenant.autoPayout} className="m-0 min-w-0 border-0 p-0">
+          <SettingsRow title="Fréquence des versements" desc={tenant.autoPayout ? "Versement automatique chaque jour, activé par GiyaX pour votre organisation." : "Quand les recettes sont reversées."}>
             <div role="radiogroup" aria-label="Fréquence" className="flex flex-col gap-2">
               <RadioCard name="freq" checked={payouts.frequency === "AFTER_EVENT"} title="Après chaque événement" desc="Sous 48 h après la fin de l'événement" onSelect={() => void setFrequency("AFTER_EVENT")} />
               <RadioCard name="freq" checked={payouts.frequency === "WEEKLY"} title="Chaque semaine" desc="Tous les lundis, ventes de la semaine précédente" onSelect={() => void setFrequency("WEEKLY")} />

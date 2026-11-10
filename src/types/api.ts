@@ -11,6 +11,8 @@ export type Tenant = {
   name: string;
   sector: Sector;
   plan: "FREE" | "STANDARD" | "PRO" | "ENTERPRISE";
+  // Versement quotidien sans validation, activé par GiyaX.
+  autoPayout?: boolean;
   status: "ACTIVE" | "SUSPENDED" | "DELETED";
   config: Record<string, unknown>;
   settings: Record<string, unknown>;

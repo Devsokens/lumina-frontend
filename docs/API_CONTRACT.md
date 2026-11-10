@@ -125,6 +125,7 @@ corps limité à 3 Mo sur cette seule route (100 ko ailleurs). Les événements 
 
 | Méthode | Route | Auth | Body → Réponse |
 |---|---|---|---|
+| GET | `/admin/payouts` | Bearer (OWNER) | — | `{ test, commissionBps, balance: { sold, commission, refunds, paidOut, inProgress, upcoming }, payouts[] }` (francs CFA entiers) |
 | GET | `/admin/tenant/export` | OWNER, 3/h | — | **ZIP binaire** (`attachment`, hors enveloppe JSON) : données de l'organisation en CSV, images, `manifest.json`. Sans mots de passe, codes de billets, signatures ni comptes de versement |
 | PUT | `/admin/tenant/emails` | Bearer (OWNER) | `{ senderName, replyTo ("" possible), templates: { ticket?, certificate?, reminder?, survey?: { subject, body, cta, enabled } } }` → `settings.emails` |
 | POST | `/admin/tenant/emails/test` | Bearer (OWNER), 5/15 min | `{ kind: "ticket" \| "certificate" \| "reminder" \| "survey" }` → `{ sentTo }` (e-mail du compte connecté) |
@@ -588,11 +589,24 @@ Administrateurs du SaaS (table `PlatformAdmin`, distincte de `User`). Jeton Bear
 | POST | `/vision/mail/test` | Vision, 5/15 min | `{ to }` | `{ sentTo }` (e-mail d'essai depuis l'adresse GiyaX) |
 | GET | `/vision/tenants` | Vision | `?page&limit&search&sector&status&plan` | `{ data: [{ …tenant, users, revenue30d, orders30d, lastLoginAt }], meta }` |
 | GET | `/vision/tenants/:id` | Vision | — | tenant + `users[]` (sans mot de passe) + `stats` |
-| PATCH | `/vision/tenants/:id` | Vision | `{ status?: ACTIVE\|SUSPENDED, plan?, reason? }` | `{ id, status, plan }` |
+| PATCH | `/vision/tenants/:id` | Vision | `{ status?: ACTIVE\|SUSPENDED, plan?, autoPayout?, reason? }` | `{ id, status, plan, autoPayout }` (autoPayout : versement quotidien sans validation ; restent manuels le premier versement vers un numéro, un titulaire non vérifié, plus de 1 000 000 F) |
 | GET | `/vision/users` | Vision | `?page&limit&search&activity=active\|passive\|disabled` | `{ data, meta }` |
 | PATCH | `/vision/users/:id` | Vision | `{ isActive, reason? }` | `{ id, isActive }` |
 | GET | `/vision/settings` | Vision | — | `{ ticketCommissionBps, isDefault, updatedAt, updatedBy }` (500 = 5 %, frais PVit compris) |
 | PATCH | `/vision/settings` | Vision | `{ ticketCommissionBps: 0…2000 }` | idem (journal `TICKET_COMMISSION_UPDATED`) |
+| GET | `/vision/payouts` | Vision | `?page&limit&status` | `{ rows, page, limit, total, summary }` |
+| POST | `/vision/payouts/prepare` | Vision, 10/15 min | — | `{ created }` (aussi chaque matin à 06:00 UTC) |
+| POST | `/vision/payouts/:id/approve` | Vision + code TOTP | `{ code }` | versement ; envoi découpé à 500 000 F |
+| POST | `/vision/payouts/:id/retry` | Vision + code TOTP | `{ code }` | relit les parts incertaines, ne renvoie que les échecs certains |
+| POST | `/vision/payouts/:id/parts/:partId/resolve` | Vision + code TOTP | `{ outcome: SUCCESS\|FAILED, code }` | constat depuis l'espace MyPVIT |
+| POST | `/vision/payouts/:id/reject` | Vision | `{ reason }` | `{ rejected }` (recettes rendues au solde) |
+| GET | `/vision/payments` | Vision | `?page&limit&kind=PAYMENT\|REFUND\|DUPLICATE_REFUND&status&q` | `{ rows, page, limit, total }` (journal PVit ; `q` = référence, n° de commande ou téléphone ; numéros masqués) |
+| GET | `/vision/payments/issues` | Vision | — | `{ uncertain: [...], duplicates: [... , lastRefund] }` |
+| GET | `/vision/payments/treasury` | Vision, 30/15 min | — | `{ test, balanceConfigured, checkedAt, accounts: [{ code (4 derniers car.), channels, balance, owed, error }], owed: { airtel, moov, noAccount, total } }` (solde PVit, `PVIT_CODE_URL_BALANCE`) |
+| POST | `/vision/payments/:id/check` | Vision, 30/15 min | — | `{ status: SUCCESS\|FAILED\|PENDING\|UNKNOWN, message }` : redemande à PVit le résultat d'un remboursement incertain ; un succès confirmé rembourse la commande |
+| POST | `/vision/payments/:id/resolve` | Vision + code TOTP | `{ outcome: SUCCESS\|FAILED, code }` | constat depuis l'espace MyPVIT |
+| POST | `/vision/payments/:id/refund-duplicate` | Vision + code TOTP | `{ code }` | `{ status, message }` : rend un paiement en double au numéro qui a payé (Mobile Money seulement) |
+| POST | `/vision/payments/:id/settle-duplicate` | Vision + code TOTP | `{ code, note }` | doublon remboursé hors GiyaX (carte, virement) |
 | GET | `/vision/logs` | Vision | `?page&limit` | `{ data, meta }` |
 | GET | `/vision/admins` | Vision | — | `[{ id, email, name, isActive, lastLoginAt, lockedUntil }]` |
 
