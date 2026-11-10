@@ -1,6 +1,12 @@
 import { NextResponse, type NextRequest } from "next/server";
 import { APP_URL, ROOT_DOMAIN } from "@/lib/constants";
-import { isReservedSlug } from "@/lib/tenant-url";
+import { isReservedSlug, subdomainActive } from "@/lib/tenant-url";
+
+// Ancienne adresse de production : liens partagés, QR codes et e-mails déjà
+// envoyés, retour de la page de paiement PVit. Dès que l'application est
+// servie sur son propre domaine, même chemin sur ce domaine. Les aperçus
+// Vercel (autres *.vercel.app) ne sont pas touchés.
+const LEGACY_HOSTS = new Set(["giyax.vercel.app"]);
 
 // Espaces de l'application : jamais servis depuis le sous-domaine d'un compte
 // (nom.giyax.com/login renvoie vers giyax.com/login).
@@ -17,6 +23,10 @@ const APP_PATHS = /^\/(admin|login|signup|auth|change-password|forgot-password|p
 export function middleware(request: NextRequest) {
   const { pathname } = request.nextUrl;
   const host = (request.headers.get("host") ?? "").split(":")[0].toLowerCase();
+
+  if (LEGACY_HOSTS.has(host) && subdomainActive()) {
+    return NextResponse.redirect(new URL(`${pathname}${request.nextUrl.search}`, APP_URL), 308);
+  }
 
   if (host === ROOT_DOMAIN || host === `www.${ROOT_DOMAIN}` || !host.endsWith(`.${ROOT_DOMAIN}`)) {
     return NextResponse.next();
@@ -43,5 +53,7 @@ export function middleware(request: NextRequest) {
 export const config = {
   // Fichiers statiques (tout chemin avec une extension : images, vidéos,
   // polices…) exclus : sur un sous-domaine, ils restent servis depuis /public.
-  matcher: ["/((?!api|_next/static|_next/image|.*\\..*).*)"],
+  // Les codes des documents (/verify/D1.…) contiennent des points : ajoutés à
+  // part pour suivre aussi le renvoi de l'ancienne adresse.
+  matcher: ["/((?!api|_next/static|_next/image|.*\\..*).*)", "/verify/:path*"],
 };
