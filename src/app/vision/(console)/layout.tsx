@@ -5,6 +5,7 @@ import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
 import {
   Activity,
+  Banknote,
   Building2,
   Coins,
   Globe,
@@ -28,6 +29,7 @@ const NAV = [
   { href: "/vision/users", label: "Utilisateurs", icon: Users },
   { href: "/vision/traffic", label: "Trafic API", icon: Activity },
   { href: "/vision/costs", label: "Coûts & revenus", icon: Coins },
+  { href: "/vision/payouts", label: "Versements", icon: Banknote },
   { href: "/vision/commission", label: "Commission", icon: Percent },
   { href: "/vision/domains", label: "Domaines", icon: Globe },
   { href: "/vision/emails", label: "E-mails", icon: Mail },

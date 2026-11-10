@@ -130,8 +130,8 @@ export default function VisionCommissionPage() {
             </div>
           </Panel>
 
-          <p className="text-xs text-amber-400">
-            Ce taux n&apos;est pas encore prélevé : il servira au calcul des versements aux organisateurs, quand ils seront en place.
+          <p className="text-xs text-muted-foreground">
+            Le taux est figé à chaque vente : le modifier ne change rien aux billets déjà vendus.
           </p>
         </div>
       )}

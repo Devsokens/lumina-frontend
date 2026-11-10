@@ -126,6 +126,30 @@ export type PayoutOperator = "AIRTEL" | "MOOV";
 export type PayoutAccount = { operator: PayoutOperator; phone: string; holderName: string; verifiedAt: string | null };
 export type Payouts = { frequency: "AFTER_EVENT" | "WEEKLY"; accounts: PayoutAccount[] };
 
+export type PayoutRow = {
+  id: string;
+  status: "PENDING_APPROVAL" | "PROCESSING" | "PAID" | "FAILED" | "REVIEW" | "REJECTED" | "CANCELLED";
+  amount: number;
+  gross: number;
+  commission: number;
+  refunds: number;
+  operator: PayoutOperator;
+  phone: string;
+  createdAt: string;
+  paidAt: string | null;
+};
+export type PayoutSummary = {
+  test: boolean;
+  commissionBps: number;
+  balance: { sold: number; commission: number; refunds: number; paidOut: number; inProgress: number; upcoming: number };
+  payouts: PayoutRow[];
+};
+
+// Recettes et versements (propriétaire), en francs CFA entiers.
+export function usePayoutSummary() {
+  return useQuery({ queryKey: ["admin-payouts"], queryFn: () => get<PayoutSummary>("/admin/payouts") });
+}
+
 export function useSavePayouts() {
   const invalidate = useInvalidate("admin-tenant");
   return useMutation({

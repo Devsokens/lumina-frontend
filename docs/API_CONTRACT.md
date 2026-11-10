@@ -125,6 +125,7 @@ corps limité à 3 Mo sur cette seule route (100 ko ailleurs). Les événements 
 
 | Méthode | Route | Auth | Body → Réponse |
 |---|---|---|---|
+| GET | `/admin/payouts` | Bearer (OWNER) | — | `{ test, commissionBps, balance: { sold, commission, refunds, paidOut, inProgress, upcoming }, payouts[] }` (francs CFA entiers) |
 | GET | `/admin/tenant/export` | OWNER, 3/h | — | **ZIP binaire** (`attachment`, hors enveloppe JSON) : données de l'organisation en CSV, images, `manifest.json`. Sans mots de passe, codes de billets, signatures ni comptes de versement |
 | PUT | `/admin/tenant/emails` | Bearer (OWNER) | `{ senderName, replyTo ("" possible), templates: { ticket?, certificate?, reminder?, survey?: { subject, body, cta, enabled } } }` → `settings.emails` |
 | POST | `/admin/tenant/emails/test` | Bearer (OWNER), 5/15 min | `{ kind: "ticket" \| "certificate" \| "reminder" \| "survey" }` → `{ sentTo }` (e-mail du compte connecté) |
@@ -593,6 +594,12 @@ Administrateurs du SaaS (table `PlatformAdmin`, distincte de `User`). Jeton Bear
 | PATCH | `/vision/users/:id` | Vision | `{ isActive, reason? }` | `{ id, isActive }` |
 | GET | `/vision/settings` | Vision | — | `{ ticketCommissionBps, isDefault, updatedAt, updatedBy }` (500 = 5 %, frais PVit compris) |
 | PATCH | `/vision/settings` | Vision | `{ ticketCommissionBps: 0…2000 }` | idem (journal `TICKET_COMMISSION_UPDATED`) |
+| GET | `/vision/payouts` | Vision | `?page&limit&status` | `{ rows, page, limit, total, summary }` |
+| POST | `/vision/payouts/prepare` | Vision, 10/15 min | — | `{ created }` (aussi chaque matin à 06:00 UTC) |
+| POST | `/vision/payouts/:id/approve` | Vision + code TOTP | `{ code }` | versement ; envoi découpé à 500 000 F |
+| POST | `/vision/payouts/:id/retry` | Vision + code TOTP | `{ code }` | relit les parts incertaines, ne renvoie que les échecs certains |
+| POST | `/vision/payouts/:id/parts/:partId/resolve` | Vision + code TOTP | `{ outcome: SUCCESS\|FAILED, code }` | constat depuis l'espace MyPVIT |
+| POST | `/vision/payouts/:id/reject` | Vision | `{ reason }` | `{ rejected }` (recettes rendues au solde) |
 | GET | `/vision/logs` | Vision | `?page&limit` | `{ data, meta }` |
 | GET | `/vision/admins` | Vision | — | `[{ id, email, name, isActive, lastLoginAt, lockedUntil }]` |
 
