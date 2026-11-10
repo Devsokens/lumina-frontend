@@ -50,6 +50,13 @@ function operatorOf(phone: string): "AIRTEL" | "MOOV" | null {
   return null;
 }
 
+// Carte : numéro gabonais, ou étranger avec l'indicatif (+33…, 0033…).
+function cardPhoneOk(phone: string) {
+  const v = normalizePhone(phone);
+  const local = v.replace(/^(\+|00)?241(?=[0-9]{8,9}$)/, "");
+  return /^0?[0-9]{8}$/.test(local) || /^(\+|00)[1-9][0-9]{6,14}$/.test(v);
+}
+
 const filled = (v: AnswerValue | undefined) =>
   v !== undefined && (Array.isArray(v) ? v.length > 0 : typeof v === "number" ? true : v.trim() !== "");
 
@@ -154,7 +161,7 @@ export function CheckoutDialog({
     const e: Record<string, string> = {};
     if (buyer.name.trim().length < 2) e.name = "Indiquez votre nom complet.";
     if (!EMAIL_FORMAT.test(buyer.email.trim())) e.email = "Adresse e-mail invalide : vos billets y seront envoyés.";
-    if (!PHONE_FORMAT.test(normalizePhone(buyer.phone))) e.phone = "Numéro invalide : 8 à 15 chiffres, ex. 077 12 34 56 ou +241 77 12 34 56.";
+    if (!PHONE_FORMAT.test(normalizePhone(buyer.phone))) e.phone = "Numéro invalide : ex. 077 12 34 56, ou +33 6 12 34 56 78 depuis l'étranger.";
     holders.forEach((h, i) => {
       if (h.trim().length < 2) e[`holder-${i}`] = "Nom du participant requis.";
     });
@@ -176,6 +183,8 @@ export function CheckoutDialog({
       else if (operator !== method) e.momo = `Ce numéro n'est pas un numéro ${method === "AIRTEL" ? "Airtel Money" : "Moov Money"}.`;
       else if (francs > MOMO_MAX) e.momo = "Mobile Money est limité à 500 000 F par paiement : réduisez le nombre de billets ou payez par carte.";
       else if (francs < MOMO_MIN) e.momo = "Mobile Money demande un paiement d'au moins 150 F.";
+    } else if (!cardPhoneOk(buyer.phone)) {
+      e.card = "Depuis l'étranger, indiquez l'indicatif du pays dans votre téléphone (étape précédente), par exemple +33 6 12 34 56 78.";
     }
     return e;
   }
@@ -723,7 +732,12 @@ function PaymentStep({
           </Field>
         </div>
       ) : (
-        <p className="m-0 text-sm text-(--s-muted)">Vous saisirez votre carte sur la page sécurisée de notre prestataire de paiement.</p>
+        <div className="flex flex-col gap-1.5">
+          <p className="m-0 text-sm text-(--s-muted)">
+            Vous saisirez votre carte sur la page sécurisée de notre prestataire de paiement. Le montant est débité en francs CFA : une banque étrangère le convertit dans votre devise.
+          </p>
+          {errors.card && <p className="m-0 text-sm text-[#E5484D]">{errors.card}</p>}
+        </div>
       )}
 
       <PaymentSummary lines={lines} total={total} />
