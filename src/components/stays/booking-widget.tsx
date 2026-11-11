@@ -16,6 +16,7 @@ import { Counter } from "@/components/stays/counter";
 import type { PublicListing } from "@/types/stays";
 import { useSiteBase } from "@/hooks/useSiteBase";
 import { localSiteUrl } from "@/lib/tenant-url";
+import { DataNotice } from "@/components/shared/data-notice";
 
 const PHONE = /^\+?[0-9]{8,15}$/;
 
@@ -134,6 +135,7 @@ export function BookingWidget({ slug, listing }: { slug: string; listing: Public
             <Label htmlFor="stay-note">Message à l&apos;hôte</Label>
             <Input id="stay-note" maxLength={500} placeholder="Heure d'arrivée, demande particulière…" value={contact.note} onChange={(e) => setContact({ ...contact, note: e.target.value })} />
           </div>
+          <DataNotice controller="l'hôte de ce logement" purpose="gérer votre réservation, vous contacter et préparer votre arrivée" className="text-muted-foreground opacity-100" />
           <Button className="h-12 w-full rounded-xl text-base" disabled={busy} onClick={() => void book()}>
             {busy ? "Redirection vers le paiement…" : "Payer et confirmer"}
           </Button>

@@ -1,7 +1,7 @@
 import type { Metadata } from "next";
 import Link from "next/link";
 import { Ext, H3, LegalPage, List, Mail, Note, Table, type LegalSection } from "@/components/legal/legal-page";
-import { LEGAL, LEGAL_LINKS } from "@/lib/legal";
+import { APDPVP, LEGAL, LEGAL_LINKS } from "@/lib/legal";
 
 export const metadata: Metadata = {
   title: "Politique de confidentialité · GiyaX",
@@ -9,8 +9,8 @@ export const metadata: Metadata = {
   alternates: { canonical: LEGAL_LINKS.privacy },
 };
 
-// Politique de confidentialité : RGPD (UE), loi gabonaise n° 001/2011 sur la
-// protection des données à caractère personnel, Google API Services User Data
+// Politique de confidentialité : RGPD (UE), loi gabonaise n° 001/2011 modifiée
+// par la loi n° 025/2023 (autorité : APDPVP), Google API Services User Data
 // Policy (connexion Google, envoi par Gmail). À relire par un juriste avant
 // une diffusion large ; tenir à jour avec la liste des prestataires.
 
@@ -27,8 +27,10 @@ const sections: LegalSection[] = [
           réservations, paiements en ligne et sites publics. Elle est éditée par <strong>{publisher}</strong> (« {LEGAL.brand} », « nous »).
         </p>
         <p>
-          Pour toute question sur vos données : <Mail to={LEGAL.privacyEmail} />. Nous répondons dans un délai d&apos;un mois au plus.
+          Pour toute question sur vos données, écrivez à notre référent protection des données : <Mail to={LEGAL.privacyEmail} />. Nous répondons dans un délai
+          d&apos;un mois au plus.
         </p>
+        {LEGAL.apdpvpReference && <p>Nos traitements ont fait l&apos;objet des formalités prévues auprès de l&apos;APDPVP : {LEGAL.apdpvpReference}.</p>}
       </>
     ),
   },
@@ -197,7 +199,9 @@ const sections: LegalSection[] = [
           head={["Prestataire", "Service", "Localisation des traitements"]}
           rows={[
             ["Render", "Hébergement de l'API", "Union européenne (Francfort, Allemagne)"],
-            ["Supabase", "Base de données", "Selon la région du projet ; sauvegardes chiffrées"],
+            ["Supabase", "Base de données et stockage des sauvegardes chiffrées", "Selon la région du projet"],
+            ["GitHub (Microsoft)", "Exécution automatique des sauvegardes : l'archive est chiffrée avant d'être stockée", "États-Unis"],
+            ["Sentry", "Détection des erreurs techniques ; numéros, e-mails, cookies et contenus des formulaires retirés avant l'envoi", "Union européenne (Allemagne)"],
             ["Upstash", "Cache et files techniques (sessions, codes, quotas)", "Selon la région du service"],
             ["Vercel", "Hébergement des pages web", "Réseau mondial (États-Unis, UE)"],
             ["PVit (BakoAI)", "Paiements en ligne (Mobile Money, carte) et vérification du numéro payeur", "Gabon ; hébergement OVHcloud et AWS"],
@@ -220,11 +224,17 @@ const sections: LegalSection[] = [
     id: "transferts",
     title: "Transferts hors du Gabon et de l'Union européenne",
     body: (
-      <p>
-        Certains prestataires traitent des données hors du Gabon ou de l&apos;Union européenne. Ces transferts sont encadrés par les garanties proposées par ces prestataires
-        (clauses contractuelles types de la Commission européenne, décisions d&apos;adéquation ou mécanismes équivalents) et, au Gabon, conformément aux exigences de la loi
-        n° 001/2011 et de l&apos;autorité de protection des données. Vous pouvez nous demander une copie des garanties applicables.
-      </p>
+      <>
+        <p>
+          Plusieurs de nos prestataires hébergent ou traitent des données hors du Gabon (Union européenne et États-Unis, voir le tableau ci-dessus). La loi gabonaise
+          n&apos;autorise un transfert vers un autre État que s&apos;il assure un niveau de protection suffisant, ou avec l&apos;autorisation de l&apos;APDPVP : nous accomplissons
+          les formalités prévues auprès de l&apos;APDPVP pour ces transferts.
+        </p>
+        <p>
+          Ces transferts sont en outre encadrés par les garanties proposées par nos prestataires (clauses contractuelles types de la Commission européenne, décisions
+          d&apos;adéquation ou mécanismes équivalents), et les données sont chiffrées pendant leur transport. Vous pouvez nous demander une copie des garanties applicables.
+        </p>
+      </>
     ),
   },
   {
@@ -236,16 +246,19 @@ const sections: LegalSection[] = [
           head={["Données", "Durée"]}
           rows={[
             ["Compte et espace de l'organisation", "Tant que le compte est actif, puis 30 jours après la clôture (le temps d'exporter vos données), sauf obligation légale"],
-            ["Billets, commandes et réservations des participants", "Durée fixée par l'organisateur ; au plus 3 ans après l'événement ou la commande, puis suppression ou anonymisation"],
+            ["Billets, commandes, réservations et attestations des participants (nom, e-mail, téléphone, adresse, réponses)", "Au plus 3 ans après la commande ou le séjour, puis anonymisation automatique ; les montants restent pour la comptabilité"],
+            ["Numéro Mobile Money ayant servi au paiement", "3 ans, puis effacement automatique"],
+            ["Fiche client d'un commerçant", "3 ans après la dernière activité, puis suppression automatique"],
             ["Pièces comptables et factures", "10 ans (obligation légale, droit comptable OHADA)"],
-            ["Journaux de sécurité et d'audit", "12 mois"],
+            ["Journaux de sécurité et d'audit", "12 mois, puis suppression automatique"],
+            ["Sauvegardes chiffrées de la base", "30 jours"],
             ["Codes de vérification (mot de passe oublié, versements)", "15 minutes au plus"],
             ["Liens d'invitation d'équipe", "7 jours"],
             ["Session de connexion (cookie)", "7 jours, renouvelée à chaque visite"],
             ["Autorisation Gmail", "Jusqu'à la déconnexion ; supprimée immédiatement ensuite"],
-            ["Consignes et réponses de l'assistant IA", "12 mois, pour la sécurité et le suivi des coûts"],
+            ["Consignes et réponses de l'assistant IA", "12 mois, pour la sécurité et le suivi des coûts, puis suppression automatique"],
             ["Historique de vos conversations avec GiyaX AI", "Jusqu'à ce que vous les supprimiez, ou la clôture du compte"],
-            ["Avis et suggestions", "3 ans, pour suivre l'évolution du produit"],
+            ["Avis et suggestions", "3 ans, pour suivre l'évolution du produit, puis suppression automatique"],
           ]}
         />
       </>
@@ -264,7 +277,9 @@ const sections: LegalSection[] = [
             "Billets signés électroniquement (Ed25519) pour empêcher les faux et les copies.",
             "Accès par rôles (propriétaire, manager, contrôleur…), journal d'audit des actions sensibles, limitation des tentatives de connexion.",
             "Confirmation, avec l'organisateur, du compte qui reçoit les versements avant le premier virement.",
-            "Sauvegardes régulières et surveillance de la plateforme.",
+            "Sauvegarde chiffrée (AES-256) de la base chaque nuit, restaurée automatiquement pour test, conservée 30 jours.",
+            "Surveillance continue de la plateforme et détection des erreurs, avec retrait des données personnelles avant tout envoi à l'outil de détection.",
+            "Protection des données dès la conception : seules les données utiles au service sont demandées, et chaque formulaire public indique à quoi elles servent.",
           ]}
         />
         <p>
@@ -310,8 +325,9 @@ const sections: LegalSection[] = [
           complexes, en vous prévenant).
         </p>
         <p>
-          Vous pouvez aussi saisir l&apos;autorité de protection des données : au Gabon, la <strong>Commission nationale pour la protection des données à caractère personnel
-          (CNPDCP)</strong> ; dans l&apos;Union européenne, l&apos;autorité de votre pays (en France, la <Ext href="https://www.cnil.fr">CNIL</Ext>).
+          Vous pouvez aussi saisir l&apos;autorité de protection des données. Au Gabon : <strong>{APDPVP.name}</strong>, {APDPVP.address} ; {APDPVP.phone} ;{" "}
+          <Mail to={APDPVP.email} /> ; <Ext href={APDPVP.url}>apdpvp.ga</Ext> (accueil {APDPVP.hours}). Dans l&apos;Union européenne : l&apos;autorité de votre pays (en
+          France, la <Ext href="https://www.cnil.fr">CNIL</Ext>).
         </p>
       </>
     ),
@@ -424,8 +440,9 @@ export default function PrivacyPage() {
             droits. Elle s&apos;applique au site {LEGAL.brand}, aux espaces de gestion, aux sites publics des organisateurs et aux applications de contrôle d&apos;accès.
           </p>
           <p>
-            Elle suit le Règlement général sur la protection des données de l&apos;Union européenne (RGPD), la loi gabonaise n° 001/2011 relative à la protection des données à
-            caractère personnel, et les règles de Google pour l&apos;accès aux données de ses utilisateurs.
+            Elle suit la loi gabonaise n° 001/2011 du 25 septembre 2011 relative à la protection des données à caractère personnel, modifiée par la loi n° 025/2023 du
+            12 juillet 2023, le Règlement général sur la protection des données de l&apos;Union européenne (RGPD), et les règles de Google pour l&apos;accès aux données de ses
+            utilisateurs.
           </p>
         </>
       }
