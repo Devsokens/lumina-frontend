@@ -17,6 +17,7 @@ import type { PublicEvent, PurchasedTicket } from "@/types/events";
 import type { QuestionnaireQuestion } from "@/types/api";
 import { cn } from "@/lib/utils";
 import { OperatorLogo } from "@/components/shared/operator-logo";
+import { DataNotice } from "@/components/shared/data-notice";
 
 // Réservation sans quitter la page de l'événement : participants (acheteur +
 // un nom par billet), questionnaire de l'organisateur s'il est activé, moyen
@@ -515,6 +516,7 @@ function PeopleStep({
           ))}
         </div>
       )}
+      <DataNotice controller="l'organisateur de cet événement" purpose="vous envoyer vos billets, contrôler l'entrée et vous tenir informé de l'événement" />
     </div>
   );
 }

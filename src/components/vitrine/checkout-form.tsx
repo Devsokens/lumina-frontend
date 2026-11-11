@@ -21,6 +21,7 @@ import { api, apiError, type ApiResponse } from "@/lib/api";
 import { formatXAF } from "@/lib/format";
 import { FEATURES } from "@/lib/features";
 import type { Order, OrderType, PaymentMethod } from "@/types/api";
+import { DataNotice } from "@/components/shared/data-notice";
 
 const checkoutSchema = z.object({
   customerName: z.string().max(120).optional(),
@@ -234,6 +235,8 @@ export function CheckoutForm() {
       <p className="text-sm text-muted-foreground">
         Le total définitif (taxes comprises) est calculé à la validation.
       </p>
+
+      <DataNotice controller="ce commerce" purpose="préparer votre commande, vous contacter à son sujet et vous envoyer votre reçu" />
 
       <Button
         type="submit"

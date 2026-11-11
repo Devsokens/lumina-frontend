@@ -4,7 +4,7 @@ import { useState } from "react";
 import { motion } from "framer-motion";
 import { Check, ArrowRight, Clock } from "lucide-react";
 import Link from "next/link";
-import { Button } from "@/components/ui/button";
+import { cn } from "@/lib/utils";
 import { siteAddressOffer } from "@/lib/tenant-url";
 
 // Formules payantes affichées « Bientôt disponible » tant que le paiement des
@@ -132,124 +132,99 @@ export function PricingPreview() {
           </div>
         </div>
 
-        {/* Pricing Cards Grid */}
-        <div className="mt-14 grid gap-8 lg:grid-cols-3">
+        {/* Cartes : mêmes dimensions fines que Paramètres › Abonnement
+            (subscription-manager.tsx), étiquette en verre penchée en haut. */}
+        <div className="mx-auto mt-14 grid max-w-5xl gap-6 md:grid-cols-3">
           {PLANS.map((plan, idx) => {
             const price = isAnnual ? plan.priceAnnual : plan.priceMonthly;
             const soon = plan.priceMonthly > 0 && !PAID_OPEN;
             return (
               <motion.div
                 key={plan.name}
-                initial={{ opacity: 0, y: 30 }}
+                initial={{ opacity: 0, y: 24 }}
                 whileInView={{ opacity: 1, y: 0 }}
                 viewport={{ once: true }}
-                transition={{ duration: 0.5, delay: idx * 0.15 }}
-                className={`relative flex flex-col justify-between rounded-3xl p-8 transition-all ${
+                transition={{ duration: 0.45, delay: idx * 0.12 }}
+                className={cn(
+                  "group relative flex flex-col justify-between rounded-2xl border p-6 transition-all duration-200",
                   soon
-                    ? "border border-dashed border-border bg-muted/40 grayscale"
+                    ? "border-dashed border-border bg-muted/40"
                     : plan.highlight
-                      ? "border-2 border-primary bg-card shadow-2xl shadow-primary/10 glow-primary scale-105"
-                      : "border border-border/80 bg-card shadow-xs hover:border-primary/40 hover:shadow-lg"
-                }`}
-              >
-                {soon ? (
-                  <div className="absolute -top-4 left-1/2 flex -translate-x-1/2 items-center gap-1.5 whitespace-nowrap rounded-full border border-border bg-background px-4 py-1 font-mono text-xs font-bold uppercase tracking-wider text-muted-foreground shadow-sm">
-                    <Clock className="size-3.5" /> Bientôt disponible
-                  </div>
-                ) : (
-                  plan.highlight && (
-                    <div className="absolute -top-4 left-1/2 -translate-x-1/2 whitespace-nowrap rounded-full bg-primary px-4 py-1 font-mono text-xs font-bold uppercase tracking-wider text-white shadow-md">
-                      {PAID_OPEN
-                        ? "Recommandé pour les PME"
-                        : "Disponible maintenant"}
-                    </div>
-                  )
+                      ? "border-primary bg-card shadow-md ring-2 ring-primary/20"
+                      : "border-border bg-card shadow-sm hover:border-foreground/20",
                 )}
+              >
+                <GlassTag tone={soon ? "muted" : plan.highlight ? "primary" : "neutral"}>
+                  {soon ? (
+                    <>
+                      <Clock className="size-3" /> Bientôt disponible
+                    </>
+                  ) : (
+                    plan.badge
+                  )}
+                </GlassTag>
 
-                <div className={soon ? "opacity-60" : undefined}>
-                  <div className="flex items-center justify-between">
-                    <h3 className="font-display text-xl font-bold text-foreground">
-                      {plan.name}
-                    </h3>
-                    <span className="rounded-full bg-muted px-2.5 py-0.5 font-mono text-xs text-muted-foreground">
-                      {plan.badge}
-                    </span>
-                  </div>
+                <div className={cn(soon && "opacity-60 grayscale")}>
+                  <h3 className="pr-24 text-lg font-bold text-foreground">{plan.name}</h3>
+                  <p className="mt-1 min-h-[32px] text-xs text-muted-foreground">{plan.desc}</p>
 
-                  <p className="mt-3 text-xs text-muted-foreground leading-relaxed">
-                    {plan.desc}
-                  </p>
-
-                  <div className="mt-6 border-y border-border/60 py-4">
+                  {/* Prix */}
+                  <div className="mt-4 border-y border-border/60 py-3">
                     {soon ? (
-                      <div className="flex flex-col gap-0.5">
-                        <span className="font-display text-3xl font-extrabold text-foreground">
-                          Bientôt
-                        </span>
-                        <span className="text-xs text-muted-foreground">
-                          Tarif communiqué à l&apos;ouverture
-                        </span>
-                      </div>
+                      <>
+                        <div className="text-2xl font-extrabold text-foreground">Bientôt</div>
+                        <div className="text-[11px] font-medium text-muted-foreground">Tarif communiqué à l&apos;ouverture</div>
+                      </>
                     ) : (
-                      <div className="flex items-baseline gap-1">
-                        <span className="font-mono text-4xl font-extrabold text-foreground">
-                          {price.toLocaleString()}
-                        </span>
-                        <span className="font-mono text-xs text-muted-foreground">
-                          FCFA / mois
-                        </span>
-                      </div>
-                    )}
-                    {isAnnual && price > 0 && (
-                      <span className="text-[11px] font-mono text-emerald-600 dark:text-emerald-400">
-                        Facturé annuellement (soit{" "}
-                        {(price * 12).toLocaleString()} FCFA/an)
-                      </span>
+                      <>
+                        <div className="text-2xl font-extrabold text-foreground">
+                          {price.toLocaleString("fr-FR")} FCFA
+                        </div>
+                        <div className="text-[11px] font-medium text-muted-foreground">
+                          {price === 0
+                            ? "pour toujours"
+                            : isAnnual
+                              ? `par mois, facturé ${(price * 12).toLocaleString("fr-FR")} FCFA/an`
+                              : "par mois"}
+                        </div>
+                      </>
                     )}
                   </div>
 
-                  {/* Features List */}
-                  <ul className="mt-6 space-y-3 text-xs">
+                  {/* Fonctionnalités */}
+                  <ul className="mt-5 flex flex-col gap-2.5 text-xs">
                     {plan.features.map((feat) => (
-                      <li key={feat} className="flex items-start gap-2.5">
-                        <div className="flex size-4 shrink-0 items-center justify-center rounded-full bg-emerald-500/15 text-emerald-600 mt-0.5">
-                          <Check className="size-2.5" />
-                        </div>
-                        <span className="text-foreground/90 font-medium">
-                          {feat}
-                        </span>
+                      <li key={feat} className="flex items-start gap-2 text-foreground">
+                        <Check className="mt-0.5 size-3.5 shrink-0 text-emerald-600 dark:text-emerald-400" strokeWidth={2.5} />
+                        <span>{feat}</span>
                       </li>
                     ))}
                   </ul>
                 </div>
 
-                <div className="mt-8 pt-4">
+                {/* Action */}
+                <div className="mt-6 border-t border-border pt-4">
                   {soon ? (
-                    <Button
-                      size="lg"
+                    <button
+                      type="button"
                       disabled
-                      className="w-full rounded-2xl border border-dashed border-border bg-background font-semibold text-muted-foreground"
+                      className="w-full cursor-not-allowed rounded-xl border border-dashed border-border bg-background/60 py-2.5 text-xs font-semibold text-muted-foreground"
                     >
                       Bientôt disponible
-                    </Button>
+                    </button>
                   ) : (
-                    <Button
-                      asChild
-                      size="lg"
-                      className={`w-full rounded-2xl font-semibold transition-all ${
+                    <Link
+                      href={plan.href}
+                      className={cn(
+                        "flex w-full items-center justify-center gap-1.5 rounded-xl py-2.5 text-xs font-semibold transition-colors",
                         plan.highlight
-                          ? "bg-primary text-white hover:bg-primary/90 shadow-lg shadow-primary/25"
-                          : "bg-muted text-foreground hover:bg-muted/80"
-                      }`}
+                          ? "bg-primary text-primary-foreground shadow-sm hover:bg-primary/90"
+                          : "border border-border bg-card text-foreground hover:bg-muted",
+                      )}
                     >
-                      <Link
-                        href={plan.href}
-                        className="flex items-center justify-center gap-2"
-                      >
-                        <span>{plan.cta}</span>
-                        <ArrowRight className="size-4" />
-                      </Link>
-                    </Button>
+                      {plan.cta}
+                      <ArrowRight className="size-3.5" />
+                    </Link>
                   )}
                 </div>
               </motion.div>
@@ -258,5 +233,24 @@ export function PricingPreview() {
         </div>
       </div>
     </section>
+  );
+}
+
+// Étiquette en verre, légèrement penchée, posée à cheval sur le bord de la
+// carte ; elle se redresse au survol de la carte.
+function GlassTag({ tone, children }: { tone: "primary" | "neutral" | "muted"; children: React.ReactNode }) {
+  return (
+    <span
+      className={cn(
+        "absolute -top-3.5 right-5 z-10 inline-flex rotate-[4deg] items-center gap-1 whitespace-nowrap rounded-full border px-3 py-1 text-[11px] font-bold",
+        "bg-gradient-to-br shadow-[0_8px_20px_-8px_rgba(15,23,42,0.35)] ring-1 ring-inset ring-white/50 backdrop-blur-md transition-transform duration-300 group-hover:rotate-0",
+        "dark:ring-white/10",
+        tone === "primary" && "border-primary/30 from-white/80 to-primary/20 text-primary dark:from-primary/30 dark:to-primary/10 dark:text-primary",
+        tone === "neutral" && "border-white/70 from-white/85 to-white/40 text-foreground dark:border-white/15 dark:from-white/15 dark:to-white/5",
+        tone === "muted" && "border-border from-white/80 to-white/40 text-muted-foreground dark:from-white/10 dark:to-white/5",
+      )}
+    >
+      {children}
+    </span>
   );
 }

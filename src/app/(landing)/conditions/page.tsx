@@ -131,7 +131,7 @@ const sections: LegalSection[] = [
       <>
         <List
           items={[
-            "Les paiements des Participants (carte, Mobile Money) sont traités par notre prestataire de paiement agréé. GiyaX n'est ni une banque ni un établissement de paiement et ne conserve aucune donnée de carte.",
+            "Les paiements des Participants (carte, Mobile Money) sont traités par notre prestataire de paiement, PVit. GiyaX n'est ni une banque ni un établissement de paiement et ne conserve aucune donnée de carte.",
             "Les recettes, déduction faite des frais applicables, sont versées sur le compte Mobile Money de l'Organisateur, confirmé avec lui avant le premier versement, selon la fréquence choisie (après l'événement ou chaque semaine).",
             "En cas de soupçon de fraude, de contestation de paiement ou de violation de ces conditions, nous pouvons suspendre un versement le temps de la vérification, en vous en informant.",
             "L'Organisateur reste seul responsable de ses obligations fiscales et sociales liées à ses ventes.",
@@ -229,7 +229,11 @@ const sections: LegalSection[] = [
         />
         <p>
           L&apos;Organisateur garantit disposer d&apos;une base légale pour les données qu&apos;il collecte (y compris par les questions posées à l&apos;inscription) et informe ses
-          Participants.
+          Participants ; la Plateforme l&apos;y aide en affichant, sous chaque formulaire d&apos;achat, de commande et de réservation, une mention d&apos;information. En tant que
+          responsable du traitement, il accomplit les formalités qui lui incombent auprès de l&apos;Autorité pour la Protection des Données Personnelles et de la Vie Privée
+          (APDPVP), en application de la loi n° 001/2011 du 25 septembre 2011 modifiée par la loi n° 025/2023 du 12 juillet 2023 ; il ne collecte pas de données sensibles
+          (santé, opinions, religion…) par les questions d&apos;inscription. {LEGAL.brand} accomplit celles qui concernent ses propres traitements et les transferts de données
+          hors du Gabon.
         </p>
       </>
     ),
@@ -368,7 +372,8 @@ const sections: LegalSection[] = [
           Site : <Ext href={LEGAL.publisherUrl}>{LEGAL.publisherUrl.replace(/^https?:\/\//, "")}</Ext>
         </p>
         <p>
-          <strong>Hébergement</strong> : Render Services, Inc. (API, serveurs à Francfort, Allemagne) ; Vercel Inc. (pages web) ; Supabase, Inc. (base de données).
+          <strong>Hébergement</strong> : Render Services, Inc. (API, serveurs à Francfort, Allemagne) ; Vercel Inc. (pages web) ; Supabase, Inc. (base de données) ;
+          Upstash, Inc. (cache et sessions).
         </p>
         <Note>
           Une question sur ces conditions ? Écrivez-nous à <Mail to={LEGAL.email} />.
@@ -392,7 +397,7 @@ export default function TermsPage() {
       summary={[
         "GiyaX fournit l'outil ; la vente d'un billet ou d'une commande est un contrat entre l'organisateur et le participant.",
         "L'organisateur est responsable de son événement, de ses informations et de ses remboursements.",
-        "Les paiements passent par un prestataire agréé ; les recettes sont versées sur un compte Mobile Money vérifié.",
+        "Les paiements passent par un prestataire de paiement spécialisé (PVit) ; les recettes sont versées sur un compte Mobile Money vérifié.",
         "Pour les données des participants, GiyaX agit comme sous-traitant de l'organisateur (accord de traitement à l'article 10).",
         "Vous pouvez fermer votre espace à tout moment et exporter vos données pendant 30 jours.",
       ]}
