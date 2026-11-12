@@ -9,6 +9,7 @@ import { fetchConversation, useAssistant, useAssistantConversations, useDeleteCo
 import { apiError } from "@/lib/api";
 import { LEGAL } from "@/lib/legal";
 import { cn } from "@/lib/utils";
+import { TurnstileWidget } from "@/components/shared/turnstile-widget";
 
 // GiyaX AI : assistant de la page d'accueil (visiteurs) et du back-office
 // (organisateurs et équipes). Historique des conversations : sur le serveur
@@ -529,6 +530,8 @@ export function GiyaxAssistant({ mode }: { mode: Mode }) {
             }}
             className="border-t border-border bg-background px-3 pb-[max(env(safe-area-inset-bottom),10px)] pt-2.5"
           >
+            {/* Visiteurs uniquement : la route publique est protégée contre les robots. */}
+            {mode === "public" && <TurnstileWidget className="pb-2" />}
             <div className="flex items-end gap-2 rounded-2xl border border-border bg-muted/40 py-1.5 pl-3.5 pr-1.5 focus-within:border-[#0C4A3A]/60">
               <textarea
                 ref={inputRef}

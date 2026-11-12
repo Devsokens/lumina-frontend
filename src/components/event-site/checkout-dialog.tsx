@@ -18,6 +18,7 @@ import type { QuestionnaireQuestion } from "@/types/api";
 import { cn } from "@/lib/utils";
 import { OperatorLogo } from "@/components/shared/operator-logo";
 import { DataNotice } from "@/components/shared/data-notice";
+import { TurnstileWidget } from "@/components/shared/turnstile-widget";
 
 // Réservation sans quitter la page de l'événement : participants (acheteur +
 // un nom par billet), questionnaire de l'organisateur s'il est activé, moyen
@@ -367,6 +368,8 @@ export function CheckoutDialog({
             )}
           </div>
 
+          {/* Anti-robot (invisible sauf en cas de doute), pour toute la durée du parcours. */}
+          {!preview && <TurnstileWidget className="px-5 pb-2 sm:px-7" />}
           {/* Actions. */}
           <div className="flex gap-2.5 border-t border-(--s-line) px-5 py-4 sm:px-7">
             {done ? (

@@ -25,6 +25,7 @@ import { publicSiteLabel } from "@/lib/tenant-url";
 import { LEGAL_LINKS } from "@/lib/legal";
 import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
+import { TurnstileWidget } from "@/components/shared/turnstile-widget";
 
 const SECTOR_OPTIONS: { id: Sector; label: string; icon: React.ComponentType<{ className?: string }> }[] = [
   { id: "EVENT", label: "Événementiel", icon: PartyPopper },
@@ -513,6 +514,7 @@ function SignupContent() {
             </span>
           </label>
 
+          <TurnstileWidget />
           {/* Actions */}
           <div className="flex gap-2.5 pt-2">
             <Button

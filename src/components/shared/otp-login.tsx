@@ -8,6 +8,7 @@ import { Label } from "@/components/ui/label";
 import { useAuth } from "@/hooks/useAuth";
 import { apiError } from "@/lib/api";
 import type { AuthUser } from "@/stores/useAuthStore";
+import { TurnstileWidget } from "@/components/shared/turnstile-widget";
 
 const PHONE_FORMAT = /^\+?[0-9]{8,15}$/;
 
@@ -96,9 +97,12 @@ export function OtpLogin({ onSuccess }: { onSuccess: (user: AuthUser) => void })
           </Button>
         </div>
       ) : (
-        <Button type="button" className="h-11 w-full rounded-xl" onClick={send} disabled={busy}>
-          {busy ? "Envoi…" : "Recevoir un code"}
-        </Button>
+        <>
+          <TurnstileWidget />
+          <Button type="button" className="h-11 w-full rounded-xl" onClick={send} disabled={busy}>
+            {busy ? "Envoi…" : "Recevoir un code"}
+          </Button>
+        </>
       )}
     </form>
   );
