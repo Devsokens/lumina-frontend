@@ -22,6 +22,7 @@ import { formatXAF } from "@/lib/format";
 import { FEATURES } from "@/lib/features";
 import type { Order, OrderType, PaymentMethod } from "@/types/api";
 import { DataNotice } from "@/components/shared/data-notice";
+import { TurnstileWidget } from "@/components/shared/turnstile-widget";
 
 const checkoutSchema = z.object({
   customerName: z.string().max(120).optional(),
@@ -238,6 +239,7 @@ export function CheckoutForm() {
 
       <DataNotice controller="ce commerce" purpose="préparer votre commande, vous contacter à son sujet et vous envoyer votre reçu" />
 
+      <TurnstileWidget />
       <Button
         type="submit"
         size="lg"

@@ -1,6 +1,7 @@
 import axios, { type InternalAxiosRequestConfig } from "axios";
 import { API_URL } from "@/lib/constants";
 import { useAuthStore } from "@/stores/useAuthStore";
+import { TURNSTILE_HEADER, isTurnstileProtected, takeTurnstileToken } from "@/lib/turnstile";
 
 // Client HTTP centralisé — voir LUMINA_FRONTEND_CONTEXT.md 4.2.
 // withCredentials: true envoie le cookie httpOnly refresh_token au backend
@@ -44,9 +45,14 @@ export function refreshAccessToken(): Promise<string> {
   return refreshInFlight;
 }
 
-api.interceptors.request.use((config) => {
+api.interceptors.request.use(async (config) => {
   const token = useAuthStore.getState().accessToken;
   if (token) config.headers.Authorization = `Bearer ${token}`;
+  // Anti-robot (Turnstile) : jeton joint aux seuls envois protégés.
+  if (isTurnstileProtected(config.method, config.url)) {
+    const proof = await takeTurnstileToken();
+    if (proof) config.headers[TURNSTILE_HEADER] = proof;
+  }
   return config;
 });
 

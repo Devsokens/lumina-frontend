@@ -41,7 +41,8 @@ const devApiProxy = isDev ? process.env.NEXT_PUBLIC_DEV_API_PROXY?.replace(/\/+$
 const imageOrigins = `https://images.unsplash.com ${process.env.NEXT_PUBLIC_IMAGE_ORIGINS ?? ""}`;
 const csp = [
   "default-src 'self'",
-  `script-src 'self' 'unsafe-inline' 'wasm-unsafe-eval'${isDev ? " 'unsafe-eval'" : ""}`,
+  // challenges.cloudflare.com : vérification anti-robot Turnstile (script + iframe).
+  `script-src 'self' 'unsafe-inline' 'wasm-unsafe-eval' https://challenges.cloudflare.com${isDev ? " 'unsafe-eval'" : ""}`,
   "style-src 'self' 'unsafe-inline'",
   // Images par URL : tout hôte https (affiches et visuels collés par les
   // organisateurs). Risque faible : une image ne peut pas exécuter de script.
@@ -55,7 +56,7 @@ const csp = [
   "worker-src 'self' blob:",
   "font-src 'self'",
   // Carte de localisation du site restaurant (iframe Google Maps, sans clé).
-  "frame-src https://www.google.com https://maps.google.com",
+  "frame-src https://www.google.com https://maps.google.com https://challenges.cloudflare.com",
   "frame-ancestors 'none'",
   "base-uri 'self'",
   "form-action 'self'",
