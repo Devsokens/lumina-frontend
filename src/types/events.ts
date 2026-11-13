@@ -15,6 +15,10 @@ export type ApiTicketType = {
   template?: string | null;
   maxPerOrder?: number | null;
   visible?: boolean;
+  // Cotisation : montant libre à partir de `minPrice` (à défaut `price`, le
+  // montant suggéré). Le billet sert aussi d'entrée.
+  kind?: "FIXED" | "CONTRIBUTION";
+  minPrice?: number | null;
 };
 
 export type {
@@ -164,6 +168,10 @@ export type PublicTicketType = {
   remaining: number;
   // Early bird (si le serveur le fournit) : plus en vente après cette date.
   saleEndsAt?: string | null;
+  // Cotisation : montant libre à partir de `minPrice` (à défaut `price`, le
+  // montant suggéré). Le billet sert aussi d'entrée.
+  kind?: "FIXED" | "CONTRIBUTION";
+  minPrice?: number | null;
 };
 
 export type PublicEvent = Omit<ApiEvent, "ticketTypes" | "status" | "createdAt"> & {

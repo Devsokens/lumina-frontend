@@ -158,6 +158,8 @@ export function formFromEvent(e: ApiEvent | null, issuer: string): EditorForm {
       ticketTemplate: (t.template as TicketTemplate | null) ?? undefined,
       maxPerOrder: t.maxPerOrder ?? undefined,
       visible: t.visible ?? true,
+      kind: t.kind ?? "FIXED",
+      minPrice: t.minPrice ?? null,
     })),
     ticketTemplate: (s.ticketTemplate as TicketTemplate | undefined) ?? defaultTemplateFor(e.eventType ?? undefined),
     ticketColor: s.ticketColor ?? "#0C4A3A",

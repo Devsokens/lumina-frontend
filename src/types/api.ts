@@ -223,6 +223,10 @@ export type TicketType = {
   saleEndsAt?: string | null;
   maxPerOrder?: number | null;
   visible?: boolean;
+  // Cotisation : montant libre à partir de `minPrice` (à défaut `price`, le
+  // montant suggéré). Le billet sert aussi d'entrée.
+  kind?: "FIXED" | "CONTRIBUTION";
+  minPrice?: number | null;
 };
 
 export type Attendee = {

@@ -96,13 +96,15 @@ export function LocationPicker({
   value,
   defaultQuery,
   onChange,
-  onCity,
+  onCity, onPlace,
 }: {
   value: LatLng | null;
   defaultQuery: string;
   onChange: (v: LatLng | null) => void;
   // Ville trouvée par la recherche (pour compléter le champ Ville s'il est vide).
   onCity?: (city: string) => void;
+  // Nom du lieu choisi dans les résultats (champ « Lieu »).
+  onPlace?: (name: string) => void;
 }) {
   const box = useRef<HTMLDivElement>(null);
   const map = useRef<LeafletMap | null>(null);
@@ -221,6 +223,10 @@ export function LocationPicker({
     place(p);
     onChange({ lat: p.lat, lng: p.lng });
     if (p.city) onCity?.(p.city);
+    // « Palais des Sports, Boulevard Triomphal, Libreville, … » → les deux
+    // premiers éléments : le nom du lieu et sa rue.
+    const name = p.label.split(",").map((s) => s.trim()).filter(Boolean).slice(0, 2).join(", ");
+    if (name) onPlace?.(name.slice(0, 150));
   }
 
   return (

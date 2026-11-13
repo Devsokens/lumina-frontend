@@ -7,6 +7,8 @@ import { useSiteBase } from "@/hooks/useSiteBase";
 import { usePublicEvents } from "@/hooks/usePublicEvents";
 import { formatXaf } from "@/lib/events";
 import { PublicTopBar } from "@/components/vitrine/public-top-bar";
+import { formatEventPeriod } from "@/lib/event-dates";
+import { startingPrice } from "@/lib/contribution";
 
 export default function PublicEventsPage() {
   const tenant = useTenant();
@@ -33,7 +35,7 @@ export default function PublicEventsPage() {
 
       <ul className="mt-6 space-y-3">
         {(events ?? []).map((e) => {
-          const prices = e.ticketTypes.map((t) => t.price);
+          const prices = e.ticketTypes.map(startingPrice);
           const soldOut = e.ticketTypes.every((t) => t.remaining === 0);
           const from = prices.length ? Math.min(...prices) : 0;
           return (
@@ -45,10 +47,7 @@ export default function PublicEventsPage() {
                 <p className="font-semibold text-foreground">{e.title}</p>
                 <p className="mt-1 flex items-center gap-1.5 text-xs text-muted-foreground">
                   <CalendarDays className="size-3.5" />
-                  {new Date(e.startDate).toLocaleString("fr-FR", {
-                    dateStyle: "medium",
-                    timeStyle: "short",
-                  })}
+                  {formatEventPeriod(e.startDate, e.endDate)}
                 </p>
                 {(e.venueName || e.location) && (
                   <p className="mt-0.5 flex items-center gap-1.5 text-xs text-muted-foreground">

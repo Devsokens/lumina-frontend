@@ -13,6 +13,7 @@ import type { AuditEntry } from "@/types/events";
 import { AreaChart, BarList, DonutChart } from "@/components/charts/charts";
 import { StatCard } from "@/components/charts/stat-card";
 import { AnalyticsOverview } from "@/components/dashboard/analytics-overview";
+import { formatEventPeriodShort } from "@/lib/event-dates";
 
 // Tableau de bord événementiel (EF-E10) : données réelles de
 // GET /admin/analytics/events, rafraîchies toutes les 15 s.
@@ -219,7 +220,7 @@ export default function EventDashboardPage() {
                 <div className="flex flex-wrap items-baseline justify-between gap-2">
                   <p className="truncate text-sm font-semibold text-foreground">{event.title}</p>
                   <p className="text-xs text-muted-foreground">
-                    {new Date(event.startDate).toLocaleDateString("fr-FR", { dateStyle: "medium" })}
+                    {formatEventPeriodShort(event.startDate, event.endDate)}
                   </p>
                 </div>
                 <div className="mt-1.5 grid grid-cols-2 gap-x-3 gap-y-0.5 text-[11px] sm:grid-cols-4">

@@ -453,29 +453,6 @@ export function StepInfos({ form, set, soldCount, orgName: _orgName, onOpenPoste
           </div>
         </div>
         <span className="-mt-1.5 text-xs text-ev-muted">Heure de Libreville (UTC+1){duration ? ` · ${duration}` : ""}</span>
-        <div className="flex flex-wrap items-center gap-3.5">
-          <span className="text-[13px] font-medium">Format</span>
-          <div role="radiogroup" aria-label="Format" className="inline-flex rounded-[10px] bg-ev-line p-[3px]">
-            {(
-              [
-                ["ONSITE", "Sur place"],
-                ["ONLINE", "En ligne"],
-                ["HYBRID", "Hybride"],
-              ] as const
-            ).map(([v, label]) => (
-              <button
-                key={v}
-                type="button"
-                role="radio"
-                aria-checked={form.format === v}
-                onClick={() => set({ format: v })}
-                className={cn("h-8 rounded-[8px] px-3.5 text-[13px]", form.format === v ? "bg-ev-surface font-semibold text-ev-ink" : "text-ev-ink3")}
-              >
-                {label}
-              </button>
-            ))}
-          </div>
-        </div>
         <div className="grid gap-3.5 sm:grid-cols-[2fr_1fr]">
           <label className="flex flex-col gap-2">
             <EvLabel required>Lieu</EvLabel>
@@ -489,17 +466,16 @@ export function StepInfos({ form, set, soldCount, orgName: _orgName, onOpenPoste
             <EvInput value={form.city} maxLength={120} onChange={(e) => set({ city: e.target.value })} />
           </label>
         </div>
-        {form.format !== "ONLINE" && (
-          <div className="flex flex-col gap-2">
-            <EvLabel>Emplacement sur la carte</EvLabel>
-            <LocationPicker
-              value={form.coords}
-              defaultQuery={[form.venueName, form.city].filter((s) => s.trim()).join(", ")}
-              onChange={(coords) => set({ coords })}
-              onCity={(city) => !form.city.trim() && set({ city })}
-            />
-          </div>
-        )}
+        <div className="flex flex-col gap-2">
+          <EvLabel>Emplacement sur la carte</EvLabel>
+          <LocationPicker
+            value={form.coords}
+            defaultQuery={[form.venueName, form.city].filter((s) => s.trim()).join(", ")}
+            onChange={(coords) => set({ coords })}
+            onCity={(city) => !form.city.trim() && set({ city })}
+            onPlace={(venueName) => set({ venueName })}
+          />
+        </div>
       </section>
 
       <EvHr />
