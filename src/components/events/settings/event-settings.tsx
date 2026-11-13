@@ -5,6 +5,7 @@ import { usePathname, useRouter, useSearchParams } from "next/navigation";
 import { EvButton, EvSelect } from "@/components/events/ev-ui";
 import { SettingsGeneral, formFromTenant, tenantLogo } from "@/components/events/settings/settings-general";
 import { PLAN_LABELS, SettingsLegal, SettingsMessages, SettingsPayments, SettingsPlan, SettingsData, SettingsProfile, SettingsSecurity, payoutsOf } from "@/components/events/settings/settings-sections";
+import { SettingsNotifications } from "@/components/events/settings/settings-notifications";
 import { useAdminTenantInfo } from "@/hooks/useAdmin";
 import { useAuthStore } from "@/stores/useAuthStore";
 import { cn } from "@/lib/utils";
@@ -15,7 +16,7 @@ import type { Tenant } from "@/types/api";
 // écrans 23 à 25) : rubriques groupées à gauche, contenu à droite.
 // Rubrique choisie dans l'URL (?rubrique=paiements) pour pouvoir y renvoyer.
 
-type SectionKey = "general" | "legal" | "paiements" | "messages" | "securite" | "profil" | "abonnement" | "donnees";
+type SectionKey = "general" | "legal" | "paiements" | "messages" | "securite" | "profil" | "notifications" | "abonnement" | "donnees";
 type Item = { key: SectionKey | "equipe"; label: string; badge?: string; tone?: "warn" | "neutral" };
 
 function groups(tenant: Tenant | undefined): { title: string; items: Item[] }[] {
@@ -39,6 +40,7 @@ function groups(tenant: Tenant | undefined): { title: string; items: Item[] }[] 
       title: "COMPTE",
       items: [
         { key: "profil", label: "Mon profil" },
+        { key: "notifications", label: "Notifications" },
         { key: "equipe", label: "Mon équipe" },
         { key: "donnees", label: "Mes données" },
         { key: "abonnement", label: "Abonnement", badge: PLAN_LABELS[tenant?.plan ?? "FREE"]?.label },
@@ -47,7 +49,7 @@ function groups(tenant: Tenant | undefined): { title: string; items: Item[] }[] 
   ];
 }
 
-const KEYS: SectionKey[] = ["general", "legal", "paiements", "messages", "securite", "profil", "abonnement", "donnees"];
+const KEYS: SectionKey[] = ["general", "legal", "paiements", "messages", "securite", "profil", "notifications", "abonnement", "donnees"];
 
 // Bandeau « Encore N étapes » : ce qui rend la vitrine, les billets et les
 // certificats complets (seuls réglages enregistrés par le serveur).
@@ -215,6 +217,8 @@ export function EventSettings() {
             <SettingsSecurity />
           ) : active === "profil" ? (
             <SettingsProfile />
+          ) : active === "notifications" ? (
+            <SettingsNotifications />
           ) : active === "donnees" ? (
             <SettingsData canEdit={isOwner} />
           ) : (

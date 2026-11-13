@@ -493,6 +493,18 @@ obligatoire sans réponse refuse la commande (400) avant toute réservation de p
 | GET | `/admin/events/:id/orders?page=&limit=` | Bearer (OWNER/MANAGER) | — | `[{ id, orderNumber, status, paymentStatus, paymentMethod, total, customerName, customerPhone, customerEmail, createdAt, tickets: [{ id, status, scannedAt, ticketType: { name } }] }]` + `meta` — commandes de billets de l'événement (réservations, remboursements) |
 | GET | `/admin/events/:id/responses` | Bearer (OWNER/MANAGER) | — | `{ orders, responses: [{ id, orderNumber, customerName, customerEmail, customerPhone, createdAt, answers, ticketTypes: string[], tickets, checkedIn }] }` — réponses au questionnaire, une par commande confirmée ; `orders` = inscriptions confirmées (taux de réponse) ; 5000 commandes au plus |
 | POST | `/admin/events/:id/ticket-types` | Bearer (OWNER/MANAGER) | `{ name, price, quantity, description?, saleEndsAt?, template?, maxPerOrder?, visible?, kind?: "FIXED" \| "CONTRIBUTION", minPrice? }` — cotisation : `price` = montant suggéré (≥ 15000), `minPrice` entre 15000 et `price` | `TicketType` |
+| GET | `/admin/payouts/events?eventId=` | Bearer (OWNER) | — | `[{ eventId, title, startDate, sales, sold, commission, refunds, net, paidOut, inProgress, upcoming }]` — recettes par événement, **francs CFA entiers** |
+| GET | `/admin/payouts/statement?page=&limit=&eventId=` | Bearer (OWNER) | — | `{ rows: [{ id, type: "SALE" \| "REFUND", date, eventId, eventTitle, orderNumber, customerName, gross, commission, net, commissionBps, state: "PAID" \| "IN_PROGRESS" \| "UPCOMING", payoutId, paidAt }], page, limit, total }` — relevé (francs) |
+| GET | `/admin/payouts/statement/export?eventId=` | Bearer (OWNER) | — | `{ truncated, rows }` — relevé complet pour l'export, 5 000 lignes au plus (10 / minute) |
+| GET | `/admin/payouts/:id` | Bearer (OWNER) | — | versement + `events: [{ eventId, title, lines, net }]` — répartition par événement ; **404** autre compte |
+| GET | `/admin/push` | Bearer (tout rôle) | — | `{ enabled, publicKey, devices }` — notifications push ; `enabled: false` tant que les clés du serveur ne sont pas posées |
+| POST | `/admin/push/subscriptions` | Bearer (tout rôle) | `{ endpoint, keys: { p256dh, auth } }` (abonnement du navigateur) | `{ subscribed: true }` — **400** service de notification inconnu ; **503** inactif |
+| DELETE | `/admin/push/subscriptions` | Bearer (tout rôle) | `{ endpoint }` | `{ subscribed: false }` |
+| POST | `/admin/push/test` | Bearer (tout rôle) | — | `{ devices, sent }` — notification d'essai sur ses propres appareils (5 / minute) |
+| GET | `/admin/events/:id/photos` | Bearer (OWNER/MANAGER) | — | `{ limit, count, bytes, storage, photos: [{ id, url, thumbUrl, width, height, size, hidden, createdAt }] }` — album de l'événement |
+| POST | `/admin/events/:id/photos` | Bearer (OWNER/MANAGER) | `{ image }` (data URL PNG/JPEG/WebP, ≤ 2 800 000 caractères, une photo par requête) | `EventPhoto` — ré-encodée en WebP 2000 px + vignette 480 px ; **409** album complet (300) ; **503** stockage indisponible |
+| PATCH | `/admin/events/:id/photos` | Bearer (OWNER/MANAGER) | `{ ids: uuid[], hidden }` | `{ updated }` — masquer / afficher sur le site |
+| DELETE | `/admin/events/:id/photos` | Bearer (OWNER/MANAGER) | `{ ids: uuid[] }` | `{ deleted }` |
 | PATCH | `/admin/ticket-types/:id` | Bearer (OWNER/MANAGER) | `{ name?, price?, quantity?, description?, saleEndsAt?, template?, maxPerOrder?, visible?, kind?, minPrice? }` | `TicketType` — **409** si `quantity` < vendus ; **400** cotisation incohérente |
 | DELETE | `/admin/ticket-types/:id` | Bearer (OWNER/MANAGER) | — | `{}` — **409** si `sold` > 0 ou si des billets de ce type existent |
 

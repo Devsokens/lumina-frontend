@@ -84,7 +84,7 @@ export function LumiereHome({ site, preview }: { site: SiteData; preview?: boole
   });
   const showActivities = site.visible.about && (activities.length > 0 || preview);
   const albums = site.albums.length
-    ? site.albums.slice(0, 6).map((a) => ({ ...a, cover: a.photos }))
+    ? site.albums.slice(0, 6).map((a) => ({ ...a, cover: a.thumbs.length ? a.thumbs : a.photos }))
     : Array.from({ length: Math.ceil(Math.min(site.gallery.length, 9) / 3) }, (_, i) => ({
         id: String(i),
         title: "",
@@ -666,7 +666,7 @@ export function LumiereEvent({ site, event: e, preview }: { site: SiteData; even
                 <div className="grid grid-cols-2 gap-3 @3xl:grid-cols-4">
                   {e.album.map((src, i) => (
                     <button key={i} type="button" onClick={() => !preview && setPhoto(i)} className="relative aspect-[4/3] overflow-hidden rounded-[18px] bg-(--s-surface2)">
-                      <Photo src={src} className="absolute inset-0" />
+                      <Photo src={e.albumThumbs[i] ?? src} className="absolute inset-0" />
                     </button>
                   ))}
                 </div>

@@ -141,6 +141,8 @@ export type EventSettings = {
   program?: ProgramItem[];
   speakers?: Speaker[];
   album?: string[];
+  // Réponses publiques seulement : vignette de chaque photo de `album`.
+  albumThumbs?: string[];
   questionnaireEnabled?: boolean;
   questionnaire?: QuestionnaireQuestion[];
   hasCertificate?: boolean;

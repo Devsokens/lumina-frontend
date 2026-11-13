@@ -37,11 +37,14 @@ export type SiteEvent = {
   program: ProgramItem[];
   speakers: Speaker[];
   album: string[];
+  // Vignette de chaque photo (même ordre), pour les grilles.
+  albumThumbs: string[];
   raw: PublicEvent;
 };
 
 // Album d'un événement passé (« Souvenirs »).
-export type SiteAlbum = { id: string; title: string; date: string; place: string; photos: string[] };
+// thumbs : vignette de chaque photo (même ordre), pour les grilles.
+export type SiteAlbum = { id: string; title: string; date: string; place: string; photos: string[]; thumbs: string[] };
 
 export type SiteData = {
   slug: string;
@@ -119,6 +122,7 @@ export function toSiteEvent(e: PublicEvent): SiteEvent {
     program: settings.program ?? [],
     speakers: settings.speakers ?? [],
     album: settings.album ?? [],
+    albumThumbs: settings.albumThumbs ?? settings.album ?? [],
     raw: e,
   };
 }
@@ -152,6 +156,7 @@ function toAlbum(e: PastEvent): SiteAlbum {
     date: start.toLocaleDateString("fr-FR", { day: "numeric", month: "long", year: "numeric" }),
     place: e.location ?? e.venueName ?? "",
     photos: (e.settings?.album ?? []).filter(Boolean),
+    thumbs: (e.settings?.albumThumbs ?? e.settings?.album ?? []).filter(Boolean),
   };
 }
 
