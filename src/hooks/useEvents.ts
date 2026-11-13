@@ -249,6 +249,10 @@ export function useSaveEvent() {
             ...(FEATURES.ticketExtras && (f.visible ?? true) !== (before.visible ?? true)
               ? { visible: f.visible ?? true }
               : {}),
+            ...((f.kind ?? "FIXED") !== (before.kind ?? "FIXED") ? { kind: f.kind ?? "FIXED" } : {}),
+            ...(f.kind === "CONTRIBUTION" && (f.minPrice ?? null) !== (before.minPrice ?? null)
+              ? { minPrice: f.minPrice ?? null }
+              : {}),
           };
           if (Object.keys(patch).length > 0) {
             try {

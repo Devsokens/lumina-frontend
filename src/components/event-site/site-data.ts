@@ -5,6 +5,8 @@ import { initialsOf } from "@/components/events/ev-ui";
 import type { FAQItem, ShowcaseContent } from "@/stores/useShowcaseStore";
 import type { PublicEvent, PublicTicketType } from "@/types/events";
 import { FEATURES } from "@/lib/features";
+import { eventBadge, eventTime, formatEventPeriod, isMultiDay } from "@/lib/event-dates";
+import { startingPrice } from "@/lib/contribution";
 
 // Données affichées par les modèles Nuit et Lumière : le contenu publié
 // depuis l'éditeur (tenant.config.showcase), l'identité du compte et les
@@ -78,7 +80,7 @@ function visibility(content: ShowcaseContent): SiteData["visible"] {
 }
 
 const cap = (s: string) => s.charAt(0).toUpperCase() + s.slice(1);
-const hm = (d: Date) => d.toLocaleTimeString("fr-FR", { hour: "2-digit", minute: "2-digit" });
+const hm = eventTime;
 
 function firstSentence(text: string) {
   const plain = text.replace(/[*_#>`]/g, "").replace(/\s+/g, " ").trim();
@@ -90,7 +92,7 @@ export function toSiteEvent(e: PublicEvent): SiteEvent {
   const start = new Date(e.startDate);
   const end = e.endDate ? new Date(e.endDate) : null;
   const settings = (e.settings ?? {}) as EventSettings;
-  const prices = e.ticketTypes.map((t) => t.price);
+  const prices = e.ticketTypes.map(startingPrice);
   const sameDay = end && end.toDateString() === start.toDateString();
   const opt = typeOption(e.eventType);
   return {
@@ -100,11 +102,12 @@ export function toSiteEvent(e: PublicEvent): SiteEvent {
     summary: firstSentence(e.description ?? ""),
     imageUrl: e.imageUrl,
     start,
-    day: String(start.getDate()),
-    month: start.toLocaleDateString("fr-FR", { month: "short" }).replace(".", "").toUpperCase(),
-    weekday: cap(start.toLocaleDateString("fr-FR", { weekday: "long" })),
-    dateLong: cap(start.toLocaleDateString("fr-FR", { weekday: "long", day: "numeric", month: "long", year: "numeric" })),
-    timeRange: sameDay ? `${hm(start)} – ${hm(end)}` : hm(start),
+    // Pastille « 15 · NOV », ou « 9–15 · NOV » sur plusieurs jours.
+    ...eventBadge(start, end),
+    weekday: cap(start.toLocaleDateString("fr-FR", { weekday: "long", timeZone: "Africa/Libreville" })),
+    // « Samedi 14 novembre 2026 », ou « Du lundi 9 au dimanche 15 novembre 2026 ».
+    dateLong: formatEventPeriod(start, end, false),
+    timeRange: isMultiDay(start, end) ? `dès ${hm(start)}` : sameDay ? `${hm(start)} – ${hm(end)}` : hm(start),
     venue: e.venueName,
     place: e.location,
     coords: e.lat != null && e.lng != null ? { lat: e.lat, lng: e.lng } : null,

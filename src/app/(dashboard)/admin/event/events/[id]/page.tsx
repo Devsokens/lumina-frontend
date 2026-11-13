@@ -20,9 +20,10 @@ import { TabCertificates } from "@/components/events/detail/tab-certificates";
 import { TabStats } from "@/components/events/detail/tab-stats";
 import { useAdminEvent, useAdminTenant, useDeleteEvent, useEventStats, useEventTickets, useSaveEvent, useSetEventStatus } from "@/hooks/useEvents";
 import { apiErrorMessage, toAttendees, toUiEvent } from "@/lib/events";
-import { formatEventDay, formatTime, STATUS_META, typeOption } from "@/lib/event-meta";
+import { STATUS_META, typeOption } from "@/lib/event-meta";
 import { publicSiteUrl } from "@/lib/tenant-url";
 import { cn } from "@/lib/utils";
+import { formatEventPeriod } from "@/lib/event-dates";
 
 // Détail d'un événement (refonte Claude Design 2026-11, écrans 2 à 5) :
 // Aperçu, Participants, Certifications, Statistiques. Onglet dans l'URL (?tab=).
@@ -125,7 +126,7 @@ export default function EventDetailPage({ params }: { params: Promise<{ id: stri
               </div>
               <div className="flex flex-wrap items-center gap-x-4 gap-y-1 text-[13px] text-ev-muted">
                 <span>
-                  {formatEventDay(event.startDate)} · {formatTime(event.startDate)}
+                  {formatEventPeriod(event.startDate, event.endDate)}
                 </span>
                 {(event.venueName || event.location) && (
                   <>

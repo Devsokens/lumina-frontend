@@ -16,6 +16,7 @@ import { DownloadButton } from "@/components/shared/download-button";
 import type { PublicEvent, PurchasedTicket } from "@/types/events";
 import type { QuestionnaireQuestion } from "@/types/api";
 import { cn } from "@/lib/utils";
+import { isContribution } from "@/lib/contribution";
 import { OperatorLogo } from "@/components/shared/operator-logo";
 import { DataNotice } from "@/components/shared/data-notice";
 import { TurnstileWidget } from "@/components/shared/turnstile-widget";
@@ -27,7 +28,11 @@ import { TurnstileWidget } from "@/components/shared/turnstile-widget";
 
 type Ticket = PublicEvent["ticketTypes"][number];
 // Une formule et son nombre de billets (plusieurs formules par commande).
-export type CheckoutLine = { ticket: Ticket; quantity: number };
+// amount : cotisation, montant choisi par billet (centimes).
+export type CheckoutLine = { ticket: Ticket; quantity: number; amount?: number };
+const unitOf = (l: CheckoutLine) => l.amount ?? l.ticket.price;
+// Ligne d'achat : une formule (et un montant de cotisation).
+const lineKey = (l: CheckoutLine) => `${l.ticket.id}:${l.amount ?? ""}`;
 type AnswerValue = string | number | string[];
 type Step = "people" | "questions" | "payment";
 type Method = "AIRTEL" | "MOOV" | "CARD";
@@ -62,6 +67,19 @@ function cardPhoneOk(phone: string) {
 const filled = (v: AnswerValue | undefined) =>
   v !== undefined && (Array.isArray(v) ? v.length > 0 : typeof v === "number" ? true : v.trim() !== "");
 
+// Canal partagé avec la page /pay/return : signale la fin du paiement carte.
+const PAYMENT_CHANNEL = "giyax-payment";
+
+// Fenêtre PVit centrée par-dessus le site (sur mobile, le navigateur ouvre un
+// onglet). null : bloquée par le navigateur.
+function openPaymentWindow(): Window | null {
+  const w = 480;
+  const h = 720;
+  const left = Math.max(0, Math.round(window.screenX + (window.outerWidth - w) / 2));
+  const top = Math.max(0, Math.round(window.screenY + (window.outerHeight - h) / 2));
+  return window.open("about:blank", "giyax-paiement", `popup=yes,width=${w},height=${h},left=${left},top=${top}`);
+}
+
 export function CheckoutDialog({
   event,
   lines,
@@ -79,8 +97,10 @@ export function CheckoutDialog({
   const look = useSiteLook();
   const nuit = variant === "nuit";
   const quantity = lines.reduce((n, l) => n + l.quantity, 0);
-  const total = lines.reduce((sum, l) => sum + l.ticket.price * l.quantity, 0);
+  const total = lines.reduce((sum, l) => sum + unitOf(l) * l.quantity, 0);
   const paid = total > 0;
+  // Uniquement des cotisations : remerciement plutôt que « billets ».
+  const gift = lines.every((l) => isContribution(l.ticket));
   // Formule de chaque billet, dans l'ordre (billet 1 = l'acheteur).
   const seats = lines.flatMap((l) => Array.from({ length: l.quantity }, () => l.ticket.name));
   const summary = lines.map((l) => `${l.quantity} × ${l.ticket.name}`).join(", ");
@@ -99,7 +119,9 @@ export function CheckoutDialog({
   const [orderId, setOrderId] = useState<string | null>(null);
   const [simulation, setSimulation] = useState<string | null>(null);
   // Paiement parti : on attend la validation (téléphone ou onglet de la banque).
-  const [waiting, setWaiting] = useState<{ reference: string; card: boolean } | null>(null);
+  const [waiting, setWaiting] = useState<{ reference: string; card: boolean; url?: string } | null>(null);
+  // Fenêtre de paiement PVit (carte), gardée pour pouvoir la remettre au premier plan.
+  const cardWin = useRef<Window | null>(null);
   const [slow, setSlow] = useState(false);
   const [failed, setFailed] = useState(false);
   const [done, setDone] = useState<Done | null>(null);
@@ -142,9 +164,18 @@ export function CheckoutDialog({
       if (tries < POLL_MAX) timer = setTimeout(() => void tick(), POLL_MS);
     };
     timer = setTimeout(() => void tick(), POLL_MS);
+    // Retour de la page PVit (même navigateur) : vérification immédiate.
+    const channel = typeof BroadcastChannel !== "undefined" ? new BroadcastChannel(PAYMENT_CHANNEL) : null;
+    if (channel) {
+      channel.onmessage = () => {
+        clearTimeout(timer);
+        void tick();
+      };
+    }
     return () => {
       stopped = true;
       clearTimeout(timer);
+      channel?.close();
     };
   }, [waiting]);
 
@@ -217,8 +248,8 @@ export function CheckoutDialog({
   // billets émis tout de suite.
   async function submit() {
     if (preview) return void toast.info("Aperçu : la réservation fonctionne sur le site publié.");
-    // Ouvert dès le clic : un onglet ouvert plus tard serait bloqué.
-    const cardTab = paid && method === "CARD" ? window.open("about:blank", "_blank") : null;
+    // Ouvert dès le clic : une fenêtre ouverte plus tard serait bloquée.
+    const cardTab = paid && method === "CARD" ? openPaymentWindow() : null;
     setBusy(true);
     setFailed(false);
     setSlow(false);
@@ -230,7 +261,11 @@ export function CheckoutDialog({
         const order = await purchaseTickets(
           event.id,
           {
-            items: lines.map((l) => ({ ticketTypeId: l.ticket.id, quantity: l.quantity })),
+            items: lines.map((l) => ({
+              ticketTypeId: l.ticket.id,
+              quantity: l.quantity,
+              ...(isContribution(l.ticket) ? { amount: unitOf(l) } : {}),
+            })),
             customerName: buyer.name.trim(),
             customerEmail: buyer.email.trim(),
             customerPhone: normalizePhone(buyer.phone),
@@ -257,12 +292,13 @@ export function CheckoutDialog({
         if (cardTab) {
           cardTab.opener = null;
           cardTab.location.href = payment.authorizationUrl;
+          cardWin.current = cardTab;
         } else {
           window.location.assign(payment.authorizationUrl);
           return;
         }
       }
-      setWaiting({ reference: payment.reference, card: payment.flow === "REDIRECT" });
+      setWaiting({ reference: payment.reference, card: payment.flow === "REDIRECT", url: payment.flow === "REDIRECT" ? payment.authorizationUrl : undefined });
     } catch (err) {
       cardTab?.close();
       if (!orderId) key.current = null;
@@ -345,9 +381,29 @@ export function CheckoutDialog({
 
           <div ref={body} className="min-h-0 flex-1 overflow-y-auto border-t border-(--s-line) px-5 py-6 sm:px-7">
             {done ? (
-              <DoneView done={done} email={buyer.email.trim()} nuit={nuit} typeName={(id) => lines.find((l) => l.ticket.id === id)?.ticket.name ?? null} />
+              <DoneView done={done} email={buyer.email.trim()} nuit={nuit} gift={gift} typeName={(id) => lines.find((l) => l.ticket.id === id)?.ticket.name ?? null} />
             ) : waiting ? (
-              <WaitingView card={waiting.card} method={method} phone={momo} total={total} slow={slow} />
+              <WaitingView
+                card={waiting.card}
+                method={method}
+                phone={momo}
+                total={total}
+                slow={slow}
+                onShowCard={
+                  waiting.url
+                    ? () => {
+                        const w = cardWin.current;
+                        if (w && !w.closed) return w.focus();
+                        const again = openPaymentWindow();
+                        if (again) {
+                          again.opener = null;
+                          again.location.href = waiting.url!;
+                          cardWin.current = again;
+                        } else window.location.assign(waiting.url!);
+                      }
+                    : undefined
+                }
+              />
             ) : simulation ? (
               <div className="flex flex-col gap-4">
                 <div className="flex items-start gap-3 rounded-[18px] border border-[#E9B949]/50 bg-[#E9B949]/12 p-4 text-sm leading-relaxed">
@@ -642,11 +698,12 @@ function PaymentSummary({ lines, total }: { lines: CheckoutLine[]; total: number
   return (
     <div className="flex flex-col gap-2 rounded-[18px] border border-(--s-line) bg-(--s-surface) p-4 text-sm">
       {lines.map((l) => (
-        <div key={l.ticket.id} className="flex justify-between gap-3">
+        <div key={lineKey(l)} className="flex justify-between gap-3">
           <span className="text-(--s-muted)">
             {l.quantity} × {l.ticket.name}
+            {l.amount !== undefined && l.quantity > 1 ? ` (${formatPrice(l.amount)})` : ""}
           </span>
-          <span>{l.ticket.price === 0 ? "Gratuit" : formatPrice(l.ticket.price * l.quantity)}</span>
+          <span>{unitOf(l) === 0 ? "Gratuit" : formatPrice(unitOf(l) * l.quantity)}</span>
         </div>
       ))}
       <div className="flex items-baseline justify-between gap-3 border-t border-(--s-line) pt-2">
@@ -755,17 +812,20 @@ function PaymentStep({
 
 // ---------- Attente de la validation ----------
 
-function WaitingView({ card, method, phone, total, slow }: { card: boolean; method: Method; phone: string; total: number; slow: boolean }) {
+function WaitingView({ card, method, phone, total, slow, onShowCard }: { card: boolean; method: Method; phone: string; total: number; slow: boolean; onShowCard?: () => void }) {
   const operator = method === "MOOV" ? "MOOV" : "AIRTEL";
   return (
     <div className="flex flex-col items-center gap-4 py-6 text-center">
       {card ? <Loader2 className="size-10 animate-spin text-(--s-muted)" /> : <OperatorLogo operator={operator} className="size-16 rounded-[16px]" />}
       <span className="font-(family-name:--s-font-display) text-2xl font-extrabold tracking-[-0.02em]">
-        {card ? "Terminez le paiement dans l'onglet ouvert" : "Validez sur votre téléphone"}
+        {card ? "Terminez le paiement dans la fenêtre sécurisée" : "Validez sur votre téléphone"}
       </span>
       <p className="m-0 max-w-[420px] text-sm leading-relaxed text-(--s-body)">
         {card ? (
-          <>Une fois le paiement de <strong className="text-(--s-text)">{formatPrice(total)}</strong> validé, vos billets s&apos;afficheront ici.</>
+          <>
+            Saisissez votre carte dans la fenêtre de notre partenaire PVit. Dès que le paiement de <strong className="text-(--s-text)">{formatPrice(total)}</strong> est validé, vos billets s&apos;affichent
+            ici, sans rien faire de plus.
+          </>
         ) : (
           <>
             Une demande de <strong className="text-(--s-text)">{formatPrice(total)}</strong> vient d&apos;être envoyée au <strong className="text-(--s-text)">{phone}</strong>. Saisissez votre code secret
@@ -773,6 +833,11 @@ function WaitingView({ card, method, phone, total, slow }: { card: boolean; meth
           </>
         )}
       </p>
+      {card && onShowCard && (
+        <button type="button" onClick={onShowCard} className="flex h-11 items-center justify-center gap-2 rounded-full border border-(--s-line3) px-5 text-sm font-semibold text-(--s-text) hover:bg-(--s-surface2)">
+          <CreditCard className="size-4" /> Afficher la fenêtre de paiement
+        </button>
+      )}
       {slow && (
         <p className="m-0 max-w-[420px] rounded-[14px] bg-(--s-surface2) px-4 py-3 text-[13px] leading-relaxed text-(--s-body)">
           {card ? "Toujours en attente de votre banque." : "Vous n'avez rien reçu ? Vérifiez que votre téléphone capte le réseau, puis renvoyez la demande."} Si le paiement a déjà abouti, vos billets arriveront par e-mail.
@@ -784,7 +849,7 @@ function WaitingView({ card, method, phone, total, slow }: { card: boolean; meth
 
 // ---------- Billets ----------
 
-function DoneView({ done, email, nuit, typeName }: { done: Done; email: string; nuit: boolean; typeName: (ticketTypeId: string) => string | null }) {
+function DoneView({ done, email, nuit, gift, typeName }: { done: Done; email: string; nuit: boolean; gift: boolean; typeName: (ticketTypeId: string) => string | null }) {
   const codes = done.tickets.map((t) => t.qrCode);
   const many = done.tickets.length > 1;
   const action = cn(
@@ -797,8 +862,9 @@ function DoneView({ done, email, nuit, typeName }: { done: Done; email: string; 
         <span className={cn("flex size-14 items-center justify-center rounded-full", nuit ? "bg-(--s-accent) text-(--s-accent-ink)" : "bg-(--s-dark) text-(--s-dark-ink)")}>
           <Check className="size-7" strokeWidth={3} />
         </span>
-        <span className="font-(family-name:--s-font-display) text-2xl font-extrabold tracking-[-0.02em]">{done.paid ? "Paiement confirmé" : "Inscription confirmée"}</span>
+        <span className="font-(family-name:--s-font-display) text-2xl font-extrabold tracking-[-0.02em]">{gift ? "Merci pour votre cotisation !" : done.paid ? "Paiement confirmé" : "Inscription confirmée"}</span>
         <p className="m-0 max-w-[420px] text-sm leading-relaxed text-(--s-body)">
+          {gift ? "Votre contribution aide à la réussite de l'événement. " : ""}
           {many ? `Vos ${done.tickets.length} billets` : "Votre billet"}
           {done.paid ? " et votre facture" : ""} {many || done.paid ? "partent" : "part"} aussi à <strong className="text-(--s-text)">{email}</strong>. Présentez le QR code à l&apos;entrée, sur votre téléphone ou imprimé.
         </p>

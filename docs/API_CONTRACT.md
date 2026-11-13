@@ -451,7 +451,7 @@ avant. Seules `GET /events` et `GET /events/:id` consomment `req.tenant` ; `/ten
 reste le fallback et **prime toujours sur le Host**. Conséquence cache : suspension d'un tenant ou
 changement de `customDomain` effectif après au plus 5 min. `ROOT_DOMAIN` doit valoir le domaine
 racine de prod (ex. `giyax.ga`).
-| POST | `/events/:id/tickets` | non, header `X-Idempotency-Key` | `{ items: [{ ticketTypeId, quantity }] (ou `ticketTypeId` + `quantity` pour une seule formule ; 10 billets au plus au total), customerPhone, customerName?, customerEmail?, attendees?: [{ name }], answers?: { [questionId]: string \| number \| string[] } }` | `Order` (`type: "EVENT"`) + `tickets: [{ id, qrCode, status, ticketTypeId }]` — **400** `"Réponse requise : « … »."` / `"Réponse invalide : « … »."` |
+| POST | `/events/:id/tickets` | non, header `X-Idempotency-Key` | `{ items: [{ ticketTypeId, quantity, amount? }] (`amount` = cotisation par billet en centimes, ≥ `minPrice` ou à défaut `price`, multiple de 100 ; ignoré pour un prix fixe) (ou `ticketTypeId` + `quantity` pour une seule formule ; 10 billets au plus au total), customerPhone, customerName?, customerEmail?, attendees?: [{ name }], answers?: { [questionId]: string \| number \| string[] } }` | `Order` (`type: "EVENT"`) + `tickets: [{ id, qrCode, status, ticketTypeId }]` — **400** `"Réponse requise : « … »."` / `"Réponse invalide : « … »."` |
 | POST | `/admin/events/:id/invitations` | OWNER, MANAGER | comme l'achat, `X-Idempotency-Key` requis | Billet émis par l'organisateur : seule voie vers une formule masquée ou aux ventes closes |
 | POST | `/tickets/pdf` | non (chaque code sert de secret, 10 au plus) | `{ codes: string[] }` | **PDF binaire** (`attachment`, pas d'enveloppe JSON) : les billets fournis, un par page. 404 si aucun n'est `VALID`/`USED`. Le code d'un billet vaut le billet : jamais dans une adresse |
 
@@ -492,8 +492,8 @@ obligatoire sans réponse refuse la commande (400) avant toute réservation de p
 | GET | `/admin/events/:id/tickets` | Bearer (OWNER/MANAGER/STAFF) | — | `Ticket[]` (+ `ticketType: { name, price }`) |
 | GET | `/admin/events/:id/orders?page=&limit=` | Bearer (OWNER/MANAGER) | — | `[{ id, orderNumber, status, paymentStatus, paymentMethod, total, customerName, customerPhone, customerEmail, createdAt, tickets: [{ id, status, scannedAt, ticketType: { name } }] }]` + `meta` — commandes de billets de l'événement (réservations, remboursements) |
 | GET | `/admin/events/:id/responses` | Bearer (OWNER/MANAGER) | — | `{ orders, responses: [{ id, orderNumber, customerName, customerEmail, customerPhone, createdAt, answers, ticketTypes: string[], tickets, checkedIn }] }` — réponses au questionnaire, une par commande confirmée ; `orders` = inscriptions confirmées (taux de réponse) ; 5000 commandes au plus |
-| POST | `/admin/events/:id/ticket-types` | Bearer (OWNER/MANAGER) | `{ name, price, quantity, description?, saleEndsAt?, template?, maxPerOrder?, visible? }` | `TicketType` |
-| PATCH | `/admin/ticket-types/:id` | Bearer (OWNER/MANAGER) | `{ name?, price?, quantity?, description?, saleEndsAt?, template?, maxPerOrder?, visible? }` | `TicketType` — **409** si `quantity` < vendus |
+| POST | `/admin/events/:id/ticket-types` | Bearer (OWNER/MANAGER) | `{ name, price, quantity, description?, saleEndsAt?, template?, maxPerOrder?, visible?, kind?: "FIXED" \| "CONTRIBUTION", minPrice? }` — cotisation : `price` = montant suggéré (≥ 15000), `minPrice` entre 15000 et `price` | `TicketType` |
+| PATCH | `/admin/ticket-types/:id` | Bearer (OWNER/MANAGER) | `{ name?, price?, quantity?, description?, saleEndsAt?, template?, maxPerOrder?, visible?, kind?, minPrice? }` | `TicketType` — **409** si `quantity` < vendus ; **400** cotisation incohérente |
 | DELETE | `/admin/ticket-types/:id` | Bearer (OWNER/MANAGER) | — | `{}` — **409** si `sold` > 0 ou si des billets de ce type existent |
 
 ### 14.1 Émission et suivi des attestations / certificats

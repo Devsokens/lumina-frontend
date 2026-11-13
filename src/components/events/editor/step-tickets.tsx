@@ -8,6 +8,7 @@ import { EvButton, EvHr, EvSectionTitle, EvSwitch, EV_PORTAL } from "@/component
 import { amount, formatEventDay, formulaColor } from "@/lib/event-meta";
 import { TEMPLATE_CATEGORIES, TICKET_TEMPLATES, defaultTemplateFor, getTicketTemplate } from "@/lib/ticket-templates";
 import { cn } from "@/lib/utils";
+import { MIN_CONTRIBUTION, contributionFloor, isContribution } from "@/lib/contribution";
 import { capacityOf, newId, potentialOf, type EditorForm, type EditorFormula } from "./editor-model";
 import { KIND_LABEL, TicketMini } from "./ticket-design";
 
@@ -24,11 +25,14 @@ const SWATCHES = [
   { label: "Sur mesure", bg: "conic-gradient(#C2547A, #E39A1F, #0F8A64, #2C5BA8, #C2547A)" },
 ];
 
-type Draft = { name: string; price: string; quantity: string; description: string; saleEndsAt: string; maxPerOrder: string; visible: boolean };
+type Kind = "FIXED" | "CONTRIBUTION";
+type Draft = { kind: Kind; name: string; price: string; minPrice: string; quantity: string; description: string; saleEndsAt: string; maxPerOrder: string; visible: boolean };
 
 const toDraft = (f: EditorFormula): Draft => ({
+  kind: f.kind ?? "FIXED",
   name: f.name,
   price: f.price ? String(Math.round(f.price / 100)) : "0",
+  minPrice: f.minPrice ? String(Math.round(f.minPrice / 100)) : "",
   quantity: String(f.quantity || ""),
   description: f.description ?? "",
   saleEndsAt: f.saleEndsAt ? f.saleEndsAt.slice(0, 10) : "",
@@ -37,6 +41,11 @@ const toDraft = (f: EditorFormula): Draft => ({
 });
 
 const digits = (v: string) => Number(v.replace(/\D/g, "") || 0);
+
+const KINDS: [Kind, string][] = [
+  ["FIXED", "Billet à prix fixe"],
+  ["CONTRIBUTION", "Cotisation libre"],
+];
 
 export function StepTickets({ form, set, eventId }: Props) {
   const [editing, setEditing] = useState<string | null>(null);
@@ -68,6 +77,8 @@ export function StepTickets({ form, set, eventId }: Props) {
       description: preset?.description ?? "",
       saleEndsAt: preset?.saleEndsAt ?? null,
       visible: true,
+      kind: preset?.kind ?? "FIXED",
+      minPrice: preset?.minPrice ?? null,
     };
     set({ formulas: [...form.formulas, f] });
     setFresh(f.id);
@@ -82,10 +93,20 @@ export function StepTickets({ form, set, eventId }: Props) {
     if (draft.name.trim().length < 2) return toast.error("Nom de la formule : 2 caractères minimum.");
     if (quantity < 1) return toast.error("Indiquez le nombre de places.");
     if (quantity < current.sold) return toast.error(`Impossible : ${current.sold} place(s) déjà vendue(s).`);
+    const price = digits(draft.price) * 100;
+    const gift = draft.kind === "CONTRIBUTION";
+    // Cotisation : minimum vide = montant suggéré.
+    const minPrice = gift ? digits(draft.minPrice) * 100 || price : null;
+    if (gift && price < MIN_CONTRIBUTION) return toast.error(`Montant suggéré : ${amount(MIN_CONTRIBUTION)} F au moins.`);
+    if (gift && minPrice !== null && (minPrice < MIN_CONTRIBUTION || minPrice > price)) {
+      return toast.error(`Le minimum doit être compris entre ${amount(MIN_CONTRIBUTION)} F et le montant suggéré.`);
+    }
     const next: EditorFormula = {
       ...current,
+      kind: draft.kind,
       name: draft.name.trim(),
-      price: digits(draft.price) * 100,
+      price,
+      minPrice,
       quantity,
       description: draft.description.trim() || null,
       saleEndsAt: draft.saleEndsAt ? new Date(`${draft.saleEndsAt}T23:59:00`).toISOString() : null,
@@ -129,6 +150,17 @@ export function StepTickets({ form, set, eventId }: Props) {
     ["Étudiant", { name: "Étudiant", price: Math.round((firstPrice * 0.5) / 10_000) * 10_000, quantity: 30, description: "Sur présentation de la carte étudiante" }],
     ["Table VIP", { name: "Table VIP", price: firstPrice * 5, quantity: 10, description: "Table réservée pour 6 personnes" }],
     ["Invitation gratuite", { name: "Invitation", price: 0, quantity: 20, description: "Accès sur invitation" }],
+    [
+      "Cotisation",
+      {
+        name: "Cotisation",
+        kind: "CONTRIBUTION",
+        price: 2_000_000,
+        minPrice: 500_000,
+        quantity: 100,
+        description: "Participation libre à la réussite de l'événement",
+      },
+    ],
   ];
 
   const list = category === "Tous" ? TICKET_TEMPLATES : TICKET_TEMPLATES.filter((t) => t.category === category);
@@ -174,15 +206,32 @@ export function StepTickets({ form, set, eventId }: Props) {
                     Modification en cours{f.sold > 0 ? ` · ${f.sold} vendu${f.sold > 1 ? "s" : ""}` : ""}
                   </span>
                 </div>
-                <span className="text-[15px] font-semibold">{digits(draft.price).toLocaleString("fr-FR")} F</span>
+                <span className="text-[15px] font-semibold">
+                  {draft.kind === "CONTRIBUTION" ? "Cotisation · " : ""}
+                  {digits(draft.price).toLocaleString("fr-FR")} F
+                </span>
               </div>
               <div className="grid grid-cols-2 gap-3.5 px-4 py-[18px] sm:grid-cols-4">
+                <div role="radiogroup" aria-label="Type de formule" className="col-span-2 flex flex-wrap gap-1.5 sm:col-span-4">
+                  {KINDS.map(([k, label]) => (
+                    <button
+                      key={k}
+                      type="button"
+                      role="radio"
+                      aria-checked={draft.kind === k}
+                      onClick={() => setDraft({ ...draft, kind: k })}
+                      className={cn("h-9 rounded-full border px-3.5 text-[13px] font-medium", draft.kind === k ? "border-ev-primary bg-ev-primary text-white" : "border-ev-border bg-ev-surface text-ev-ink2 hover:bg-ev-soft")}
+                    >
+                      {label}
+                    </button>
+                  ))}
+                </div>
                 <label className="col-span-2 flex flex-col gap-1.5 text-[13px] font-medium">
                   Nom
                   <input value={draft.name} maxLength={80} onChange={(e) => setDraft({ ...draft, name: e.target.value })} className="h-[42px] rounded-[10px] border border-ev-border bg-ev-surface px-3 font-normal outline-none focus:border-ev-primary" />
                 </label>
                 <label className="flex flex-col gap-1.5 text-[13px] font-medium">
-                  Prix
+                  {draft.kind === "CONTRIBUTION" ? "Montant suggéré" : "Prix"}
                   <span className="flex h-[42px] items-center overflow-hidden rounded-[10px] border border-ev-border focus-within:border-ev-primary">
                     <input inputMode="numeric" value={draft.price} onChange={(e) => setDraft({ ...draft, price: e.target.value.replace(/[^\d\s]/g, "") })} className="h-full min-w-0 flex-1 border-0 bg-ev-surface px-3 font-normal outline-none" />
                     <span className="flex h-full items-center border-l border-ev-border bg-ev-soft px-2.5 text-xs text-ev-muted">F</span>
@@ -192,6 +241,20 @@ export function StepTickets({ form, set, eventId }: Props) {
                   Places
                   <input inputMode="numeric" value={draft.quantity} onChange={(e) => setDraft({ ...draft, quantity: e.target.value.replace(/\D/g, "") })} className="h-[42px] rounded-[10px] border border-ev-border bg-ev-surface px-3 font-normal outline-none focus:border-ev-primary" />
                 </label>
+                {draft.kind === "CONTRIBUTION" && (
+                  <>
+                    <label className="col-span-2 flex flex-col gap-1.5 text-[13px] font-medium sm:col-span-1">
+                      Minimum
+                      <span className="flex h-[42px] items-center overflow-hidden rounded-[10px] border border-ev-border focus-within:border-ev-primary">
+                        <input inputMode="numeric" value={draft.minPrice} placeholder={draft.price || "0"} onChange={(e) => setDraft({ ...draft, minPrice: e.target.value.replace(/[^\d\s]/g, "") })} className="h-full min-w-0 flex-1 border-0 bg-ev-surface px-3 font-normal outline-none" />
+                        <span className="flex h-full items-center border-l border-ev-border bg-ev-soft px-2.5 text-xs text-ev-muted">F</span>
+                      </span>
+                    </label>
+                    <p className="col-span-2 m-0 self-end rounded-[10px] bg-ev-soft px-3 py-2.5 text-xs leading-relaxed text-ev-muted sm:col-span-3">
+                      Chaque invité choisit son montant à partir du minimum (montant suggéré mis en avant). Son billet porte « J&apos;ai cotisé pour la réussite de… » et sert aussi d&apos;entrée.
+                    </p>
+                  </>
+                )}
                 <label className="col-span-2 flex flex-col gap-1.5 text-[13px] font-medium">
                   Avantages inclus
                   <input value={draft.description} maxLength={300} onChange={(e) => setDraft({ ...draft, description: e.target.value })} placeholder="Accès, boisson, place assise…" className="h-[42px] rounded-[10px] border border-ev-border bg-ev-surface px-3 font-normal outline-none focus:border-ev-primary" />
@@ -226,10 +289,10 @@ export function StepTickets({ form, set, eventId }: Props) {
               <div className="flex min-w-0 flex-1 flex-col gap-1">
                 <span className="truncate text-sm font-semibold">{f.name}</span>
                 <span className="truncate text-xs text-ev-muted">
-                  {[f.description, `${f.quantity} places`, `${f.sold} vendu${f.sold > 1 ? "s" : ""}`].filter(Boolean).join(" · ")}
+                  {[isContribution(f) ? "Cotisation libre" : null, f.description, `${f.quantity} places`, `${f.sold} vendu${f.sold > 1 ? "s" : ""}`].filter(Boolean).join(" · ")}
                 </span>
               </div>
-              <span className="shrink-0 text-[15px] font-semibold">{f.price === 0 ? "Gratuit" : `${amount(f.price)} F`}</span>
+              <span className="shrink-0 text-[15px] font-semibold">{isContribution(f) ? `dès ${amount(contributionFloor(f))} F` : f.price === 0 ? "Gratuit" : `${amount(f.price)} F`}</span>
               <button type="button" aria-label={`Modifier ${f.name}`} onClick={() => startEdit(f)} className="flex size-[34px] shrink-0 items-center justify-center rounded-[8px] border border-ev-border bg-ev-surface text-ev-ink2 hover:bg-ev-soft">
                 <Pencil className="size-4" />
               </button>

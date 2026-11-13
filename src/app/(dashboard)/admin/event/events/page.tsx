@@ -21,6 +21,7 @@ import { publicSiteUrl } from "@/lib/tenant-url";
 import { amount, daysUntilLabel, EVENT_TYPE_OPTIONS, formatEventDay, pct, STATUS_META, typeOption } from "@/lib/event-meta";
 import { cn } from "@/lib/utils";
 import type { ApiEvent, EventStats } from "@/types/events";
+import { formatEventPeriodShort } from "@/lib/event-dates";
 
 // « Mes événements » (refonte Claude Design 2026-11, écran 1).
 type StatusTab = "ALL" | "ON_SALE" | "DRAFT" | "DONE";
@@ -258,7 +259,7 @@ export default function EventsListPage() {
                         <EvPill tone={STATUS_META[e.status].tone}>{STATUS_META[e.status].label}</EvPill>
                       </div>
                       <p className="mt-0.5 truncate text-[13px] text-ev-muted">
-                        {formatEventDay(e.startDate)} · {e.venueName || e.location || "Lieu à préciser"}
+                        {formatEventPeriodShort(e.startDate, e.endDate)} · {e.venueName || e.location || "Lieu à préciser"}
                       </p>
                     </div>
                     <div className="w-full sm:w-40">
@@ -348,7 +349,7 @@ function EventCard({ event: e, stats, actions, onOpen }: { event: ApiEvent; stat
         <div className="flex flex-col gap-1.5 text-[13px] text-ev-ink2">
           <span className="flex items-center gap-2">
             <Calendar className="size-[15px] shrink-0 text-ev-muted" />
-            {formatEventDay(e.startDate)}
+            {formatEventPeriodShort(e.startDate, e.endDate)}
           </span>
           <span className="flex min-w-0 items-center gap-2">
             <MapPin className="size-[15px] shrink-0 text-ev-muted" />

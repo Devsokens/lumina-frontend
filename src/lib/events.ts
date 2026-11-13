@@ -1,6 +1,7 @@
 import { isAxiosError } from "axios";
 import type { Attendee, Event, QuestionnaireQuestion, TicketTemplate, TicketType } from "@/types/api";
 import { FEATURES } from "@/lib/features";
+import { startingPrice } from "@/lib/contribution";
 import type { ApiEvent, ApiTicket, EventStats, PublicEvent } from "@/types/events";
 import type { EventItem } from "@/stores/useShowcaseStore";
 
@@ -44,6 +45,8 @@ export function toUiEvent(event: ApiEvent, stats?: EventStats): Event {
         description: t.description,
         saleEndsAt: t.saleEndsAt ?? null,
         ticketTemplate: (t.template as TicketTemplate | null) ?? undefined,
+        kind: t.kind ?? "FIXED",
+        minPrice: t.minPrice ?? null,
       })
     ),
     soldTicketsCount: stats?.issued ?? event.ticketTypes.reduce((n, t) => n + t.sold, 0),
@@ -217,6 +220,7 @@ export function ticketTypeBody(f: TicketType) {
     ...(FEATURES.ticketExtras && f.ticketTemplate ? { template: f.ticketTemplate } : {}),
     ...(FEATURES.ticketExtras && f.maxPerOrder ? { maxPerOrder: f.maxPerOrder } : {}),
     ...(FEATURES.ticketExtras && f.visible !== undefined ? { visible: f.visible } : {}),
+    ...(f.kind === "CONTRIBUTION" ? { kind: f.kind, ...(f.minPrice ? { minPrice: f.minPrice } : {}) } : {}),
   };
 }
 
@@ -253,7 +257,7 @@ const SHOWCASE_CATEGORY: Record<string, EventItem["category"]> = {
 
 export function toShowcaseEvent(event: PublicEvent): EventItem {
   const start = new Date(event.startDate);
-  const prices = event.ticketTypes.map((t) => t.price);
+  const prices = event.ticketTypes.map(startingPrice);
   return {
     id: event.id,
     title: event.title,
