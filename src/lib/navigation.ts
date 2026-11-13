@@ -15,6 +15,7 @@ import {
   Palette,
   BedDouble,
   Receipt,
+  Wallet,
   type LucideIcon,
 } from "lucide-react";
 import type { Role } from "@/lib/constants";
@@ -55,6 +56,7 @@ export function navLinks(sectorParam: string | undefined, role: Role | undefined
     links = [
       { href: base, label: "Tableau de bord", short: "Accueil", icon: LayoutDashboard, exact: true, tab: true, hint: "Ventes et entrées du jour" },
       { href: `${base}/events`, label: "Mes événements", short: "Événements", icon: CalendarDays, roles: OWNER_MANAGER, tab: true, hint: "Billetterie, participants, remboursements" },
+      { href: `${base}/revenue`, label: "Revenus", icon: Wallet, roles: ["OWNER"], hint: "Recettes, reversements et relevé" },
       { href: "/scan", label: "Contrôle d'accès", short: "Scanner", icon: ScanLine, roles: ["OWNER", "MANAGER", "STAFF"], tab: true, accent: true, hint: "Scanner les billets à l'entrée" },
       { href: `${base}/showcase`, label: "Mon site web", short: "Site web", icon: Globe, roles: OWNER_MANAGER, tab: true, hint: "Votre site public et son apparence" },
       { href: `${base}/users`, label: "Mon équipe", icon: Users, roles: OWNER_MANAGER, hint: "Membres, rôles et accès au scanner" },

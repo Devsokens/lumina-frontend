@@ -282,7 +282,8 @@ export function NuitHome({ site, preview }: { site: SiteData; preview?: boolean 
                     i === 0 ? "col-span-2 min-h-[320px] p-[26px] @3xl:col-span-1 @3xl:row-span-2 @3xl:min-h-[560px]" : "min-h-[220px] p-[22px] @3xl:min-h-[271px]"
                   )}
                 >
-                  <Photo src={a.photos[0]} className="absolute inset-0" />
+                  {/* Grande tuile : photo entière ; petites tuiles : vignette. */}
+                  <Photo src={i === 0 ? a.photos[0] : (a.thumbs[0] ?? a.photos[0])} className="absolute inset-0" />
                   <span aria-hidden className="absolute inset-0 bg-[linear-gradient(180deg,transparent_40%,rgba(0,0,0,.75))]" />
                   <span className="relative flex flex-col gap-1.5 text-white">
                     {i === 0 && (
@@ -595,7 +596,7 @@ export function NuitEvent({ site, event: e, preview }: { site: SiteData; event: 
               <div className="grid grid-cols-2 gap-3 @3xl:grid-cols-4">
                 {e.album.map((src, i) => (
                   <button key={i} type="button" onClick={() => !preview && setPhoto(i)} className="relative h-[150px] overflow-hidden rounded-[18px] bg-(--s-surface)">
-                    <Photo src={src} className="absolute inset-0" />
+                    <Photo src={e.albumThumbs[i] ?? src} className="absolute inset-0" />
                   </button>
                 ))}
               </div>

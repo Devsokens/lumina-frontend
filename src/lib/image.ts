@@ -54,3 +54,32 @@ export async function prepareImage(file: File, maxSide = 1600): Promise<string> 
 export function isHttpsImageUrl(value: string) {
   return /^https:\/\/\S+$/.test(value.trim());
 }
+
+// Photo d'album : réduite à 2000 px en WebP avant l'envoi (une photo de
+// téléphone de 5 Mo descend vers 300 à 600 ko), EXIF retiré. Le serveur la
+// ré-encode et fabrique la vignette ; limite acceptée : 2 800 000 caractères.
+const MAX_PHOTO_SOURCE_BYTES = 25 * 1024 * 1024;
+const MAX_PHOTO_DATA_URL = 2_600_000;
+
+export async function preparePhoto(file: File): Promise<string> {
+  if (!ACCEPTED_IMAGE_TYPES.includes(file.type)) {
+    throw new Error("Format non pris en charge (PNG, JPG ou WEBP).");
+  }
+  if (file.size > MAX_PHOTO_SOURCE_BYTES) throw new Error("Photo trop lourde (25 Mo maximum).");
+  const img = await loadImage(file);
+  for (const side of [2000, 1600, 1200]) {
+    const scale = Math.min(1, side / Math.max(img.naturalWidth, img.naturalHeight));
+    const canvas = document.createElement("canvas");
+    canvas.width = Math.max(1, Math.round(img.naturalWidth * scale));
+    canvas.height = Math.max(1, Math.round(img.naturalHeight * scale));
+    const ctx = canvas.getContext("2d");
+    if (!ctx) throw new Error("Traitement d'image indisponible sur ce navigateur.");
+    ctx.drawImage(img, 0, 0, canvas.width, canvas.height);
+    for (const quality of [0.84, 0.72]) {
+      let data = canvas.toDataURL("image/webp", quality);
+      if (!data.startsWith("data:image/webp")) data = canvas.toDataURL("image/jpeg", quality);
+      if (data.length <= MAX_PHOTO_DATA_URL) return data;
+    }
+  }
+  throw new Error("Photo trop détaillée pour être envoyée.");
+}

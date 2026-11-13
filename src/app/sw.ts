@@ -69,3 +69,52 @@ const serwist = new Serwist({
 });
 
 serwist.addEventListeners();
+
+// --- Notifications push (ventes, cotisations, versements) ---
+// Le serveur envoie { title, body, url?, tag?, kind? }. La notification
+// s'affiche même GiyaX fermé ; si un onglet est ouvert, il est aussi prévenu
+// pour jouer le son de l'application (lib/push.ts, PushListener).
+type PushPayload = { title?: string; body?: string; url?: string; tag?: string; kind?: string };
+
+self.addEventListener("push", (event) => {
+  let data: PushPayload = {};
+  try {
+    data = (event.data?.json() ?? {}) as PushPayload;
+  } catch {
+    data = { body: event.data?.text() };
+  }
+  const title = data.title || "GiyaX";
+  // Lien interne uniquement : jamais d'adresse externe ouverte au clic.
+  const url = typeof data.url === "string" && data.url.startsWith("/") && !data.url.startsWith("//") ? data.url : "/admin";
+  event.waitUntil(
+    (async () => {
+      await self.registration.showNotification(title, {
+        body: data.body ?? "",
+        icon: "/brand/giyax-favicon-192.png",
+        badge: "/brand/giyax-favicon-192.png",
+        tag: data.tag,
+        data: { url },
+      });
+      const windows = await self.clients.matchAll({ type: "window", includeUncontrolled: true });
+      for (const client of windows) client.postMessage({ type: "giyax-push", title, body: data.body ?? "", url, kind: data.kind });
+    })()
+  );
+});
+
+self.addEventListener("notificationclick", (event) => {
+  event.notification.close();
+  const url = new URL((event.notification.data as { url?: string } | null)?.url ?? "/admin", self.location.origin).href;
+  event.waitUntil(
+    (async () => {
+      const windows = await self.clients.matchAll({ type: "window", includeUncontrolled: true });
+      // Un onglet GiyaX déjà ouvert : on le réutilise.
+      const open = windows.find((c) => new URL(c.url).origin === self.location.origin);
+      if (open) {
+        await open.focus();
+        await open.navigate(url).catch(() => undefined);
+        return;
+      }
+      await self.clients.openWindow(url);
+    })()
+  );
+});

@@ -27,7 +27,6 @@ import { DEFAULT_MESSAGES, MESSAGE_META, MESSAGE_VARS } from "@/lib/event-messag
 import { apiError } from "@/lib/api";
 import { useAuthStore } from "@/stores/useAuthStore";
 import { DownloadButton } from "@/components/shared/download-button";
-import { PayoutBalance } from "@/components/events/settings/payout-balance";
 import { downloadTenantExport } from "@/lib/download";
 import { OperatorLogo } from "@/components/shared/operator-logo";
 import { cn } from "@/lib/utils";
@@ -290,7 +289,17 @@ export function SettingsPayments({ tenant, canEdit }: { tenant: Tenant; canEdit:
         Les encaissements sont traités par notre prestataire de paiement sécurisé. Vos recettes sont reversées sur votre compte, selon la fréquence choisie.
         {!FEATURES.sms && " Notre équipe confirme le numéro de versement avec vous avant le premier virement."} Un numéro modifié n&apos;est utilisable qu&apos;après 48 h, pour votre sécurité.
       </InfoNote>
-      {canEdit && <PayoutBalance />}
+      {canEdit && (
+        <SettingsCard className="flex flex-wrap items-center justify-between gap-3 px-5 py-4 sm:px-6">
+          <span className="flex flex-col gap-0.5">
+            <span className="text-[15px] font-semibold">Vos recettes et reversements</span>
+            <span className="text-[13px] text-ev-muted">Solde, versements reçus et relevé détaillé par événement.</span>
+          </span>
+          <Link href="/admin/event/revenue" className="text-[13px] font-semibold text-ev-link hover:underline">
+            Ouvrir Revenus
+          </Link>
+        </SettingsCard>
+      )}
       {!canEdit && <p className="m-0 text-[13px] text-ev-muted">Seul l&apos;organisateur peut modifier les comptes de versement.</p>}
       <SettingsCard className="overflow-hidden">
         <div className="flex items-center justify-between border-b border-ev-line px-5 py-[18px] sm:px-6">

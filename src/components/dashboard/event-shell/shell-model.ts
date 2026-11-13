@@ -17,6 +17,7 @@ export const NAV_ICON: Record<string, string> = {
   events: "M3 5h18v16H3zM3 10h18M8 3v4M16 3v4",
   scan: "M3 7V5a2 2 0 0 1 2-2h2M17 3h2a2 2 0 0 1 2 2v2M21 17v2a2 2 0 0 1-2 2h-2M7 21H5a2 2 0 0 1-2-2v-2M7 12h10",
   showcase: "M12 3a9 9 0 1 0 0 18 9 9 0 0 0 0-18zM3 12h18M12 3c2.5 2.5 3.5 5.5 3.5 9s-1 6.5-3.5 9c-2.5-2.5-3.5-5.5-3.5-9S9.5 5.5 12 3z",
+  revenue: "M3 7a2 2 0 0 1 2-2h13v4M3 7v10a2 2 0 0 0 2 2h15a1 1 0 0 0 1-1v-8a1 1 0 0 0-1-1H5a2 2 0 0 1-2-2zM16.5 14h.01",
   users: "M16 20v-1a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v1M9 11a4 4 0 1 0 0-8 4 4 0 0 0 0 8zM22 20v-1a4 4 0 0 0-3-3.9M16 3.1a4 4 0 0 1 0 7.8",
   audit: "M8 6h13M8 12h13M8 18h13M3 6h.01M3 12h.01M3 18h.01",
   settings: "M12 15a3 3 0 1 0 0-6 3 3 0 0 0 0 6zM12 2v3M12 19v3M4.2 4.2l2.1 2.1M17.7 17.7l2.1 2.1M2 12h3M19 12h3M4.2 19.8l2.1-2.1M17.7 6.3l2.1-2.1",
@@ -31,7 +32,7 @@ export function keyOf(href: string): keyof typeof NAV_ICON {
 
 // Groupes de la barre latérale ; les noms des modules restent ceux de l'app.
 const GROUPS: { title: string; keys: (keyof typeof NAV_ICON)[] }[] = [
-  { title: "BILLETTERIE", keys: ["home", "events", "scan"] },
+  { title: "BILLETTERIE", keys: ["home", "events", "revenue", "scan"] },
   { title: "VITRINE", keys: ["showcase"] },
   { title: "ORGANISATION", keys: ["users", "audit", "settings"] },
 ];

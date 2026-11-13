@@ -32,7 +32,7 @@ export type PastEvent = {
   location: string | null;
   eventType: string | null;
   imageUrl: string | null;
-  settings: { album?: string[] };
+  settings: { album?: string[]; albumThumbs?: string[] };
 };
 
 export function usePastEvents(slug: string) {

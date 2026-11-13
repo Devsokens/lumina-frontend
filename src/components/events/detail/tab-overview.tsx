@@ -13,6 +13,7 @@ import {
   DialogTitle,
 } from "@/components/ui/dialog";
 import { EV_PORTAL, EvButton, EvCard, EvProgress } from "@/components/events/ev-ui";
+import { EventRevenueCard } from "@/components/events/revenue/event-revenue-card";
 import { amount, daysUntilLabel, formulaColor, pct, questionSummary } from "@/lib/event-meta";
 import { publicSiteLabel, publicSiteUrl } from "@/lib/tenant-url";
 import type { Tenant } from "@/types/api";
@@ -322,6 +323,9 @@ export function TabOverview({ event, stats, tenant, onEdit, onTab }: Props) {
             </div>
           </dl>
         </EvCard>
+
+        {/* Revenus de l'événement (propriétaire) */}
+        <EventRevenueCard eventId={event.id} />
 
         {/* Partager la vitrine */}
         <EvCard className="flex flex-col gap-3.5 p-4 sm:p-[22px]">

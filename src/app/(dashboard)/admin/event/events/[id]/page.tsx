@@ -18,6 +18,7 @@ import { TabOverview } from "@/components/events/detail/tab-overview";
 import { TabParticipants } from "@/components/events/detail/tab-participants";
 import { TabCertificates } from "@/components/events/detail/tab-certificates";
 import { TabStats } from "@/components/events/detail/tab-stats";
+import { TabAlbum } from "@/components/events/detail/tab-album";
 import { useAdminEvent, useAdminTenant, useDeleteEvent, useEventStats, useEventTickets, useSaveEvent, useSetEventStatus } from "@/hooks/useEvents";
 import { apiErrorMessage, toAttendees, toUiEvent } from "@/lib/events";
 import { STATUS_META, typeOption } from "@/lib/event-meta";
@@ -26,13 +27,14 @@ import { cn } from "@/lib/utils";
 import { formatEventPeriod } from "@/lib/event-dates";
 
 // Détail d'un événement (refonte Claude Design 2026-11, écrans 2 à 5) :
-// Aperçu, Participants, Certifications, Statistiques. Onglet dans l'URL (?tab=).
-type Tab = "apercu" | "participants" | "certifications" | "statistiques";
+// Aperçu, Participants, Certifications, Statistiques, Album. Onglet dans l'URL (?tab=).
+type Tab = "apercu" | "participants" | "certifications" | "statistiques" | "album";
 const TABS: { id: Tab; label: string }[] = [
   { id: "apercu", label: "Aperçu" },
   { id: "participants", label: "Participants" },
   { id: "certifications", label: "Certifications" },
   { id: "statistiques", label: "Statistiques" },
+  { id: "album", label: "Album" },
 ];
 
 export default function EventDetailPage({ params }: { params: Promise<{ id: string }> }) {
@@ -212,6 +214,7 @@ export default function EventDetailPage({ params }: { params: Promise<{ id: stri
         {tab === "participants" && <TabParticipants event={event} stats={stats} tickets={tickets ?? []} />}
         {tab === "certifications" && <TabCertificates event={event} tickets={tickets ?? []} orgName={tenant?.name ?? "Votre organisation"} onEdit={openEditor} />}
         {tab === "statistiques" && <TabStats event={event} stats={stats} tickets={tickets ?? []} />}
+        {tab === "album" && <TabAlbum event={event} />}
       </div>
 
       <EventEditor open={editor.open} event={event} initialStep={editor.step} onOpenChange={(open) => setEditor((s) => ({ ...s, open }))} />
