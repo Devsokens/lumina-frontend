@@ -9,7 +9,8 @@ import { api, type ApiResponse } from "@/lib/api";
 // panneau est ouvert, toutes les minutes sinon (pastille « non lu »).
 
 export type SupportMessage = { id: string; from: "me" | "support"; body: string; createdAt: string };
-export type SupportConversation = { unread: number; waiting: boolean; messages: SupportMessage[] };
+// handled : un conseiller suit la conversation ; seenAt : dernière lecture par l'équipe.
+export type SupportConversation = { unread: number; waiting: boolean; handled: boolean; seenAt: string | null; messages: SupportMessage[] };
 
 export const SUPPORT_MESSAGE_MAX = 2000;
 const KEY = ["support"];
@@ -38,7 +39,7 @@ export function useSendSupportMessage() {
       await qc.cancelQueries({ queryKey: KEY });
       const before = qc.getQueryData<SupportConversation>(KEY);
       const draft: SupportMessage = { id: `local-${Date.now()}`, from: "me", body, createdAt: new Date().toISOString() };
-      qc.setQueryData<SupportConversation>(KEY, { unread: 0, waiting: true, messages: [...(before?.messages ?? []), draft] });
+      qc.setQueryData<SupportConversation>(KEY, { unread: 0, waiting: true, handled: before?.handled ?? false, seenAt: before?.seenAt ?? null, messages: [...(before?.messages ?? []), draft] });
       return { before };
     },
     onError: (_e, _v, ctx) => qc.setQueryData(KEY, ctx?.before),

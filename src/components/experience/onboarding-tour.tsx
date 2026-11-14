@@ -8,7 +8,6 @@ import {
   Building2,
   CalendarDays,
   Check,
-  Compass,
   Globe,
   LayoutDashboard,
   MessageCircle,
@@ -19,6 +18,7 @@ import {
   Users,
   Wallet,
   X,
+  Headset,
 } from "lucide-react";
 import { EV_PORTAL } from "@/components/events/ev-ui";
 import { GiyaxAvatar } from "@/components/ai/giyax-avatar";
@@ -49,7 +49,7 @@ const SPOTS: Spot[] = [
   { target: "nav-users", icon: Users, roles: MANAGE, title: "Mon équipe", text: "Invitez vos managers et vos contrôleurs, chacun avec le bon niveau d'accès." },
   { target: "nav-settings", icon: Settings, roles: MANAGE, title: "Paramètres", text: "Logo, coordonnées, e-mails, et surtout votre compte Mobile Money pour recevoir vos recettes." },
   { target: "assistant", icon: MessageCircle, title: "GiyaX AI, votre assistante", text: "Une question, un souci, un conseil pour une décision ? Elle répond en quelques secondes, et garde l'historique de vos échanges." },
-  { target: "tour", icon: Compass, title: "Revoir la visite", text: "Ce bouton relance cette visite quand vous voulez. Vous la retrouvez aussi dans le menu de votre compte." },
+  { target: "support", icon: Headset, title: "Le support", text: "Une question, un blocage ? Écrivez à l'équipe GiyaX : une personne vous répond ici. Cette visite se relance depuis le menu de votre compte." },
 ];
 
 const FIRST_STEPS: { label: string; href?: string; create?: boolean; icon: Icon; roles?: string[] }[] = [

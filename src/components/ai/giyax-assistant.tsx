@@ -144,6 +144,90 @@ function Rich({ text }: { text: string }) {
   );
 }
 
+// --- L'assistante s'écarte toute seule ---
+// Quand une fenêtre s'ouvre sur sa zone (création d'un événement, panneau du
+// support, formulaire…), le bouton glisse de l'autre côté de l'écran, ou se
+// range contre le bord si tout l'écran est pris, avec un petit mot. Il
+// revient à sa place à la fermeture. Aucune fenêtre n'est jamais masquée.
+
+const DODGE_LINES = [
+  "Oups, je m'écarte pour ne pas vous gêner. Je suis juste à côté !",
+  "Je vous laisse la place, je reste dans le coin.",
+  "Hop, je me pousse ! Faites-moi signe si besoin.",
+  "Je me fais toute petite, travaillez tranquille.",
+  "Pardon, j'étais dans le passage. Je me range ici.",
+];
+const BACK_LINES = ["Me revoilà !", "C'est bon, je reprends ma place.", "Voilà, la voie est libre."];
+const pick = (lines: string[]) => lines[Math.floor(Math.random() * lines.length)];
+
+type Box = { left: number; top: number; right: number; bottom: number };
+const hits = (a: Box, b: Box) => a.left < b.right && a.right > b.left && a.top < b.bottom && a.bottom > b.top;
+
+function useDodge(ref: React.RefObject<HTMLDivElement | null>, active: boolean) {
+  const [shift, setShift] = useState<{ x: number; y: number; tucked: boolean } | null>(null);
+  const [line, setLine] = useState<string | null>(null);
+  const away = shift !== null;
+
+  useEffect(() => {
+    if (!active) return;
+    let frame = 0;
+    const measure = () => {
+      frame = 0;
+      const el = ref.current;
+      if (!el) return;
+      // Position d'origine : offsetLeft/Top d'un élément fixe ignorent le déplacement en cours.
+      const size = 60;
+      const home: Box = { left: el.offsetLeft + el.offsetWidth - size, top: el.offsetTop + el.offsetHeight - size, right: el.offsetLeft + el.offsetWidth, bottom: el.offsetTop + el.offsetHeight };
+      const gutter = window.innerWidth - home.right;
+      const leftSpot: Box = { left: gutter, top: home.top, right: gutter + size, bottom: home.bottom };
+      const boxes = [...document.querySelectorAll<HTMLElement>('[role="dialog"], [role="alertdialog"]')]
+        .filter((d) => !el.contains(d) && d.dataset.state !== "closed")
+        .map((d) => d.getBoundingClientRect())
+        .filter((r) => r.width > 0 && r.height > 0);
+      const blocked = (spot: Box) => boxes.some((r) => hits(spot, r));
+      // Même position qu'avant : pas de nouveau rendu.
+      const move = (next: { x: number; y: number; tucked: boolean } | null) =>
+        setShift((prev) => (prev?.x === next?.x && prev?.y === next?.y && prev?.tucked === next?.tucked ? prev : next));
+      if (!blocked(home)) return move(null);
+      const x = Math.round(leftSpot.left - home.left);
+      if (!blocked(leftSpot)) return move({ x, y: 0, tucked: false });
+      // Tout l'écran est pris : rangée contre le bord gauche, à mi-hauteur.
+      move({ x: Math.round(x - gutter + 6), y: Math.round(window.innerHeight * 0.45 - home.top), tucked: true });
+    };
+    const schedule = () => {
+      if (!frame) frame = requestAnimationFrame(measure);
+    };
+    const observer = new MutationObserver(schedule);
+    observer.observe(document.body, { childList: true, subtree: true, attributes: true, attributeFilter: ["data-state", "role", "open"] });
+    window.addEventListener("resize", schedule);
+    schedule();
+    return () => {
+      observer.disconnect();
+      window.removeEventListener("resize", schedule);
+      if (frame) cancelAnimationFrame(frame);
+    };
+  }, [ref, active]);
+
+  // Un mot à chaque déplacement, effacé après quelques secondes.
+  const wasAway = useRef(false);
+  useEffect(() => {
+    if (away === wasAway.current) return;
+    wasAway.current = away;
+    const show = setTimeout(() => setLine(pick(away ? DODGE_LINES : BACK_LINES)), 250);
+    const hide = setTimeout(() => setLine(null), away ? 4200 : 2400);
+    return () => {
+      clearTimeout(show);
+      clearTimeout(hide);
+    };
+  }, [away]);
+
+  return {
+    away,
+    line,
+    style: shift ? { transform: `translate(${shift.x}px, ${shift.y}px) scale(${shift.tucked ? 0.82 : 1})` } : undefined,
+  };
+}
+
 export function GiyaxAssistant({ mode }: { mode: Mode }) {
   const pathname = usePathname();
   const ask = useAssistant(mode);
@@ -344,13 +428,31 @@ export function GiyaxAssistant({ mode }: { mode: Mode }) {
   const mood: GiyaxMood = ask.isPending ? "thinking" : typing ? "talking" : "idle";
   const onlyGreeting = messages.length <= 1;
   const lift = mode === "admin" ? "bottom-[92px] sm:bottom-6" : "bottom-5 sm:bottom-8";
+  const launcher = useRef<HTMLDivElement>(null);
+  const dodge = useDodge(launcher, !open);
 
   return (
     <>
       {/* Lanceur */}
       {!open && (
-        <div className={cn("fixed right-4 z-[55] flex items-end gap-2 sm:right-6", lift)}>
-          {teaser && (
+        <div
+          ref={launcher}
+          style={dodge.style}
+          className={cn("fixed right-4 z-[55] flex items-end gap-2 transition-transform duration-500 ease-[cubic-bezier(.34,1.4,.64,1)] motion-reduce:transition-none sm:right-6", lift)}
+        >
+          {/* Petit mot quand elle se pousse, ou quand elle revient à sa place. */}
+          {dodge.line && (
+            <div
+              role="status"
+              className={cn(
+                "giyax-pop absolute bottom-full mb-2 w-max max-w-[220px] rounded-2xl border border-border bg-background px-3.5 py-2.5 text-[13px] leading-snug text-foreground shadow-xl",
+                dodge.away ? "left-0 rounded-bl-md" : "right-0 rounded-br-md"
+              )}
+            >
+              {dodge.line}
+            </div>
+          )}
+          {teaser && !dodge.away && !dodge.line && (
             <div className="giyax-pop relative mb-2 max-w-[230px] rounded-2xl rounded-br-md border border-border bg-background px-3.5 py-2.5 text-[13px] leading-snug text-foreground shadow-xl">
               <button type="button" aria-label="Masquer" onClick={hideTeaser} className="absolute -right-2 -top-2 flex size-6 items-center justify-center rounded-full border border-border bg-background text-muted-foreground shadow">
                 <X className="size-3.5" />
