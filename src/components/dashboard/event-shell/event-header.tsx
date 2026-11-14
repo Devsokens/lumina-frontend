@@ -3,7 +3,7 @@
 import Link from "next/link";
 import { Suspense } from "react";
 import { usePathname, useSearchParams } from "next/navigation";
-import { ArrowUpRight, ChevronRight, CircleHelp, Compass, Search } from "lucide-react";
+import { ArrowUpRight, ChevronRight, CircleHelp, Headset, Search } from "lucide-react";
 import { useSupport } from "@/hooks/useSupport";
 import { NotificationBell } from "@/components/shared/notification-bell";
 import { DropdownMenu, DropdownMenuContent, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
@@ -76,8 +76,8 @@ export function EventHeader() {
   const { tenant } = useTenantSector();
   const collapsed = useShellStore((s) => s.collapsed);
   const setPaletteOpen = useShellStore((s) => s.setPaletteOpen);
-  const setTourOpen = useShellStore((s) => s.setTourOpen);
-  // Réponse du support non lue : pastille sur « Aide ».
+  const setSupportOpen = useShellStore((s) => s.setSupportOpen);
+  // Réponse du support non lue : pastille sur le bouton Support.
   const { data: support } = useSupport(false);
   const supportUnread = support?.unread ?? 0;
   const userName = user?.fullName || user?.email || "Administrateur";
@@ -111,18 +111,20 @@ export function EventHeader() {
             Voir mon site <ArrowUpRight className="size-4" />
           </a>
         )}
-        {/* Visite guidée : toujours accessible pour revoir le tutoriel. */}
-        <button type="button" data-tour="tour" aria-label="Revoir la visite guidée" title="Visite guidée" onClick={() => setTourOpen(true)} className="flex size-10 items-center justify-center rounded-[10px] text-ev-ink2 hover:bg-ev-soft">
-          <Compass className="size-[18px]" />
-        </button>
-        <Link
-          href={`${BASE}/help${supportUnread > 0 ? "?support=1" : ""}`}
-          aria-label={supportUnread > 0 ? "Aide : le support vous a répondu" : "Aide et support"}
-          title="Aide et support"
-          className="relative flex size-10 items-center justify-center rounded-[10px] text-ev-ink2 hover:bg-ev-soft"
+        {/* Support : conversation avec l'équipe GiyaX (la visite guidée se relance depuis le menu du compte). */}
+        <button
+          type="button"
+          data-tour="support"
+          aria-label={supportUnread > 0 ? "Support : l'équipe vous a répondu" : "Contacter le support"}
+          onClick={() => setSupportOpen(true)}
+          className="relative flex h-10 items-center gap-2 rounded-[10px] bg-ev-primary px-3 text-sm font-semibold text-white transition-colors hover:bg-ev-primary-hover sm:px-3.5"
         >
+          <Headset className="size-[18px]" />
+          <span className="hidden sm:inline">Support</span>
+          {supportUnread > 0 && <span className="absolute -right-1.5 -top-1.5 flex h-5 min-w-5 items-center justify-center rounded-full border-2 border-ev-surface bg-[#E5484D] px-1 text-[11px] font-bold leading-none">{supportUnread}</span>}
+        </button>
+        <Link href={`${BASE}/help`} aria-label="Aide et documentation" title="Aide et documentation" className="flex size-10 items-center justify-center rounded-[10px] text-ev-ink2 hover:bg-ev-soft">
           <CircleHelp className="size-[18px]" />
-          {supportUnread > 0 && <span className="absolute right-1.5 top-1.5 size-2.5 rounded-full border-2 border-ev-surface bg-[#E5484D]" />}
         </Link>
         <NotificationBell className="flex size-10 items-center justify-center rounded-[10px] text-ev-ink2 hover:bg-ev-soft" />
         {/* Compte : dans la barre latérale dépliée ; ici quand elle est repliée, et sur téléphone. */}
