@@ -1,9 +1,10 @@
 "use client";
 
+import Image from "next/image";
 import Link from "next/link";
 import { Suspense } from "react";
 import { usePathname, useSearchParams } from "next/navigation";
-import { ArrowUpRight, ChevronRight, CircleHelp, Headset, Search } from "lucide-react";
+import { ArrowUpRight, ChevronRight, CircleHelp, Search } from "lucide-react";
 import { useSupport } from "@/hooks/useSupport";
 import { NotificationBell } from "@/components/shared/notification-bell";
 import { DropdownMenu, DropdownMenuContent, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
@@ -117,9 +118,12 @@ export function EventHeader() {
           data-tour="support"
           aria-label={supportUnread > 0 ? "Support : l'équipe vous a répondu" : "Contacter le support"}
           onClick={() => setSupportOpen(true)}
-          className="relative flex h-10 items-center gap-2 rounded-[10px] bg-ev-primary px-3 text-sm font-semibold text-white transition-colors hover:bg-ev-primary-hover sm:px-3.5"
+          className="relative flex h-10 items-center gap-2 rounded-[10px] bg-ev-primary px-2 text-sm font-semibold text-white transition-colors hover:bg-ev-primary-hover sm:pl-2 sm:pr-3.5"
         >
-          <Headset className="size-[18px]" />
+          {/* Logo GiyaX sur pastille blanche : on écrit à l'équipe, pas à un robot. */}
+          <span className="flex size-6 shrink-0 items-center justify-center overflow-hidden rounded-full bg-white">
+            <Image src="/brand/giyax-favicon-192.png" alt="" width={24} height={24} className="size-[72%] object-contain" />
+          </span>
           <span className="hidden sm:inline">Support</span>
           {supportUnread > 0 && <span className="absolute -right-1.5 -top-1.5 flex h-5 min-w-5 items-center justify-center rounded-full border-2 border-ev-surface bg-[#E5484D] px-1 text-[11px] font-bold leading-none">{supportUnread}</span>}
         </button>
