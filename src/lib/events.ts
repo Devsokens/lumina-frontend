@@ -46,6 +46,7 @@ export function toUiEvent(event: ApiEvent, stats?: EventStats): Event {
         saleEndsAt: t.saleEndsAt ?? null,
         ticketTemplate: (t.template as TicketTemplate | null) ?? undefined,
         kind: t.kind ?? "FIXED",
+        color: t.color ?? null,
         minPrice: t.minPrice ?? null,
       })
     ),
@@ -153,6 +154,8 @@ export type EventSettings = {
   logosDisplay?: { vitrine: boolean; billets: boolean; certificats: boolean };
   posterCrops?: PosterCrops;
   ticketColor?: string;
+  // Photo du couple des cartons de mariage (remplace l'illustration).
+  ticketPhoto?: string | null;
   ticketShowPrice?: boolean;
   ticketShowLogo?: boolean;
   certificateTitle?: string;
@@ -223,6 +226,7 @@ export function ticketTypeBody(f: TicketType) {
     ...(FEATURES.ticketExtras && f.maxPerOrder ? { maxPerOrder: f.maxPerOrder } : {}),
     ...(FEATURES.ticketExtras && f.visible !== undefined ? { visible: f.visible } : {}),
     ...(f.kind === "CONTRIBUTION" ? { kind: f.kind, ...(f.minPrice ? { minPrice: f.minPrice } : {}) } : {}),
+    ...(f.color ? { color: f.color } : {}),
   };
 }
 

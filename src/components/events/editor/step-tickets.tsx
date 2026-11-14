@@ -1,8 +1,9 @@
 "use client";
 
-import { useState } from "react";
+import { useRef, useState } from "react";
 import { toast } from "sonner";
-import { CheckCircle2, ChevronLeft, ChevronRight, MoreHorizontal, Pencil, Plus } from "lucide-react";
+import { CheckCircle2, ChevronLeft, ChevronRight, ImagePlus, MoreHorizontal, Pencil, Plus } from "lucide-react";
+import { prepareImage } from "@/lib/image";
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
 import { EvButton, EvHr, EvSectionTitle, EvSwitch, EV_PORTAL } from "@/components/events/ev-ui";
 import { amount, formatEventDay, formulaColor } from "@/lib/event-meta";
@@ -26,10 +27,11 @@ const SWATCHES = [
 ];
 
 type Kind = "FIXED" | "CONTRIBUTION";
-type Draft = { kind: Kind; name: string; price: string; minPrice: string; quantity: string; description: string; saleEndsAt: string; maxPerOrder: string; visible: boolean };
+type Draft = { kind: Kind; color: string | null; name: string; price: string; minPrice: string; quantity: string; description: string; saleEndsAt: string; maxPerOrder: string; visible: boolean };
 
 const toDraft = (f: EditorFormula): Draft => ({
   kind: f.kind ?? "FIXED",
+  color: f.color ?? null,
   name: f.name,
   price: f.price ? String(Math.round(f.price / 100)) : "0",
   minPrice: f.minPrice ? String(Math.round(f.minPrice / 100)) : "",
@@ -42,6 +44,18 @@ const toDraft = (f: EditorFormula): Draft => ({
 
 const digits = (v: string) => Number(v.replace(/\D/g, "") || 0);
 
+// Couleurs proposées pour distinguer les formules (accent du billet PDF).
+const FORMULA_COLORS = [
+  { label: "Vert", value: "#0F8A64" },
+  { label: "Or", value: "#C79A3B" },
+  { label: "Bleu", value: "#2C5BA8" },
+  { label: "Rose", value: "#C2547A" },
+  { label: "Violet", value: "#7C3AED" },
+  { label: "Rouge", value: "#DC2626" },
+  { label: "Orange", value: "#E3741F" },
+  { label: "Noir", value: "#1F2937" },
+];
+
 const KINDS: [Kind, string][] = [
   ["FIXED", "Billet à prix fixe"],
   ["CONTRIBUTION", "Cotisation libre"],
@@ -53,6 +67,8 @@ export function StepTickets({ form, set, eventId }: Props) {
   // Formule ajoutée et pas encore validée : « Annuler » la retire.
   const [fresh, setFresh] = useState<string | null>(null);
   const [category, setCategory] = useState<Category>("Tous");
+  const photoInput = useRef<HTMLInputElement>(null);
+  const [photoBusy, setPhotoBusy] = useState(false);
   const [page, setPage] = useState(() => {
     const idx = TICKET_TEMPLATES.findIndex((t) => t.id === form.ticketTemplate);
     return idx >= 0 ? Math.floor(idx / 4) : 0;
@@ -78,6 +94,9 @@ export function StepTickets({ form, set, eventId }: Props) {
       saleEndsAt: preset?.saleEndsAt ?? null,
       visible: true,
       kind: preset?.kind ?? "FIXED",
+      // Première formule : couleur du modèle. Les suivantes reçoivent chacune
+      // une couleur différente, pour les distinguer.
+      color: preset?.color ?? (form.formulas.length === 0 ? null : FORMULA_COLORS[form.formulas.length % FORMULA_COLORS.length].value),
       minPrice: preset?.minPrice ?? null,
     };
     set({ formulas: [...form.formulas, f] });
@@ -104,6 +123,7 @@ export function StepTickets({ form, set, eventId }: Props) {
     const next: EditorFormula = {
       ...current,
       kind: draft.kind,
+      color: draft.color,
       name: draft.name.trim(),
       price,
       minPrice,
@@ -199,7 +219,7 @@ export function StepTickets({ form, set, eventId }: Props) {
           editing === f.id && draft ? (
             <div key={f.id} className="overflow-hidden rounded-[12px] border-[1.5px] border-ev-primary">
               <div className="flex items-center gap-3.5 border-b border-[#D5E6DE] bg-ev-selected px-4 py-3.5 dark:border-ev-border">
-                <span className="h-[34px] w-1 rounded-[3px]" style={{ background: formulaColor(i) }} />
+                <span className="h-[34px] w-1 rounded-[3px]" style={{ background: draft.color ?? formulaColor(i) }} />
                 <div className="flex min-w-0 flex-1 flex-col gap-1">
                   <span className="text-sm font-semibold">{draft.name || "Nouvelle formule"}</span>
                   <span className="text-xs text-ev-muted">
@@ -267,6 +287,37 @@ export function StepTickets({ form, set, eventId }: Props) {
                   <span>Max. par commande</span>
                   <input inputMode="numeric" value={draft.maxPerOrder} onChange={(e) => setDraft({ ...draft, maxPerOrder: e.target.value.replace(/\D/g, "") })} className="h-[42px] rounded-[10px] border border-ev-border bg-ev-surface px-3 font-normal outline-none focus:border-ev-primary" />
                 </label>
+                <div className="col-span-2 flex flex-col gap-2 sm:col-span-4">
+                  <span className="text-[13px] font-medium">Couleur du billet</span>
+                  <div role="radiogroup" aria-label="Couleur du billet de cette formule" className="flex flex-wrap items-center gap-2.5">
+                    <button
+                      type="button"
+                      role="radio"
+                      aria-checked={draft.color === null}
+                      onClick={() => setDraft({ ...draft, color: null })}
+                      className={cn("h-8 rounded-full border px-3 text-xs font-medium", draft.color === null ? "border-ev-primary bg-ev-selected text-ev-ink" : "border-ev-border bg-ev-surface text-ev-ink2 hover:bg-ev-soft")}
+                    >
+                      Celle du modèle
+                    </button>
+                    {FORMULA_COLORS.map((c) => {
+                      const on = draft.color?.toLowerCase() === c.value.toLowerCase();
+                      return (
+                        <button
+                          key={c.value}
+                          type="button"
+                          role="radio"
+                          aria-checked={on}
+                          aria-label={c.label}
+                          title={c.label}
+                          onClick={() => setDraft({ ...draft, color: c.value })}
+                          className="size-7 rounded-full p-0"
+                          style={{ background: c.value, boxShadow: on ? "0 0 0 2px #FFFFFF, 0 0 0 4px #0C4A3A" : undefined }}
+                        />
+                      );
+                    })}
+                  </div>
+                  <span className="text-xs text-ev-muted">Une couleur par formule aide l&apos;équipe à reconnaître les billets à l&apos;entrée (VIP, standard, cotisation…).</span>
+                </div>
                 <div className="col-span-2 flex flex-wrap items-center justify-between gap-3 border-t border-ev-line pt-3 sm:col-span-4">
                   <span className="flex items-center gap-2.5 text-[13px]">
                     <EvSwitch checked={draft.visible} ariaLabel="Visible sur la vitrine" onChange={(v) => setDraft({ ...draft, visible: v })} />
@@ -285,7 +336,7 @@ export function StepTickets({ form, set, eventId }: Props) {
             </div>
           ) : (
             <div key={f.id} className="flex items-center gap-3.5 rounded-[12px] border border-ev-border px-4 py-3.5">
-              <span className="h-[34px] w-1 shrink-0 rounded-[3px]" style={{ background: formulaColor(i) }} />
+              <span className="h-[34px] w-1 shrink-0 rounded-[3px]" style={{ background: f.color ?? formulaColor(i) }} />
               <div className="flex min-w-0 flex-1 flex-col gap-1">
                 <span className="truncate text-sm font-semibold">{f.name}</span>
                 <span className="truncate text-xs text-ev-muted">
@@ -417,6 +468,50 @@ export function StepTickets({ form, set, eventId }: Props) {
             </span>
           </div>
         </div>
+        {(current.layout === "invitation" || current.layout === "savedate") && (
+          <div className="flex flex-wrap items-center gap-4 rounded-[12px] border border-ev-line bg-ev-surface px-4 py-3.5">
+            <span className="flex size-[72px] shrink-0 items-center justify-center overflow-hidden rounded-[12px] border border-ev-border bg-ev-soft text-ev-muted">
+              {form.ticketPhoto ? (
+                // eslint-disable-next-line @next/next/no-img-element -- aperçu local de la photo importée
+                <img src={form.ticketPhoto} alt="Photo du couple" className="size-full object-cover" />
+              ) : (
+                <ImagePlus className="size-6" />
+              )}
+            </span>
+            <div className="flex min-w-[200px] flex-1 flex-col gap-1">
+              <span className="text-sm font-semibold">Photo du couple</span>
+              <span className="text-[13px] leading-relaxed text-ev-muted">
+                Facultatif. Sans photo, le carton affiche une illustration de mariage (alliances et cœurs). Avec une photo, elle prend la place de l&apos;illustration.
+              </span>
+            </div>
+            <div className="flex gap-2">
+              <input
+                ref={photoInput}
+                type="file"
+                accept="image/png,image/jpeg,image/webp"
+                className="hidden"
+                onChange={(e) => {
+                  const file = e.target.files?.[0];
+                  e.target.value = "";
+                  if (!file) return;
+                  setPhotoBusy(true);
+                  prepareImage(file, 1200)
+                    .then((ticketPhoto) => set({ ticketPhoto }))
+                    .catch((err: unknown) => toast.error(err instanceof Error ? err.message : "Photo illisible."))
+                    .finally(() => setPhotoBusy(false));
+                }}
+              />
+              <EvButton size="sm" disabled={photoBusy} onClick={() => photoInput.current?.click()}>
+                {photoBusy ? "Préparation…" : form.ticketPhoto ? "Changer" : "Importer une photo"}
+              </EvButton>
+              {form.ticketPhoto && (
+                <EvButton size="sm" variant="ghost" onClick={() => set({ ticketPhoto: "" })}>
+                  Retirer
+                </EvButton>
+              )}
+            </div>
+          </div>
+        )}
         <div className="flex flex-wrap items-center gap-6 rounded-[12px] border border-ev-line bg-ev-soft px-4 py-3.5 text-[13px]">
           <div className="flex items-center gap-2.5">
             <span className="font-medium">Couleur</span>

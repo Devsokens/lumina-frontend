@@ -65,3 +65,7 @@ export const SECTOR_LABELS: Record<Sector, { label: string; icon: string; descri
   },
 };
 
+// Secteurs ouverts à l'inscription. Les autres sont affichés grisés
+// « Bientôt disponible » (inscription, page d'accueil) : ajouter ici le
+// secteur le jour de son ouverture.
+export const OPEN_SECTORS: Sector[] = ["EVENT"];

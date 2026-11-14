@@ -24,12 +24,17 @@ export const TEMPLATE_STYLE: Record<TicketTemplate, Style> = {
   CLASSIC_PASS: { bg: "#FFFFFF", fg: "#16211C", accent: "#0C4A3A" },
   MINIMAL_MONO: { bg: "#F4F2EC", fg: "#16211C", accent: "#5E6A64" },
   PASTEL_BRUNCH: { bg: "#F3DDEB", fg: "#4A2340", accent: "#9B4D7D" },
+  WEDDING_IVORY: { bg: "#FBF7EF", fg: "#2B2118", accent: "#B8893B" },
+  WEDDING_BLUSH: { bg: "#FDF1F1", fg: "#3A1F29", accent: "#B5536C" },
+  WEDDING_EMERALD: { bg: "#0F3B2E", fg: "#F7F1E3", accent: "#D9B86A" },
+  WEDDING_ROSE_PHOTO: { bg: "#FDE8EC", fg: "#5A2A3C", accent: "#D4577A" },
+  WEDDING_GOLD_PHOTO: { bg: "#FFFFFF", fg: "#2A2418", accent: "#C19A3D" },
 };
 
 const LIGHT = ["#FFFFFF", "#F4F2EC", "#F3DDEB", "#E8E3D5", "#E3B7FF", "#FFD6E8", "#3BE8FF", "#FFD23F", "#FFE2C2", "#FFE08A", "#F2C14E", "#8FB3E8", "#E3C34A", "#D8F3DC"];
 const isLight = (hex: string) => LIGHT.includes(hex);
 
-export const KIND_LABEL: Record<TicketLayout, string> = { stub: "Billet", badge: "Badge", wristband: "Bracelet" };
+export const KIND_LABEL: Record<TicketLayout, string> = { stub: "Billet", badge: "Badge", wristband: "Bracelet", invitation: "Carton d'invitation", savedate: "Carton avec photo" };
 
 function QrGlyph({ size, color }: { size: number; color: string }) {
   return (
@@ -72,6 +77,57 @@ export function TicketMini({
         {large && <span style={{ fontSize: 7.5, fontWeight: 600, color: s.accent }}>Nom du participant</span>}
         <span style={{ height: 9, padding: "0 5px", borderRadius: 999, background: s.accent, color: chipFg, fontSize: 4.5, fontWeight: 700, letterSpacing: "0.08em", display: "flex", alignItems: "center", whiteSpace: "nowrap" }}>{FORMULA}</span>
         <QrGlyph size={large ? 26 : 20} color={s.fg} />
+      </span>
+    );
+  }
+  if (t.layout === "savedate") {
+    // Carton paysage : texte à gauche, photo du couple (ou illustration) à droite.
+    const serif = "Georgia, 'Times New Roman', serif";
+    return (
+      <span style={{ width: 150, height: 98, borderRadius: 4, background: s.bg, display: "flex", alignItems: "center", gap: 7, padding: "8px 8px 8px 10px", boxSizing: "border-box", boxShadow: shadow, border: isLight(s.bg) ? "1px solid #EDE8DC" : undefined }}>
+        <span style={{ flex: 1, minWidth: 0, alignSelf: "stretch", display: "flex", flexDirection: "column", justifyContent: "space-between" }}>
+          <span style={{ display: "flex", flexDirection: "column", gap: 2 }}>
+            <span style={{ fontSize: 4.5, fontWeight: 700, letterSpacing: "0.16em", color: s.accent }}>SAVE THE DATE</span>
+            <span style={{ fontFamily: serif, fontWeight: 700, fontSize: 8, lineHeight: 1.15, color: s.fg }}>{title}</span>
+            <span style={{ width: 16, height: 1, background: s.accent }} />
+            {meta && <span style={{ fontFamily: serif, fontSize: 4.5, color: s.fg, opacity: 0.8 }}>{meta}</span>}
+          </span>
+          <span style={{ display: "flex", alignItems: "flex-end", gap: 4 }}>
+            <span style={{ background: "#FFFFFF", padding: 1.5, borderRadius: 2, display: "flex", border: `0.5px solid ${s.accent}` }}>
+              <QrGlyph size={16} color="#16211C" />
+            </span>
+            <span style={{ fontFamily: serif, fontStyle: "italic", fontWeight: 700, fontSize: 5.5, color: s.accent, whiteSpace: "nowrap" }}>Nom de l&apos;invité</span>
+          </span>
+        </span>
+        <span style={{ width: 56, alignSelf: "stretch", borderRadius: 7, border: `1px solid ${s.accent}`, padding: 2, boxSizing: "border-box", display: "flex" }}>
+          <span style={{ flex: 1, borderRadius: 5, background: `${s.accent}26`, display: "flex", alignItems: "center", justifyContent: "center" }}>
+            <svg width="34" height="24" viewBox="0 0 200 140" aria-hidden>
+              <circle cx="78" cy="78" r="40" stroke={s.accent} strokeWidth="9" fill="none" />
+              <circle cx="122" cy="78" r="40" stroke={s.accent} strokeWidth="9" strokeOpacity="0.55" fill="none" />
+            </svg>
+          </span>
+        </span>
+      </span>
+    );
+  }
+  if (t.layout === "invitation") {
+    // Carton : double filet, texte centré en caractères à empattements.
+    const w = large ? 92 : 70;
+    const serif = "Georgia, 'Times New Roman', serif";
+    return (
+      <span style={{ width: w, height: large ? 124 : 94, borderRadius: 3, background: s.bg, padding: 3, boxSizing: "border-box", display: "flex", boxShadow: shadow }}>
+        <span style={{ flex: 1, border: `1px solid ${s.accent}`, display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "space-between", padding: large ? "7px 5px 6px" : "5px 4px", boxSizing: "border-box", minWidth: 0 }}>
+          <span style={{ display: "flex", flexDirection: "column", alignItems: "center", gap: large ? 3 : 2, minWidth: 0 }}>
+            <span style={{ fontFamily: serif, fontStyle: "italic", fontSize: large ? 5.5 : 4.5, color: s.fg, opacity: 0.85 }}>Vous êtes invité(e) à</span>
+            <span style={{ fontFamily: serif, fontWeight: 700, fontSize: large ? 8.5 : 7, lineHeight: 1.15, textAlign: "center", color: s.fg }}>{title}</span>
+            <span style={{ width: 22, height: 1, background: s.accent }} />
+            {large && meta && <span style={{ fontFamily: serif, fontSize: 5, color: s.fg, opacity: 0.8, textAlign: "center" }}>{meta}</span>}
+          </span>
+          <span style={{ fontFamily: serif, fontStyle: "italic", fontWeight: 700, fontSize: large ? 7 : 5.5, color: s.accent, whiteSpace: "nowrap" }}>Nom de l&apos;invité</span>
+          <span style={{ background: "#FFFFFF", padding: 2, borderRadius: 2, display: "flex" }}>
+            <QrGlyph size={large ? 22 : 16} color="#16211C" />
+          </span>
+        </span>
       </span>
     );
   }

@@ -498,6 +498,7 @@ obligatoire sans réponse refuse la commande (400) avant toute réservation de p
 | GET | `/admin/payouts/statement/export?eventId=` | Bearer (OWNER) | — | `{ truncated, rows }` — relevé complet pour l'export, 5 000 lignes au plus (10 / minute) |
 | GET | `/admin/payouts/:id` | Bearer (OWNER) | — | versement + `events: [{ eventId, title, lines, net }]` — répartition par événement ; **404** autre compte |
 | GET | `/admin/push` | Bearer (tout rôle) | — | `{ enabled, publicKey, devices }` — notifications push ; `enabled: false` tant que les clés du serveur ne sont pas posées |
+| GET | `/admin/push/feed` | Bearer (tout rôle) | — | `[{ id, kind: "sale" \| "contribution" \| "payout", title, body, url, date }]` — 20 dernières notifications (cloche) ; vide hors OWNER/MANAGER |
 | POST | `/admin/push/subscriptions` | Bearer (tout rôle) | `{ endpoint, keys: { p256dh, auth } }` (abonnement du navigateur) | `{ subscribed: true }` — **400** service de notification inconnu ; **503** inactif |
 | DELETE | `/admin/push/subscriptions` | Bearer (tout rôle) | `{ endpoint }` | `{ subscribed: false }` |
 | POST | `/admin/push/test` | Bearer (tout rôle) | — | `{ devices, sent }` — notification d'essai sur ses propres appareils (5 / minute) |

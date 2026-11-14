@@ -45,6 +45,8 @@ export type EditorForm = {
   formulas: EditorFormula[];
   ticketTemplate: TicketTemplate;
   ticketColor: string;
+  // Photo du couple (cartons de mariage) : data URL ou adresse, vide = illustration.
+  ticketPhoto: string;
   ticketShowPrice: boolean;
   ticketShowLogo: boolean;
   questionnaireEnabled: boolean;
@@ -105,6 +107,7 @@ export function formFromEvent(e: ApiEvent | null, issuer: string): EditorForm {
       formulas: [],
       ticketTemplate: defaultTemplateFor("CONCERT"),
       ticketColor: "#0C4A3A",
+      ticketPhoto: "",
       ticketShowPrice: true,
       ticketShowLogo: true,
       questionnaireEnabled: false,
@@ -159,10 +162,12 @@ export function formFromEvent(e: ApiEvent | null, issuer: string): EditorForm {
       maxPerOrder: t.maxPerOrder ?? undefined,
       visible: t.visible ?? true,
       kind: t.kind ?? "FIXED",
+      color: t.color ?? null,
       minPrice: t.minPrice ?? null,
     })),
     ticketTemplate: (s.ticketTemplate as TicketTemplate | undefined) ?? defaultTemplateFor(e.eventType ?? undefined),
     ticketColor: s.ticketColor ?? "#0C4A3A",
+    ticketPhoto: s.ticketPhoto ?? "",
     ticketShowPrice: s.ticketShowPrice ?? true,
     ticketShowLogo: s.ticketShowLogo ?? true,
     questionnaireEnabled: s.questionnaireEnabled ?? false,
@@ -235,6 +240,8 @@ export function toEventForm(form: EditorForm): Partial<Event> {
       logosDisplay: form.logosDisplay,
       posterCrops: form.posterCrops,
       ticketColor: form.ticketColor,
+      // null : photo retirée (les réglages sont fusionnés côté serveur).
+      ticketPhoto: form.ticketPhoto || null,
       ticketShowPrice: form.ticketShowPrice,
       ticketShowLogo: form.ticketShowLogo,
       certificateTitle: form.certificateTitle.trim() || "Certificat de participation",

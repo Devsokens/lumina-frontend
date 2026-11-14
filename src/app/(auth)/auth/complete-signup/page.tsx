@@ -13,7 +13,7 @@ import { Label } from "@/components/ui/label";
 import { Skeleton } from "@/components/ui/skeleton";
 import { homePathFor, useAuth } from "@/hooks/useAuth";
 import { api, apiError, type ApiResponse } from "@/lib/api";
-import { APP_URL, ROOT_DOMAIN, SECTOR_LABELS, type Sector } from "@/lib/constants";
+import { APP_URL, OPEN_SECTORS, ROOT_DOMAIN, SECTOR_LABELS, type Sector } from "@/lib/constants";
 import { LEGAL_LINKS } from "@/lib/legal";
 import { publicSiteLabel, subdomainActive } from "@/lib/tenant-url";
 import { slugSchema } from "@/lib/validations";
@@ -38,7 +38,7 @@ function CompleteSignup() {
   const [businessName, setBusinessName] = useState("");
   const [slug, setSlug] = useState("");
   const [slugEdited, setSlugEdited] = useState(false);
-  const [sector, setSector] = useState<Sector>("RESTAURANT");
+  const [sector, setSector] = useState<Sector>("EVENT");
   const [phone, setPhone] = useState("");
   const [accepted, setAccepted] = useState(false);
   const [busy, setBusy] = useState(false);
@@ -133,13 +133,19 @@ function CompleteSignup() {
             <button
               key={s}
               type="button"
+              disabled={!OPEN_SECTORS.includes(s)}
               onClick={() => setSector(s)}
               aria-pressed={sector === s}
               className={cn(
                 "rounded-xl border p-3 text-left text-sm transition-colors",
-                sector === s ? "border-primary bg-primary/5 ring-2 ring-primary/20" : "border-border hover:border-foreground/30"
+                !OPEN_SECTORS.includes(s)
+                  ? "cursor-not-allowed border-dashed border-border bg-muted/40 opacity-70"
+                  : sector === s
+                    ? "border-primary bg-primary/5 ring-2 ring-primary/20"
+                    : "border-border hover:border-foreground/30"
               )}
             >
+              {!OPEN_SECTORS.includes(s) && <span className="mb-1 inline-block rounded-full border border-border bg-background px-2 py-px text-[10px] font-bold text-muted-foreground">Bientôt disponible</span>}
               <span className="block font-semibold">{SECTOR_LABELS[s].label}</span>
               <span className="line-clamp-2 text-xs text-muted-foreground">{SECTOR_LABELS[s].description}</span>
             </button>

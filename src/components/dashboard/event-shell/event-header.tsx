@@ -3,8 +3,8 @@
 import Link from "next/link";
 import { Suspense } from "react";
 import { usePathname, useSearchParams } from "next/navigation";
-import { toast } from "sonner";
-import { ArrowUpRight, Bell, ChevronRight, Compass, Search } from "lucide-react";
+import { ArrowUpRight, ChevronRight, Compass, Search } from "lucide-react";
+import { NotificationBell } from "@/components/shared/notification-bell";
 import { DropdownMenu, DropdownMenuContent, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
 import { EV_PORTAL, initialsOf } from "@/components/events/ev-ui";
 import { BASE } from "@/components/dashboard/event-shell/shell-model";
@@ -109,9 +109,7 @@ export function EventHeader() {
         <button type="button" data-tour="tour" aria-label="Revoir la visite guidée" title="Visite guidée" onClick={() => setTourOpen(true)} className="flex size-10 items-center justify-center rounded-[10px] text-ev-ink2 hover:bg-ev-soft">
           <Compass className="size-[18px]" />
         </button>
-        <button type="button" aria-label="Notifications" onClick={() => toast.info("Aucune notification.")} className="relative flex size-10 items-center justify-center rounded-[10px] text-ev-ink2 hover:bg-ev-soft">
-          <Bell className="size-[18px]" />
-        </button>
+        <NotificationBell className="flex size-10 items-center justify-center rounded-[10px] text-ev-ink2 hover:bg-ev-soft" />
         {/* Compte : dans la barre latérale dépliée ; ici quand elle est repliée, et sur téléphone. */}
         <DropdownMenu>
           <DropdownMenuTrigger asChild>
