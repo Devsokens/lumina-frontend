@@ -10,6 +10,7 @@ import { NewOrganizationDrawer } from "@/components/dashboard/event-shell/new-or
 import { BASE, NAV_ICON } from "@/components/dashboard/event-shell/shell-model";
 import { OnboardingTour } from "@/components/experience/onboarding-tour";
 import { FeedbackModal, FeedbackPrompter } from "@/components/experience/feedback-modal";
+import { SupportDrawer } from "@/components/support/support-drawer";
 import { useTenantSector } from "@/hooks/useTenantSector";
 import { useShellStore } from "@/stores/useShellStore";
 import { cn } from "@/lib/utils";
@@ -93,6 +94,7 @@ export function EventShellHosts() {
       <FeedbackPrompter />
       <BusinessDialog />
       <NewOrganizationDrawer />
+      <SupportDrawer />
       <CreateEventHost />
     </>
   );

@@ -22,6 +22,8 @@ type ShellState = {
   createEventOpen: boolean;
   businessOpen: boolean;
   newOrgOpen: boolean;
+  // Panneau de conversation avec le support GiyaX.
+  supportOpen: boolean;
   setCollapsed: (v: boolean) => void;
   setPaletteOpen: (v: boolean) => void;
   setTourOpen: (v: boolean) => void;
@@ -29,6 +31,7 @@ type ShellState = {
   setCreateEventOpen: (v: boolean) => void;
   setBusinessOpen: (v: boolean) => void;
   setNewOrgOpen: (v: boolean) => void;
+  setSupportOpen: (v: boolean) => void;
   hydrate: () => void;
 };
 
@@ -40,6 +43,7 @@ export const useShellStore = create<ShellState>((set) => ({
   createEventOpen: false,
   businessOpen: false,
   newOrgOpen: false,
+  supportOpen: false,
   setCollapsed: (collapsed) => {
     try {
       localStorage.setItem(COLLAPSED_KEY, collapsed ? "1" : "0");
@@ -54,6 +58,7 @@ export const useShellStore = create<ShellState>((set) => ({
   setCreateEventOpen: (createEventOpen) => set({ createEventOpen }),
   setBusinessOpen: (businessOpen) => set({ businessOpen }),
   setNewOrgOpen: (newOrgOpen) => set({ newOrgOpen }),
+  setSupportOpen: (supportOpen) => set({ supportOpen }),
   // Lu après le montage (le rendu serveur ne connaît pas localStorage).
   hydrate: () => set({ collapsed: readCollapsed() }),
 }));

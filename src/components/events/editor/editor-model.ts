@@ -11,8 +11,11 @@ import type {
   PosterCrops,
   ProgramItem,
   Speaker,
+  TicketTexts,
 } from "@/lib/events";
 import { defaultTemplateFor } from "@/lib/ticket-templates";
+
+const EMPTY_TEXTS: Required<TicketTexts> = { heading: "", intro: "", names: "", message: "", guestLabel: "" };
 
 // État de l'éditeur d'événement (4 étapes, refonte 2026-11) et conversion
 // vers le format envoyé par useSaveEvent.
@@ -47,6 +50,8 @@ export type EditorForm = {
   ticketColor: string;
   // Photo du couple (cartons de mariage) : data URL ou adresse, vide = illustration.
   ticketPhoto: string;
+  // Textes des cartons de mariage ; vide = texte par défaut du modèle.
+  ticketTexts: Required<TicketTexts>;
   ticketShowPrice: boolean;
   ticketShowLogo: boolean;
   questionnaireEnabled: boolean;
@@ -108,6 +113,7 @@ export function formFromEvent(e: ApiEvent | null, issuer: string): EditorForm {
       ticketTemplate: defaultTemplateFor("CONCERT"),
       ticketColor: "#0C4A3A",
       ticketPhoto: "",
+      ticketTexts: { ...EMPTY_TEXTS },
       ticketShowPrice: true,
       ticketShowLogo: true,
       questionnaireEnabled: false,
@@ -168,6 +174,7 @@ export function formFromEvent(e: ApiEvent | null, issuer: string): EditorForm {
     ticketTemplate: (s.ticketTemplate as TicketTemplate | undefined) ?? defaultTemplateFor(e.eventType ?? undefined),
     ticketColor: s.ticketColor ?? "#0C4A3A",
     ticketPhoto: s.ticketPhoto ?? "",
+    ticketTexts: { ...EMPTY_TEXTS, ...s.ticketTexts },
     ticketShowPrice: s.ticketShowPrice ?? true,
     ticketShowLogo: s.ticketShowLogo ?? true,
     questionnaireEnabled: s.questionnaireEnabled ?? false,
@@ -242,6 +249,9 @@ export function toEventForm(form: EditorForm): Partial<Event> {
       ticketColor: form.ticketColor,
       // null : photo retirée (les réglages sont fusionnés côté serveur).
       ticketPhoto: form.ticketPhoto || null,
+      // Tous les champs sont envoyés (même vides) : un texte effacé revient
+      // au texte par défaut.
+      ticketTexts: Object.fromEntries(Object.entries(form.ticketTexts).map(([k, v]) => [k, v.trim()])) as Required<TicketTexts>,
       ticketShowPrice: form.ticketShowPrice,
       ticketShowLogo: form.ticketShowLogo,
       certificateTitle: form.certificateTitle.trim() || "Certificat de participation",

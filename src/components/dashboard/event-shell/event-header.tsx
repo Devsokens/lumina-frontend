@@ -3,7 +3,8 @@
 import Link from "next/link";
 import { Suspense } from "react";
 import { usePathname, useSearchParams } from "next/navigation";
-import { ArrowUpRight, ChevronRight, Compass, Search } from "lucide-react";
+import { ArrowUpRight, ChevronRight, CircleHelp, Compass, Search } from "lucide-react";
+import { useSupport } from "@/hooks/useSupport";
 import { NotificationBell } from "@/components/shared/notification-bell";
 import { DropdownMenu, DropdownMenuContent, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
 import { EV_PORTAL, initialsOf } from "@/components/events/ev-ui";
@@ -26,6 +27,8 @@ const PAGES: Record<string, string> = {
   settings: "Paramètres",
   audit: "Journal d'audit",
   showcase: "Mon site web",
+  revenue: "Revenus",
+  help: "Aide",
 };
 
 const RUBRIQUES: Record<string, string> = {
@@ -74,6 +77,9 @@ export function EventHeader() {
   const collapsed = useShellStore((s) => s.collapsed);
   const setPaletteOpen = useShellStore((s) => s.setPaletteOpen);
   const setTourOpen = useShellStore((s) => s.setTourOpen);
+  // Réponse du support non lue : pastille sur « Aide ».
+  const { data: support } = useSupport(false);
+  const supportUnread = support?.unread ?? 0;
   const userName = user?.fullName || user?.email || "Administrateur";
 
   return (
@@ -109,6 +115,15 @@ export function EventHeader() {
         <button type="button" data-tour="tour" aria-label="Revoir la visite guidée" title="Visite guidée" onClick={() => setTourOpen(true)} className="flex size-10 items-center justify-center rounded-[10px] text-ev-ink2 hover:bg-ev-soft">
           <Compass className="size-[18px]" />
         </button>
+        <Link
+          href={`${BASE}/help${supportUnread > 0 ? "?support=1" : ""}`}
+          aria-label={supportUnread > 0 ? "Aide : le support vous a répondu" : "Aide et support"}
+          title="Aide et support"
+          className="relative flex size-10 items-center justify-center rounded-[10px] text-ev-ink2 hover:bg-ev-soft"
+        >
+          <CircleHelp className="size-[18px]" />
+          {supportUnread > 0 && <span className="absolute right-1.5 top-1.5 size-2.5 rounded-full border-2 border-ev-surface bg-[#E5484D]" />}
+        </Link>
         <NotificationBell className="flex size-10 items-center justify-center rounded-[10px] text-ev-ink2 hover:bg-ev-soft" />
         {/* Compte : dans la barre latérale dépliée ; ici quand elle est repliée, et sur téléphone. */}
         <DropdownMenu>
