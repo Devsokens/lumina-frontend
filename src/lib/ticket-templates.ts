@@ -3,13 +3,16 @@ import type { EventType, TicketTemplate } from "@/types/api";
 // Catalogue des modèles visuels de billet. Couleurs en valeurs CSS (styles
 // inline) : elles sont dynamiques, Tailwind ne peut pas les générer.
 // `layout` : stub = billet avec talon détachable, badge = badge vertical
-// (conférence, salon), wristband = bracelet / bandeau horizontal.
-export type TicketLayout = "stub" | "badge" | "wristband";
+// (conférence, salon), wristband = bracelet / bandeau horizontal,
+// invitation = carton d'invitation (mariage, cérémonie), texte centré.
+// savedate = carton paysage avec la photo du couple (affiche de l'événement)
+// ou, sans photo, une illustration de mariage.
+export type TicketLayout = "stub" | "badge" | "wristband" | "invitation" | "savedate";
 
 export type TicketTemplateDef = {
   id: TicketTemplate;
   label: string;
-  category: "Prestige" | "Festival" | "Pro" | "Sport" | "Spectacle" | "Sobre";
+  category: "Mariage" | "Prestige" | "Festival" | "Pro" | "Sport" | "Spectacle" | "Sobre";
   layout: TicketLayout;
   background: string;
   foreground: string;
@@ -38,9 +41,15 @@ export const TICKET_TEMPLATES: TicketTemplateDef[] = [
   { id: "CLASSIC_PASS", label: "Classique", category: "Sobre", layout: "stub", background: "#ffffff", foreground: "#111827", accent: "#059669", muted: "#6b7280" },
   { id: "MINIMAL_MONO", label: "Minimal", category: "Sobre", layout: "stub", background: "#f5f5f4", foreground: "#1c1917", accent: "#1c1917", muted: "#78716c" },
   { id: "PASTEL_BRUNCH", label: "Pastel Brunch", category: "Sobre", layout: "wristband", background: "linear-gradient(90deg,#fce7f3,#e0e7ff)", foreground: "#3b0764", accent: "#be185d", muted: "#6b21a8" },
+  // Cartons d'invitation (mariages, cérémonies).
+  { id: "WEDDING_IVORY", label: "Ivoire & Or", category: "Mariage", layout: "invitation", background: "#fbf7ef", foreground: "#2b2118", accent: "#b8893b", muted: "#8a7a66" },
+  { id: "WEDDING_BLUSH", label: "Rose poudré", category: "Mariage", layout: "invitation", background: "#fdf1f1", foreground: "#3a1f29", accent: "#b5536c", muted: "#94707a" },
+  { id: "WEDDING_EMERALD", label: "Émeraude & Or", category: "Mariage", layout: "invitation", background: "#0f3b2e", foreground: "#f7f1e3", accent: "#d9b86a", muted: "#a9c2b6" },
+  { id: "WEDDING_ROSE_PHOTO", label: "Save the date · Rose", category: "Mariage", layout: "savedate", background: "#fde8ec", foreground: "#5a2a3c", accent: "#d4577a", muted: "#9a6f7d" },
+  { id: "WEDDING_GOLD_PHOTO", label: "Save the date · Or", category: "Mariage", layout: "savedate", background: "#ffffff", foreground: "#2a2418", accent: "#c19a3d", muted: "#8c8372" },
 ];
 
-export const TEMPLATE_CATEGORIES = ["Prestige", "Festival", "Spectacle", "Pro", "Sport", "Sobre"] as const;
+export const TEMPLATE_CATEGORIES = ["Mariage", "Prestige", "Festival", "Spectacle", "Pro", "Sport", "Sobre"] as const;
 
 export function getTicketTemplate(id?: string | null): TicketTemplateDef {
   return TICKET_TEMPLATES.find((t) => t.id === id) ?? TICKET_TEMPLATES[0];
@@ -61,6 +70,8 @@ export function defaultTemplateFor(type?: EventType): TicketTemplate {
       return "SPORT_STADIUM";
     case "SHOW":
       return "THEATRE_RED";
+    case "WEDDING":
+      return "WEDDING_IVORY";
     default:
       return "GOLD_VIP";
   }

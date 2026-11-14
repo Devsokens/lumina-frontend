@@ -15,6 +15,8 @@ export type ApiTicketType = {
   template?: string | null;
   maxPerOrder?: number | null;
   visible?: boolean;
+  // Couleur d'accent du billet de cette formule (#RRGGBB), null = modèle.
+  color?: string | null;
   // Cotisation : montant libre à partir de `minPrice` (à défaut `price`, le
   // montant suggéré). Le billet sert aussi d'entrée.
   kind?: "FIXED" | "CONTRIBUTION";

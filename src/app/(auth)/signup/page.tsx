@@ -20,7 +20,7 @@ import {
 } from "lucide-react";
 import { homePathFor, useAuth } from "@/hooks/useAuth";
 import { apiError } from "@/lib/api";
-import { API_URL, type Sector } from "@/lib/constants";
+import { API_URL, OPEN_SECTORS, type Sector } from "@/lib/constants";
 import { publicSiteLabel } from "@/lib/tenant-url";
 import { LEGAL_LINKS } from "@/lib/legal";
 import { Button } from "@/components/ui/button";
@@ -55,10 +55,9 @@ function SignupContent() {
   const { signup } = useAuth();
 
   const sectorParam = searchParams.get("sector");
-  const initialSector: Sector =
-    sectorParam === "EVENT" || sectorParam === "RESTAURANT" || sectorParam === "ACCOMMODATION"
-      ? sectorParam
-      : "EVENT";
+  // Seul l'événementiel est ouvert pour le moment (OPEN_SECTORS) : un lien
+  // vers un autre secteur retombe dessus.
+  const initialSector: Sector = OPEN_SECTORS.includes(sectorParam as Sector) ? (sectorParam as Sector) : "EVENT";
 
   const [step, setStep] = useState<1 | 2 | 3>(1);
   const [submitting, setSubmitting] = useState(false);
@@ -380,20 +379,26 @@ function SignupContent() {
               {SECTOR_OPTIONS.map((opt) => {
                 const Icon = opt.icon;
                 const isSelected = sector === opt.id;
+                const soon = !OPEN_SECTORS.includes(opt.id);
                 return (
                   <button
                     key={opt.id}
                     type="button"
+                    disabled={soon}
+                    aria-pressed={isSelected}
                     onClick={() => setSector(opt.id)}
                     className={cn(
-                      "flex flex-col items-center gap-1.5 rounded-xl border p-3 text-center transition-all",
-                      isSelected
-                        ? "border-primary bg-primary/10 text-primary font-bold shadow-xs"
-                        : "border-input bg-card text-muted-foreground hover:border-foreground/30 hover:text-foreground",
+                      "relative flex flex-col items-center gap-1.5 rounded-xl border p-3 text-center transition-all",
+                      soon
+                        ? "cursor-not-allowed border-dashed border-input bg-muted/40 text-muted-foreground/60"
+                        : isSelected
+                          ? "border-primary bg-primary/10 text-primary font-bold shadow-xs"
+                          : "border-input bg-card text-muted-foreground hover:border-foreground/30 hover:text-foreground",
                     )}
                   >
                     <Icon className="size-5" />
                     <span className="text-xs">{opt.label}</span>
+                    {soon && <span className="rounded-full border border-border bg-background px-1.5 py-px text-[9px] font-bold leading-tight text-muted-foreground">Bientôt disponible</span>}
                   </button>
                 );
               })}

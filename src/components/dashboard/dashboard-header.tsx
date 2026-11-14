@@ -2,7 +2,6 @@
 
 import { useState } from "react";
 import {
-  Bell,
   LogOut,
   Search,
   User,
@@ -52,6 +51,7 @@ const ROLE_LABELS: Record<Role, string> = {
 };
 import Link from "next/link";
 import { toast } from "sonner";
+import { NotificationBell } from "@/components/shared/notification-bell";
 
 import { EventHeader } from "@/components/dashboard/event-shell/event-header";
 
@@ -159,18 +159,13 @@ export function DashboardHeader() {
         {/* Right Action Icons & Profile Dropdown */}
         <div className="flex items-center gap-3">
           {/* Notifications button */}
-          <Button
-            variant="ghost"
-            size="icon"
+          <NotificationBell
+            iconClassName="size-4.5"
             className={cn(
-              "text-muted-foreground hover:text-foreground",
+              "flex items-center justify-center text-muted-foreground transition-colors hover:bg-accent hover:text-foreground",
               isEvent ? "size-10 rounded-[10px] border border-ev-border bg-ev-surface text-ev-ink2" : "size-9 rounded-xl"
             )}
-            aria-label="Notifications"
-            onClick={() => toast.info("Aucune notification.")}
-          >
-            <Bell className="size-4.5" />
-          </Button>
+          />
 
           {/* User Profile Dropdown */}
           <DropdownMenu>

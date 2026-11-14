@@ -139,7 +139,13 @@ export type TicketTemplate =
   | "RACE_BIB"
   | "CLASSIC_PASS"
   | "MINIMAL_MONO"
-  | "PASTEL_BRUNCH";
+  | "PASTEL_BRUNCH"
+  // Cartons d'invitation (mariages, cérémonies).
+  | "WEDDING_IVORY"
+  | "WEDDING_BLUSH"
+  | "WEDDING_EMERALD"
+  | "WEDDING_ROSE_PHOTO"
+  | "WEDDING_GOLD_PHOTO";
 
 // Les quatre derniers ne sont acceptés par le serveur qu’avec le drapeau
 // event-extras (lib/features.ts).
@@ -223,6 +229,8 @@ export type TicketType = {
   saleEndsAt?: string | null;
   maxPerOrder?: number | null;
   visible?: boolean;
+  // Couleur d'accent du billet de cette formule (#RRGGBB), null = modèle.
+  color?: string | null;
   // Cotisation : montant libre à partir de `minPrice` (à défaut `price`, le
   // montant suggéré). Le billet sert aussi d'entrée.
   kind?: "FIXED" | "CONTRIBUTION";

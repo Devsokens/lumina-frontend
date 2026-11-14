@@ -250,6 +250,7 @@ export function useSaveEvent() {
               ? { visible: f.visible ?? true }
               : {}),
             ...((f.kind ?? "FIXED") !== (before.kind ?? "FIXED") ? { kind: f.kind ?? "FIXED" } : {}),
+            ...((f.color ?? null) !== (before.color ?? null) ? { color: f.color ?? null } : {}),
             ...(f.kind === "CONTRIBUTION" && (f.minPrice ?? null) !== (before.minPrice ?? null)
               ? { minPrice: f.minPrice ?? null }
               : {}),

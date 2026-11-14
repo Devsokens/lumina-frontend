@@ -99,6 +99,9 @@ const SECTORS: Sector[] = [
   },
 ];
 
+// Seul secteur ouvert à l'inscription pour le moment (voir OPEN_SECTORS).
+const OPEN_SECTOR = "event";
+
 export function SectorShowcaseHub() {
   const sectionRef = useRef<HTMLElement>(null);
   const tabRefs = useRef<(HTMLButtonElement | null)[]>([]);
@@ -205,6 +208,7 @@ export function SectorShowcaseHub() {
                     tabIndex={isActive ? 0 : -1}
                     onClick={() => select(i)}
                     className={cn(
+                      s.id !== OPEN_SECTOR && "grayscale opacity-70",
                       "group relative flex min-w-0 flex-col items-center gap-1.5 overflow-hidden rounded-2xl border px-1.5 pb-3.5 pt-3 text-center transition-all duration-300 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary lg:flex-row lg:items-start lg:gap-4 lg:px-5 lg:py-5 lg:text-left",
                       isActive
                         ? "border-border bg-card shadow-lg shadow-primary/10"
@@ -255,6 +259,9 @@ export function SectorShowcaseHub() {
                           {s.label}
                         </span>
                       </span>
+                      {s.id !== OPEN_SECTOR && (
+                        <span className="mt-1 inline-block rounded-full border border-border bg-background px-2 py-px text-[9px] font-bold uppercase tracking-wide text-muted-foreground lg:text-[10px]">Bientôt disponible</span>
+                      )}
                       {/* Résumé dépliant de l'onglet actif (grand écran) */}
                       <span
                         className={cn(
@@ -355,16 +362,22 @@ export function SectorShowcaseHub() {
                     </li>
                   ))}
                 </ul>
-                <Button
-                  asChild
-                  size="lg"
-                  className="group mt-6 h-12 rounded-full bg-secondary px-6 font-semibold text-secondary-foreground hover:bg-secondary/90"
-                >
-                  <Link href={sector.href}>
-                    {sector.cta}
-                    <ArrowRight className="size-4 transition-transform group-hover:translate-x-0.5" />
-                  </Link>
-                </Button>
+                {sector.id === OPEN_SECTOR ? (
+                  <Button
+                    asChild
+                    size="lg"
+                    className="group mt-6 h-12 rounded-full bg-secondary px-6 font-semibold text-secondary-foreground hover:bg-secondary/90"
+                  >
+                    <Link href={sector.href}>
+                      {sector.cta}
+                      <ArrowRight className="size-4 transition-transform group-hover:translate-x-0.5" />
+                    </Link>
+                  </Button>
+                ) : (
+                  <Button type="button" size="lg" disabled className="mt-6 h-12 rounded-full px-6 font-semibold">
+                    Bientôt disponible
+                  </Button>
+                )}
               </motion.div>
             </AnimatePresence>
           </div>
