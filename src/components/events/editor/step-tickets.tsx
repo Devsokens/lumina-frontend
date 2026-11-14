@@ -56,6 +56,16 @@ const FORMULA_COLORS = [
   { label: "Noir", value: "#1F2937" },
 ];
 
+// Lignes modifiables d'un carton de mariage (mêmes limites que le serveur).
+// « heading » n'existe que sur les cartons paysage.
+const CARD_TEXT_FIELDS: { key: "heading" | "intro" | "names" | "message" | "guestLabel"; label: string; placeholder: string; max: number; wide?: boolean }[] = [
+  { key: "heading", label: "En-tête", placeholder: "SAVE THE DATE", max: 30 },
+  { key: "intro", label: "Phrase d'accroche", placeholder: "Vous êtes invité(e) à", max: 70 },
+  { key: "names", label: "Grand titre (prénoms des mariés)", placeholder: "", max: 60 },
+  { key: "guestLabel", label: "Libellé de l'invité", placeholder: "Invité(e)", max: 30 },
+  { key: "message", label: "Mot libre, sous la date et le lieu", placeholder: "Tenue de soirée souhaitée · Réponse attendue avant le 1er décembre", max: 160, wide: true },
+];
+
 const KINDS: [Kind, string][] = [
   ["FIXED", "Billet à prix fixe"],
   ["CONTRIBUTION", "Cotisation libre"],
@@ -509,6 +519,28 @@ export function StepTickets({ form, set, eventId }: Props) {
                   Retirer
                 </EvButton>
               )}
+            </div>
+          </div>
+        )}
+        {(current.layout === "invitation" || current.layout === "savedate") && (
+          <div className="flex flex-col gap-3.5 rounded-[12px] border border-ev-line bg-ev-surface px-4 py-4">
+            <div className="flex flex-col gap-1">
+              <span className="text-sm font-semibold">Textes du carton</span>
+              <span className="text-[13px] leading-relaxed text-ev-muted">Personnalisez chaque ligne. Un champ laissé vide garde le texte du modèle, indiqué en gris. La date, le lieu et le nom de l&apos;invité sont remplis automatiquement.</span>
+            </div>
+            <div className="grid gap-3.5 sm:grid-cols-2">
+              {CARD_TEXT_FIELDS.filter((f) => f.key !== "heading" || current.layout === "savedate").map((f) => (
+                <label key={f.key} className={cn("flex flex-col gap-1.5 text-[13px] font-medium", f.wide && "sm:col-span-2")}>
+                  {f.label}
+                  <input
+                    value={form.ticketTexts[f.key]}
+                    maxLength={f.max}
+                    placeholder={f.key === "names" ? title : f.placeholder}
+                    onChange={(e) => set({ ticketTexts: { ...form.ticketTexts, [f.key]: e.target.value } })}
+                    className="h-[42px] rounded-[10px] border border-ev-border bg-ev-surface px-3 font-normal outline-none placeholder:text-ev-muted focus:border-ev-primary"
+                  />
+                </label>
+              ))}
             </div>
           </div>
         )}

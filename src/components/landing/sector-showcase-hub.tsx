@@ -6,13 +6,9 @@ import Link from "next/link";
 import { AnimatePresence, motion } from "framer-motion";
 import {
   ArrowRight,
-  Building2,
   CheckCircle2,
   Pause,
   Play,
-  Ticket,
-  UtensilsCrossed,
-  type LucideIcon,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
@@ -24,7 +20,6 @@ interface Sector {
   id: string;
   label: string;
   short: string;
-  icon: LucideIcon;
   image: string;
   imageAlt: string;
   /** Cadrage de la photo dans le panneau (object-position). */
@@ -43,7 +38,6 @@ const SECTORS: Sector[] = [
     id: "event",
     label: "Événementiel",
     short: "Billetterie en ligne et contrôle d'entrée",
-    icon: Ticket,
     image: "/images/landing/secteur-evenements-chanteur.jpg",
     imageAlt: "Un chanteur en pleine performance sur scène",
     imagePosition: "50% 28%",
@@ -63,7 +57,6 @@ const SECTORS: Sector[] = [
     id: "restaurant",
     label: "Restauration",
     short: "Menu QR, commandes à table et écran cuisine",
-    icon: UtensilsCrossed,
     image: "/images/landing/secteur-restauration.jpg",
     imageAlt: "Clients attablés dans un restaurant chaleureux",
     proof: "CMD-0427 · En préparation",
@@ -82,7 +75,6 @@ const SECTORS: Sector[] = [
     id: "rbnb",
     label: "RBNB",
     short: "Logements meublés, calendrier et réservations",
-    icon: Building2,
     image: "/images/landing/secteur-rbnb.jpg",
     imageAlt: "Salon d'un appartement meublé lumineux",
     proof: "Séjour réservé · 3 nuits",
@@ -193,7 +185,6 @@ export function SectorShowcaseHub() {
             >
               {SECTORS.map((s, i) => {
                 const isActive = i === active;
-                const Icon = s.icon;
                 return (
                   <button
                     key={s.id}
@@ -237,19 +228,17 @@ export function SectorShowcaseHub() {
                       )}
                     </span>
 
+                    {/* Vignette photo du secteur (plutôt qu'un pictogramme générique). */}
                     <span
                       className={cn(
-                        "flex size-10 shrink-0 items-center justify-center rounded-xl transition-colors lg:size-12",
-                        isActive ? "bg-primary text-primary-foreground" : "bg-card text-muted-foreground lg:bg-muted",
+                        "relative size-11 shrink-0 overflow-hidden rounded-xl ring-2 ring-offset-2 ring-offset-background transition-all lg:size-14",
+                        isActive ? "ring-primary" : "ring-transparent",
                       )}
                     >
-                      <Icon className="size-5 lg:size-6" />
+                      <Image src={s.image} alt="" fill sizes="56px" className="object-cover" />
                     </span>
                     <span className="w-full min-w-0 lg:w-auto">
                       <span className="flex items-baseline justify-center gap-2 lg:justify-start">
-                        <span className="hidden font-mono text-xs text-muted-foreground lg:inline">
-                          0{i + 1}
-                        </span>
                         <span
                           className={cn(
                             "block truncate font-display text-[13px] font-semibold sm:text-sm lg:text-xl",

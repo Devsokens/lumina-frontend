@@ -10,6 +10,7 @@ import {
   Coins,
   CreditCard,
   Globe,
+  Headset,
   KeyRound,
   LayoutDashboard,
   LogOut,
@@ -22,12 +23,14 @@ import {
   X,
 } from "lucide-react";
 import { readVisionSessionRaw, setVisionSession, subscribeVisionSession, visionApi, type VisionSession } from "@/lib/vision";
+import { useSupportAlerts } from "@/lib/vision-support";
 import { cn } from "@/lib/utils";
 
 const NAV = [
   { href: "/vision", label: "Vue d'ensemble", icon: LayoutDashboard },
   { href: "/vision/tenants", label: "Comptes clients", icon: Building2 },
   { href: "/vision/users", label: "Utilisateurs", icon: Users },
+  { href: "/vision/support", label: "Support", icon: Headset },
   { href: "/vision/traffic", label: "Trafic API", icon: Activity },
   { href: "/vision/costs", label: "Coûts & revenus", icon: Coins },
   { href: "/vision/payments", label: "Paiements", icon: CreditCard },
@@ -47,6 +50,9 @@ export default function VisionConsoleLayout({ children }: { children: React.Reac
   const raw = useSyncExternalStore(subscribeVisionSession, readVisionSessionRaw, () => undefined);
   const session = useMemo<VisionSession | null | undefined>(() => (raw === undefined ? undefined : raw ? (JSON.parse(raw) as VisionSession) : null), [raw]);
   const [open, setOpen] = useState(false);
+  // Demandes d'assistance : pastille du menu, son et message sur toutes les pages.
+  const support = useSupportAlerts(!!session);
+  const supportTodo = (support?.toTake ?? 0) + (support?.overdue ?? 0);
 
   useEffect(() => {
     if (session === undefined) return;
@@ -89,6 +95,9 @@ export default function VisionConsoleLayout({ children }: { children: React.Reac
           >
             <Icon className="size-4" />
             {label}
+            {href === "/vision/support" && supportTodo > 0 && (
+              <span className={cn("ml-auto flex h-5 min-w-5 items-center justify-center rounded-full px-1.5 text-[11px] font-bold text-white", support?.overdue ? "bg-red-500" : "bg-amber-500")}>{supportTodo}</span>
+            )}
           </Link>
         );
       })}

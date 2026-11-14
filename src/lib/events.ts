@@ -137,6 +137,9 @@ export type EventPayload = {
 export type ProgramItem = { id: string; time: string; title: string; detail?: string };
 export type Speaker = { id: string; name: string; role?: string; photoUrl?: string | null };
 
+// Textes libres d'un carton de mariage (TicketTextsDto côté serveur).
+export type TicketTexts = { heading?: string; intro?: string; names?: string; message?: string; guestLabel?: string };
+
 // Event.settings côté serveur (EventSettingsDto).
 export type EventSettings = {
   program?: ProgramItem[];
@@ -156,6 +159,8 @@ export type EventSettings = {
   ticketColor?: string;
   // Photo du couple des cartons de mariage (remplace l'illustration).
   ticketPhoto?: string | null;
+  // Textes des cartons de mariage (champ vide = texte par défaut du modèle).
+  ticketTexts?: TicketTexts;
   ticketShowPrice?: boolean;
   ticketShowLogo?: boolean;
   certificateTitle?: string;

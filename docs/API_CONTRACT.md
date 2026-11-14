@@ -497,6 +497,15 @@ obligatoire sans réponse refuse la commande (400) avant toute réservation de p
 | GET | `/admin/payouts/statement?page=&limit=&eventId=` | Bearer (OWNER) | — | `{ rows: [{ id, type: "SALE" \| "REFUND", date, eventId, eventTitle, orderNumber, customerName, gross, commission, net, commissionBps, state: "PAID" \| "IN_PROGRESS" \| "UPCOMING", payoutId, paidAt }], page, limit, total }` — relevé (francs) |
 | GET | `/admin/payouts/statement/export?eventId=` | Bearer (OWNER) | — | `{ truncated, rows }` — relevé complet pour l'export, 5 000 lignes au plus (10 / minute) |
 | GET | `/admin/payouts/:id` | Bearer (OWNER) | — | versement + `events: [{ eventId, title, lines, net }]` — répartition par événement ; **404** autre compte |
+| GET | `/admin/support` | Bearer (tout rôle) | — | `{ unread, waiting, messages: [{ id, from: "me" \| "support", body, createdAt }] }` — conversation de la personne connectée avec le support ; ni nom d'admin ni note interne |
+| POST | `/admin/support/messages` | Bearer (tout rôle) | `{ body }` (1 à 2000 caractères) | message créé — 20 / minute ; rouvre une conversation clôturée |
+| POST | `/admin/support/read` | Bearer (tout rôle) | — | `{}` — réponses marquées lues |
+| GET | `/vision/support` | Vision | — | `{ counts: { toTake, overdue, mine }, threads: [{ id, status, organization, person, role, lastMessageAt, lastPreview, waitingSince, overdue, assignedTo: { id, name, me } \| null, canWrite, canClaim, unread }] }` |
+| GET | `/vision/support/admins` | Vision | — | `[{ id, name }]` — admins actifs (passage de main) |
+| GET | `/vision/support/:id` | Vision | — | `{ thread, messages: [{ id, author: "USER" \| "ADMIN" \| "SYSTEM", adminName, mine, body, createdAt }] }` |
+| POST | `/vision/support/:id/claim` | Vision | — | `{}` — prise en charge ; **409** si un collègue l'a déjà (sauf 15 min sans réponse) |
+| POST | `/vision/support/:id/release` · `/transfer` `{ adminId }` · `/close` | Vision | — | `{}` — admin en charge uniquement (**403** sinon) |
+| POST | `/vision/support/:id/messages` | Vision | `{ body }` | `{ id }` — admin en charge uniquement (**403** sinon) |
 | GET | `/admin/push` | Bearer (tout rôle) | — | `{ enabled, publicKey, devices }` — notifications push ; `enabled: false` tant que les clés du serveur ne sont pas posées |
 | GET | `/admin/push/feed` | Bearer (tout rôle) | — | `[{ id, kind: "sale" \| "contribution" \| "payout", title, body, url, date }]` — 20 dernières notifications (cloche) ; vide hors OWNER/MANAGER |
 | POST | `/admin/push/subscriptions` | Bearer (tout rôle) | `{ endpoint, keys: { p256dh, auth } }` (abonnement du navigateur) | `{ subscribed: true }` — **400** service de notification inconnu ; **503** inactif |

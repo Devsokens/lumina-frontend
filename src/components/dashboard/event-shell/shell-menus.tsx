@@ -3,7 +3,7 @@
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { toast } from "sonner";
-import { Building2, Check, Compass, CreditCard, Languages, LockKeyhole, LogOut, MessageSquareHeart, Plus, Star, User, UserPlus } from "lucide-react";
+import { Building2, Check, CircleHelp, Compass, CreditCard, Headset, Languages, LockKeyhole, LogOut, MessageSquareHeart, Plus, Star, User, UserPlus } from "lucide-react";
 import { DropdownMenuItem, DropdownMenuLabel, DropdownMenuSeparator } from "@/components/ui/dropdown-menu";
 import { initialsOf } from "@/components/events/ev-ui";
 import { BASE, PLAN_NAME, logoOf, type SetupStep } from "@/components/dashboard/event-shell/shell-model";
@@ -132,6 +132,7 @@ export function UserMenuContent({ name, contact }: { name: string; contact: stri
   const { signOut } = useAuth();
   const setTourOpen = useShellStore((s) => s.setTourOpen);
   const setFeedbackOpen = useShellStore((s) => s.setFeedbackOpen);
+  const setSupportOpen = useShellStore((s) => s.setSupportOpen);
 
   async function logout() {
     await signOut();
@@ -162,6 +163,14 @@ export function UserMenuContent({ name, contact }: { name: string; contact: stri
         </DropdownMenuItem>
         <DropdownMenuItem disabled className="gap-2.5" title="Seule langue disponible pour l'instant">
           <Languages className="size-4" /> Langue : Français
+        </DropdownMenuItem>
+        <DropdownMenuItem asChild>
+          <Link href={`${BASE}/help`} className="gap-2.5">
+            <CircleHelp className="size-4" /> Aide et documentation
+          </Link>
+        </DropdownMenuItem>
+        <DropdownMenuItem className="gap-2.5" onClick={() => setSupportOpen(true)}>
+          <Headset className="size-4" /> Contacter le support
         </DropdownMenuItem>
         <DropdownMenuItem className="gap-2.5" onClick={() => setTourOpen(true)}>
           <Compass className="size-4" /> Revoir la visite guidée
