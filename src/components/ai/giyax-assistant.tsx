@@ -197,13 +197,27 @@ function useDodge(ref: React.RefObject<HTMLDivElement | null>, active: boolean) 
     const schedule = () => {
       if (!frame) frame = requestAnimationFrame(measure);
     };
-    const observer = new MutationObserver(schedule);
+    // Un panneau qui glisse (support, tiroirs) est encore hors de l'écran au
+    // moment où il apparaît dans la page : on remesure pendant et après son
+    // animation d'entrée ou de sortie.
+    let later: ReturnType<typeof setTimeout>[] = [];
+    const changed = () => {
+      schedule();
+      later.forEach(clearTimeout);
+      later = [150, 350, 600].map((ms) => setTimeout(schedule, ms));
+    };
+    const observer = new MutationObserver(changed);
     observer.observe(document.body, { childList: true, subtree: true, attributes: true, attributeFilter: ["data-state", "role", "open"] });
     window.addEventListener("resize", schedule);
+    document.addEventListener("animationend", schedule, true);
+    document.addEventListener("transitionend", schedule, true);
     schedule();
     return () => {
       observer.disconnect();
+      later.forEach(clearTimeout);
       window.removeEventListener("resize", schedule);
+      document.removeEventListener("animationend", schedule, true);
+      document.removeEventListener("transitionend", schedule, true);
       if (frame) cancelAnimationFrame(frame);
     };
   }, [ref, active]);
