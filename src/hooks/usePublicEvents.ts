@@ -112,6 +112,9 @@ export async function fetchPaymentStatus(reference: string) {
 
 const STATUS_POLL_MS = 3_000;
 const STATUS_MAX_POLLS = 60; // ~3 min : le temps de valider sur son téléphone
+// Ensuite, ou après une coupure réseau : on continue, moins souvent.
+const STATUS_IDLE_MS = 15_000;
+const STATUS_MAX_ERRORS = 40;
 
 // Page d'attente : interroge le statut tant que le paiement n'est pas validé.
 export function usePaymentStatus(reference: string | null) {
@@ -125,10 +128,11 @@ export function usePaymentStatus(reference: string | null) {
     },
     enabled: !!reference,
     retry: false,
-    refetchInterval: (query) =>
-      query.state.data?.paymentStatus === "PENDING" &&
-      query.state.dataUpdateCount < STATUS_MAX_POLLS
-        ? STATUS_POLL_MS
-        : false,
+    refetchInterval: (query) => {
+      // Réseau coupé : nouvel essai, sans insister indéfiniment.
+      if (query.state.status === "error") return query.state.errorUpdateCount < STATUS_MAX_ERRORS ? STATUS_IDLE_MS : false;
+      if (query.state.data?.paymentStatus !== "PENDING") return false;
+      return query.state.dataUpdateCount < STATUS_MAX_POLLS ? STATUS_POLL_MS : STATUS_IDLE_MS;
+    },
   });
 }

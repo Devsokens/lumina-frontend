@@ -336,7 +336,7 @@ export const HELP_SECTIONS: HelpSection[] = [
   {
     id: "revenus",
     title: "Revenus",
-    description: "Ce que vos ventes rapportent, la commission et les reversements.",
+    description: "Ce que vos ventes rapportent, les frais et les reversements.",
     icon: "M3 7a2 2 0 0 1 2-2h13v4M3 7v10a2 2 0 0 0 2 2h15a1 1 0 0 0 1-1v-8a1 1 0 0 0-1-1H5a2 2 0 0 1-2-2zM16.5 14h.01",
     articles: [
       {
@@ -349,7 +349,8 @@ export const HELP_SECTIONS: HelpSection[] = [
             "Versement en cours : un versement préparé ou en cours d'envoi.",
             "Déjà reversé : ce que vous avez reçu sur votre Mobile Money."
           ),
-          p("Le net d'une vente est son montant moins la commission GiyaX, qui comprend les frais de paiement. Les billets gratuits ne coûtent rien."),
+          p("Vous recevez le prix de vos billets en entier. Les frais de service sont ajoutés au prix et payés par l'acheteur, qui les voit avant de payer. Les billets gratuits ne coûtent rien."),
+          p("Les recettes d'un événement sont versées quelques jours après sa fin. Les cotisations peuvent être retirées juste avant le début de l'événement, depuis l'onglet Par événement."),
           note("Le module Revenus est réservé au propriétaire du compte."),
         ],
         link: { label: "Ouvrir Revenus", href: `${BASE}/revenue` },
@@ -359,7 +360,7 @@ export const HELP_SECTIONS: HelpSection[] = [
         title: "Relevé et reversements",
         summary: "Chaque vente ligne par ligne, par événement, avec export.",
         blocks: [
-          p("L'onglet Relevé liste chaque vente et chaque remboursement : montant brut, commission, net et état. Filtrez par événement et exportez le tout en CSV."),
+          p("L'onglet Relevé liste chaque vente et chaque remboursement : montant vendu, retenue éventuelle, net et état. Filtrez par événement et exportez le tout en CSV."),
           p("Un clic sur un versement montre sa répartition par événement. Depuis l'aperçu d'un événement, l'encart Revenus mène au relevé déjà filtré."),
         ],
       },

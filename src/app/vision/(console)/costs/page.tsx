@@ -1,7 +1,7 @@
 "use client";
 
 import { useQuery } from "@tanstack/react-query";
-import { Coins, Receipt, TrendingUp } from "lucide-react";
+import { Coins, Receipt, Ticket, TrendingUp } from "lucide-react";
 import { Skeleton } from "@/components/ui/skeleton";
 import { DonutChart } from "@/components/charts/charts";
 import { StatCard } from "@/components/charts/stat-card";
@@ -13,6 +13,8 @@ type Costs = {
   lines: { label: string; amount: number; kind: "fixed" | "usage" }[];
   total: number;
   mrr: number;
+  // Frais de service et commissions de billetterie sur la période.
+  ticketFees?: number;
   margin: number;
   assumptions: { usdRate: number; paymentFeePct: number; fixedConfigured: boolean; planPrices: Record<string, number> };
 };
@@ -29,10 +31,11 @@ export default function VisionCostsPage() {
         <Skeleton className="h-96 rounded-2xl" />
       ) : (
         <div className="space-y-4">
-          <div className="grid gap-3 sm:grid-cols-3">
+          <div className="grid grid-cols-2 gap-3 lg:grid-cols-4">
             <StatCard index={0} label="Revenu récurrent (MRR)" value={data.mrr} format={fcfa} icon={TrendingUp} />
-            <StatCard index={1} label="Coûts estimés" value={data.total} format={fcfa} icon={Receipt} />
-            <StatCard index={2} label="Marge estimée" value={data.margin} format={fcfa} icon={Coins} hint={data.mrr ? `${Math.round((data.margin / data.mrr) * 100)} % du MRR` : undefined} />
+            <StatCard index={1} label="Frais et commissions" value={data.ticketFees ?? 0} format={fcfa} icon={Ticket} hint="Billetterie, 30 jours" />
+            <StatCard index={2} label="Coûts estimés" value={data.total} format={fcfa} icon={Receipt} />
+            <StatCard index={3} label="Marge estimée" value={data.margin} format={fcfa} icon={Coins} hint="Abonnements + billetterie − coûts" />
           </div>
 
           <div className="grid gap-4 lg:grid-cols-12">
@@ -70,7 +73,7 @@ export default function VisionCostsPage() {
           <Panel title="Hypothèses de calcul">
             <ul className="grid gap-2 text-sm text-muted-foreground sm:grid-cols-2">
               <li>Taux de change IA : 1 $ = {data.assumptions.usdRate} FCFA (<code>VISION_USD_XAF</code>)</li>
-              <li>Frais de paiement : {data.assumptions.paymentFeePct} % des paiements en ligne (<code>VISION_PAYMENT_FEE_PCT</code>)</li>
+              <li>Frais de paiement : ceux relevés par PVit sur chaque paiement ; à défaut, {data.assumptions.paymentFeePct} % des paiements en ligne (<code>VISION_PAYMENT_FEE_PCT</code>)</li>
               <li className="sm:col-span-2">
                 Prix des offres (<code>VISION_PLAN_PRICES</code>) :{" "}
                 {Object.entries(data.assumptions.planPrices)

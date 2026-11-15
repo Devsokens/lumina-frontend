@@ -35,7 +35,7 @@ const NAV = [
   { href: "/vision/costs", label: "Coûts & revenus", icon: Coins },
   { href: "/vision/payments", label: "Paiements", icon: CreditCard },
   { href: "/vision/payouts", label: "Versements", icon: Banknote },
-  { href: "/vision/commission", label: "Commission", icon: Percent },
+  { href: "/vision/commission", label: "Frais et reversements", icon: Percent },
   { href: "/vision/domains", label: "Domaines", icon: Globe },
   { href: "/vision/emails", label: "E-mails", icon: Mail },
   { href: "/vision/logs", label: "Journal & admins", icon: ScrollText },

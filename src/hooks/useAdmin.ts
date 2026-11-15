@@ -135,19 +135,31 @@ export type PayoutRow = {
   refunds: number;
   operator: PayoutOperator;
   phone: string;
+  // CONTRIBUTION : retrait de cotisations demandé avant l'événement.
+  kind?: "STANDARD" | "CONTRIBUTION";
   createdAt: string;
   paidAt: string | null;
+};
+// Règles fixées par GiyaX (console /vision). Taux en points de base.
+export type PaymentRules = {
+  buyerFeeBps: number;
+  ticketCommissionBps: number;
+  payoutHoldDays: number;
+  contributionOpenHours: number;
+  contributionCloseHours: number;
+  contributionMinPayout: number;
 };
 export type PayoutSummary = {
   test: boolean;
   commissionBps: number;
+  rules?: PaymentRules;
   balance: { sold: number; commission: number; refunds: number; paidOut: number; inProgress: number; upcoming: number };
   payouts: PayoutRow[];
 };
 
 // Recettes et versements (propriétaire), en francs CFA entiers.
-export function usePayoutSummary() {
-  return useQuery({ queryKey: ["admin-payouts"], queryFn: () => get<PayoutSummary>("/admin/payouts") });
+export function usePayoutSummary(enabled = true) {
+  return useQuery({ queryKey: ["admin-payouts"], queryFn: () => get<PayoutSummary>("/admin/payouts"), enabled });
 }
 
 export function useSavePayouts() {

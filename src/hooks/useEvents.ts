@@ -409,6 +409,18 @@ export function useRefundOrder(eventId: string) {
   });
 }
 
+// Renvoi des billets d'une commande par e-mail (adresse corrigée en option).
+export function useResendTickets(eventId: string) {
+  const invalidate = useInvalidateEvents();
+  return useMutation({
+    mutationFn: async ({ orderId, email }: { orderId: string; email?: string }) => {
+      const { data } = await api.post<ApiResponse<{ sentTo: string; tickets: number }>>(`/admin/orders/${orderId}/tickets/resend`, email ? { email } : {});
+      return data.data as { sentTo: string; tickets: number };
+    },
+    onSettled: () => invalidate(eventId),
+  });
+}
+
 // Pointage manuel à l'entrée : même endpoint que le scanner (/scan).
 export function useCheckIn(eventId: string) {
   const invalidate = useInvalidateEvents();

@@ -1,6 +1,6 @@
 "use client";
 
-import { useQuery } from "@tanstack/react-query";
+import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { api, type ApiResponse } from "@/lib/api";
 import type { PayoutRow } from "@/hooks/useAdmin";
 
@@ -22,6 +22,10 @@ export type EventRevenue = {
   paidOut: number;
   inProgress: number;
   upcoming: number;
+  // Cotisations pas encore versées et fenêtre de retrait avant l'événement
+  // (phase : avant, pendant ou après la fenêtre ; open : retrait possible
+  // maintenant). null : aucune cotisation à retirer.
+  contribution?: { available: number; opensAt: string; closesAt: string; min: number; phase: "BEFORE" | "OPEN" | "AFTER"; open: boolean } | null;
 };
 
 export type StatementLine = {
@@ -80,6 +84,22 @@ export function useStatement(page: number, eventId?: string) {
 
 export function fetchStatementExport(eventId?: string) {
   return get<{ truncated: boolean; rows: StatementLine[] }>(`/admin/payouts/statement/export${query({ eventId })}`);
+}
+
+// Retrait des cotisations d'un événement (fenêtre fixée par GiyaX).
+export function useWithdrawContributions() {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: async (eventId: string) => {
+      const { data } = await api.post<ApiResponse<{ id: string; status: string; amount: number }>>(`/admin/payouts/events/${eventId}/contributions/withdraw`);
+      return data.data as { id: string; status: string; amount: number };
+    },
+    onSuccess: () => {
+      void qc.invalidateQueries({ queryKey: ["revenue-events"] });
+      void qc.invalidateQueries({ queryKey: ["revenue-statement"] });
+      void qc.invalidateQueries({ queryKey: ["admin-payouts"] });
+    },
+  });
 }
 
 export function usePayoutDetail(id: string | null) {

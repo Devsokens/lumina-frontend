@@ -125,7 +125,7 @@ corps limité à 3 Mo sur cette seule route (100 ko ailleurs). Les événements 
 
 | Méthode | Route | Auth | Body → Réponse |
 |---|---|---|---|
-| GET | `/admin/payouts` | Bearer (OWNER) | — | `{ test, commissionBps, balance: { sold, commission, refunds, paidOut, inProgress, upcoming }, payouts[] }` (francs CFA entiers) |
+| GET | `/admin/payouts` | Bearer (OWNER) | — | `{ test, commissionBps, rules: { buyerFeeBps, ticketCommissionBps, payoutHoldDays, contributionOpenHours, contributionCloseHours, contributionMinPayout }, balance: { sold, commission, refunds, paidOut, inProgress, upcoming }, payouts[] }` (francs CFA entiers ; `payouts[].kind` : `STANDARD` ou `CONTRIBUTION`) |
 | GET | `/admin/tenant/export` | OWNER, 3/h | — | **ZIP binaire** (`attachment`, hors enveloppe JSON) : données de l'organisation en CSV, images, `manifest.json`. Sans mots de passe, codes de billets, signatures ni comptes de versement |
 | PUT | `/admin/tenant/emails` | Bearer (OWNER) | `{ senderName, replyTo ("" possible), templates: { ticket?, certificate?, reminder?, survey?: { subject, body, cta, enabled } } }` → `settings.emails` |
 | POST | `/admin/tenant/emails/test` | Bearer (OWNER), 5/15 min | `{ kind: "ticket" \| "certificate" \| "reminder" \| "survey" }` → `{ sentTo }` (e-mail du compte connecté) |
@@ -325,7 +325,7 @@ Le webhook PVit (`POST /webhooks/pvit`) est **interne au backend**, jamais appel
 
 | Méthode | Route | Auth | Body | Réponse `data` |
 |---|---|---|---|---|
-| POST | `/admin/orders/:id/refund` | Bearer (OWNER, MANAGER) | `{ releaseSeats?: boolean }` (défaut `true`) | `{ orderId, paymentStatus: "REFUNDED", amount, providerStatus, refundedTickets, releasedSeats }` |
+| POST | `/admin/orders/:id/refund` | Bearer (OWNER, MANAGER) | `{ releaseSeats?: boolean }` (défaut `true`) | `{ orderId, paymentStatus: "REFUNDED", amount, serviceFeeKept, providerStatus, refundedTickets, releasedSeats }` — `amount` (centimes) : prix des billets rendu au client ; les frais de service (`serviceFeeKept`) restent acquis |
 
 - Commande `type: "EVENT"`, `paymentStatus: "PAID"`, payée en ligne par Mobile Money — sinon **409** (carte : remboursement manuel) ;
   **404** si la commande n'est pas au tenant ; **502** si PVit refuse ou si le résultat est incertain.
@@ -438,7 +438,7 @@ Actions journalisées : `CREATE/UPDATE/DELETE_CATEGORY`, `CREATE/UPDATE/DELETE/D
 | Méthode | Route | Auth | Body | Réponse `data` |
 |---|---|---|---|---|
 | GET | `/tenants/:slug/events` | non | — | `Event[]` à venir, `PUBLISHED`/`ONGOING`, avec `ticketTypes: [{ id, name, price, remaining }]` |
-| GET | `/tenants/:slug/events/:id` | non | — | `Event` (même forme) |
+| GET | `/tenants/:slug/events/:id` | non | — | `Event` (même forme), avec `buyerFeeBps` (frais de service de l'acheteur en points de base, 500 = 5 %, aussi présent dans la liste) : sert à afficher le total avant de commander |
 | GET | `/events` | non, **Host = sous-domaine tenant** | — | Comme `/tenants/:slug/events`, pour le tenant du Host. **404** hors sous-domaine/domaine tenant |
 | GET | `/events/:id` | non, **Host = sous-domaine tenant** | — | Comme `/tenants/:slug/events/:id`, pour le tenant du Host |
 
@@ -451,7 +451,8 @@ avant. Seules `GET /events` et `GET /events/:id` consomment `req.tenant` ; `/ten
 reste le fallback et **prime toujours sur le Host**. Conséquence cache : suspension d'un tenant ou
 changement de `customDomain` effectif après au plus 5 min. `ROOT_DOMAIN` doit valoir le domaine
 racine de prod (ex. `giyax.ga`).
-| POST | `/events/:id/tickets` | non, header `X-Idempotency-Key` | `{ items: [{ ticketTypeId, quantity, amount? }] (`amount` = cotisation par billet en centimes, ≥ `minPrice` ou à défaut `price`, multiple de 100 ; ignoré pour un prix fixe) (ou `ticketTypeId` + `quantity` pour une seule formule ; 10 billets au plus au total), customerPhone, customerName?, customerEmail?, attendees?: [{ name }], answers?: { [questionId]: string \| number \| string[] } }` | `Order` (`type: "EVENT"`) + `tickets: [{ id, qrCode, status, ticketTypeId }]` — **400** `"Réponse requise : « … »."` / `"Réponse invalide : « … »."` |
+| POST | `/events/:id/tickets` | non, header `X-Idempotency-Key` | `{ items: [{ ticketTypeId, quantity, amount? }] (`amount` = cotisation par billet en centimes, ≥ `minPrice` ou à défaut `price`, multiple de 100 ; ignoré pour un prix fixe) (ou `ticketTypeId` + `quantity` pour une seule formule ; 10 billets au plus au total), customerPhone, customerName?, customerEmail?, attendees?: [{ name }], answers?: { [questionId]: string \| number \| string[] } }` | `Order` (`type: "EVENT"`, `serviceFee` = frais de service de l'acheteur en centimes, compris dans `total`) + `tickets: [{ id, qrCode, status, ticketTypeId }]` — **400** `"Réponse requise : « … »."` / `"Réponse invalide : « … »."` |
+| POST | `/admin/orders/:orderId/tickets/resend` | OWNER, MANAGER (30 / 15 min) | `{ email? }` (adresse corrigée : remplace celle de la commande et de ses billets) | `{ sentTo, tickets }` — renvoie par e-mail les billets valides de la commande. **409** aucun billet valide, **429** plafond horaire du destinataire, **502** aucun compte d'envoi n'a accepté l'e-mail |
 | POST | `/admin/events/:id/invitations` | OWNER, MANAGER | comme l'achat, `X-Idempotency-Key` requis | Billet émis par l'organisateur : seule voie vers une formule masquée ou aux ventes closes |
 | POST | `/tickets/pdf` | non (chaque code sert de secret, 10 au plus) | `{ codes: string[] }` | **PDF binaire** (`attachment`, pas d'enveloppe JSON) : les billets fournis, un par page. 404 si aucun n'est `VALID`/`USED`. Le code d'un billet vaut le billet : jamais dans une adresse |
 
@@ -493,7 +494,8 @@ obligatoire sans réponse refuse la commande (400) avant toute réservation de p
 | GET | `/admin/events/:id/orders?page=&limit=` | Bearer (OWNER/MANAGER) | — | `[{ id, orderNumber, status, paymentStatus, paymentMethod, total, customerName, customerPhone, customerEmail, createdAt, tickets: [{ id, status, scannedAt, ticketType: { name } }] }]` + `meta` — commandes de billets de l'événement (réservations, remboursements) |
 | GET | `/admin/events/:id/responses` | Bearer (OWNER/MANAGER) | — | `{ orders, responses: [{ id, orderNumber, customerName, customerEmail, customerPhone, createdAt, answers, ticketTypes: string[], tickets, checkedIn }] }` — réponses au questionnaire, une par commande confirmée ; `orders` = inscriptions confirmées (taux de réponse) ; 5000 commandes au plus |
 | POST | `/admin/events/:id/ticket-types` | Bearer (OWNER/MANAGER) | `{ name, price, quantity, description?, saleEndsAt?, template?, maxPerOrder?, visible?, kind?: "FIXED" \| "CONTRIBUTION", minPrice? }` — cotisation : `price` = montant suggéré (≥ 15000), `minPrice` entre 15000 et `price` | `TicketType` |
-| GET | `/admin/payouts/events?eventId=` | Bearer (OWNER) | — | `[{ eventId, title, startDate, sales, sold, commission, refunds, net, paidOut, inProgress, upcoming }]` — recettes par événement, **francs CFA entiers** |
+| GET | `/admin/payouts/events?eventId=` | Bearer (OWNER) | — | `[{ eventId, title, startDate, sales, sold, commission, refunds, net, paidOut, inProgress, upcoming, contribution: { available, opensAt, closesAt, min, phase: "BEFORE" \| "OPEN" \| "AFTER", open } \| null }]` — recettes par événement, **francs CFA entiers**. `sold` : prix des billets, hors frais de service de l'acheteur. `contribution` : cotisations pas encore versées et fenêtre de retrait |
+| POST | `/admin/payouts/events/:eventId/contributions/withdraw` | Bearer (OWNER) | — | `{ id, status, amount }` — retrait des cotisations de l'événement, uniquement dans la fenêtre fixée par GiyaX et au-dessus du minimum (409 avec le motif sinon). Envoyé tout de suite si l'organisation est en versement automatique, sinon à valider dans /vision |
 | GET | `/admin/payouts/statement?page=&limit=&eventId=` | Bearer (OWNER) | — | `{ rows: [{ id, type: "SALE" \| "REFUND", date, eventId, eventTitle, orderNumber, customerName, gross, commission, net, commissionBps, state: "PAID" \| "IN_PROGRESS" \| "UPCOMING", payoutId, paidAt }], page, limit, total }` — relevé (francs) |
 | GET | `/admin/payouts/statement/export?eventId=` | Bearer (OWNER) | — | `{ truncated, rows }` — relevé complet pour l'export, 5 000 lignes au plus (10 / minute) |
 | GET | `/admin/payouts/:id` | Bearer (OWNER) | — | versement + `events: [{ eventId, title, lines, net }]` — répartition par événement ; **404** autre compte |
@@ -603,7 +605,7 @@ Administrateurs du SaaS (table `PlatformAdmin`, distincte de `User`). Jeton Bear
 | GET | `/vision/me` | Vision | — | `{ id, email, name, expiresAt }` |
 | GET | `/vision/overview?days=7\|30\|90` | Vision | — | `{ tenants: { total, bySector, byStatus, byPlan[{key,count,mrr}] }, users: { total, active, passive, neverLoggedIn, disabled, activeWindowDays }, gmv: { current, previous, orders, previousOrders, online, bySector }, mrr, ai: { calls, costUsd, tokens }, series: [{ date, revenue, orders, previousRevenue, newTenants, newUsers }] }` |
 | GET | `/vision/traffic?days=1\|7\|30` | Vision | — | `{ granularity: hour\|day, totals: { requests, errors4xx, errors5xx, errorRate, avgMs }, series: [{ at, … }], routes: [{ route, … }] }` |
-| GET | `/vision/costs` | Vision | — | `{ lines: [{ label, amount, kind }], total, mrr, margin, assumptions }` — FCFA, estimation 30 j |
+| GET | `/vision/costs` | Vision | — | `{ lines: [{ label, amount, kind }], total, mrr, margin, assumptions }` — FCFA, estimation 30 j ; `ticketFees` : frais de service et commissions de billetterie sur la période, compris dans `margin` |
 | GET | `/vision/domains` | Vision | — | `{ rootDomain, customDomains, items: [{ slug, name, sector, status, customDomain, subdomain }] }` |
 | GET | `/vision/mail` | Vision | — | `{ platform: { connected, email, status, lastError, connectedAt }, available, redirectUri, sentToday, tenantAccounts: { active, error } }` |
 | POST | `/vision/mail/connect` | Vision, 10/15 min | — | `{ url }` : écran Google pour l'adresse d'envoi GiyaX (retour : `/vision/emails?gmail=…`) |
@@ -614,8 +616,8 @@ Administrateurs du SaaS (table `PlatformAdmin`, distincte de `User`). Jeton Bear
 | PATCH | `/vision/tenants/:id` | Vision | `{ status?: ACTIVE\|SUSPENDED, plan?, autoPayout?, reason? }` | `{ id, status, plan, autoPayout }` (autoPayout : versement quotidien sans validation ; restent manuels le premier versement vers un numéro, un titulaire non vérifié, plus de 1 000 000 F) |
 | GET | `/vision/users` | Vision | `?page&limit&search&activity=active\|passive\|disabled` | `{ data, meta }` |
 | PATCH | `/vision/users/:id` | Vision | `{ isActive, reason? }` | `{ id, isActive }` |
-| GET | `/vision/settings` | Vision | — | `{ ticketCommissionBps, isDefault, updatedAt, updatedBy }` (500 = 5 %, frais PVit compris) |
-| PATCH | `/vision/settings` | Vision | `{ ticketCommissionBps: 0…2000 }` | idem (journal `TICKET_COMMISSION_UPDATED`) |
+| GET | `/vision/settings` | Vision | — | `{ buyerFeeBps, ticketCommissionBps, payoutHoldDays, contributionOpenHours, contributionCloseHours, contributionMinPayout, isDefault, updatedAt, updatedBy, limits: { <règle>: [min, max] } }` — règles d'argent de la plateforme. Taux en points de base (500 = 5 %) ; `buyerFeeBps` : frais ajoutés au prix, payés par l'acheteur ; `ticketCommissionBps` : commission retirée à l'organisateur |
+| PATCH | `/vision/settings` | Vision | une ou plusieurs règles (seules celles envoyées changent) | idem (journal `PAYMENT_RULE_UPDATED` / `TICKET_COMMISSION_UPDATED`, une ligne par règle changée). 400 si la fenêtre de cotisation s'ouvre après sa fermeture |
 | GET | `/vision/payouts` | Vision | `?page&limit&status` | `{ rows, page, limit, total, summary }` |
 | POST | `/vision/payouts/prepare` | Vision, 10/15 min | — | `{ created }` (aussi chaque matin à 06:00 UTC) |
 | POST | `/vision/payouts/:id/approve` | Vision + code TOTP | `{ code }` | versement ; envoi découpé à 500 000 F |

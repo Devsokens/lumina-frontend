@@ -7,6 +7,8 @@ import type { PublicEvent } from "@/types/events";
 import { cn } from "@/lib/utils";
 import { OperatorLogo } from "@/components/shared/operator-logo";
 import { contributionFloor, isContribution, quickAmounts } from "@/lib/contribution";
+import { feePercent, serviceFeeOf } from "@/lib/service-fee";
+import { PaymentRecovery } from "@/components/event-site/payment-recovery";
 
 // Boîte « Billets » des pages événement (modèles Nuit et Lumière) : nombre de
 // billets par formule (plusieurs formules possibles dans une commande), puis
@@ -39,7 +41,11 @@ export function TicketBox({ event, variant, preview }: { event: PublicEvent; var
     .filter((t) => (sel[t.id] ?? 0) > 0)
     .map((t) => ({ ticket: t, quantity: sel[t.id], ...(isContribution(t) ? { amount: amountOf(t) } : {}) }));
   const qty = lines.reduce((n, l) => n + l.quantity, 0);
-  const total = lines.reduce((sum, l) => sum + (l.amount ?? l.ticket.price) * l.quantity, 0);
+  const subtotal = lines.reduce((sum, l) => sum + (l.amount ?? l.ticket.price) * l.quantity, 0);
+  // Frais de service payés par l'acheteur, en plus du prix des billets.
+  const feeBps = event.buyerFeeBps ?? 0;
+  const fee = serviceFeeOf(subtotal, feeBps);
+  const total = subtotal + fee;
   // Cotisation choisie sous le minimum : réservation bloquée.
   const invalid = lines.some((l) => tooLow(l.ticket));
   const full = qty >= MAX_PER_ORDER;
@@ -77,6 +83,8 @@ export function TicketBox({ event, variant, preview }: { event: PublicEvent; var
 
   return (
     <div className={box}>
+      {/* Paiement lancé puis fenêtre perdue (réseau, rechargement) : billets à retrouver ici. */}
+      {!preview && !checkout && <PaymentRecovery event={event} variant={variant} />}
       <div className="flex items-center justify-between">
         <span className={cn("font-(family-name:--s-font-display) font-extrabold", nuit ? "text-2xl" : "text-xl tracking-[-0.02em]")}>Billets</span>
         {open.length === 0 ? (
@@ -180,9 +188,23 @@ export function TicketBox({ event, variant, preview }: { event: PublicEvent; var
           )}
       </div>
 
-      <div className="flex items-baseline justify-between border-t border-(--s-line2) pt-3.5">
+      {fee > 0 && (
+        <div className="-mb-2 flex flex-col gap-1.5 border-t border-(--s-line2) pt-3.5 text-sm text-(--s-muted)">
+          <div className="flex justify-between gap-3">
+            <span>
+              {qty} billet{qty > 1 ? "s" : ""}
+            </span>
+            <span>{formatPrice(subtotal)}</span>
+          </div>
+          <div className="flex justify-between gap-3">
+            <span>Frais de service ({feePercent(feeBps)})</span>
+            <span>{formatPrice(fee)}</span>
+          </div>
+        </div>
+      )}
+      <div className={cn("flex items-baseline justify-between pt-3.5", fee === 0 && "border-t border-(--s-line2)")}>
         <span className="text-[15px] text-(--s-muted)">
-          Total · {qty} billet{qty > 1 ? "s" : ""}
+          {fee > 0 ? "Total à payer" : `Total · ${qty} billet${qty > 1 ? "s" : ""}`}
         </span>
         <span className={cn("font-(family-name:--s-font-display) font-extrabold tracking-[-0.02em]", nuit ? "text-[30px]" : "text-[26px]")}>
           {qty === 0 ? "0 F" : total === 0 ? "Gratuit" : formatPrice(total)}

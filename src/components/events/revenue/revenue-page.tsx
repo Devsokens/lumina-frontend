@@ -7,8 +7,10 @@ import { toast } from "sonner";
 import { ChevronDown, ChevronLeft, ChevronRight, Download } from "lucide-react";
 import { EvButton, EvCard, EvPill, EvSegmented, EvSelect } from "@/components/events/ev-ui";
 import { PLAN_LABELS, payoutsOf } from "@/components/events/settings/settings-sections";
-import { useAdminTenantInfo, usePayoutSummary, type PayoutRow } from "@/hooks/useAdmin";
-import { fetchStatementExport, usePayoutDetail, useRevenueByEvent, useStatement, type EventRevenue, type MoneyState, type StatementLine } from "@/hooks/useRevenue";
+import { useAdminTenantInfo, usePayoutSummary, type PaymentRules, type PayoutRow } from "@/hooks/useAdmin";
+import { fetchStatementExport, usePayoutDetail, useRevenueByEvent, useStatement, useWithdrawContributions, type EventRevenue, type MoneyState, type StatementLine } from "@/hooks/useRevenue";
+import { apiErrorMessage } from "@/lib/events";
+import { feePercent } from "@/lib/service-fee";
 import { useAuthStore } from "@/stores/useAuthStore";
 import { cn } from "@/lib/utils";
 
@@ -81,14 +83,19 @@ export function RevenuePage() {
   if (isLoading) return <div className="h-64 animate-pulse rounded-[16px] bg-ev-line" />;
   if (isError || !summary) return <p className="text-sm text-ev-danger">Impossible de charger vos revenus. Rechargez la page.</p>;
 
-  const { balance } = summary;
+  const { balance, rules } = summary;
   const rate = String(summary.commissionBps / 100).replace(".", ",");
+  const hold = rules?.payoutHoldDays ?? 2;
+  // Commission retirée à l'organisateur : affichée seulement si elle existe.
+  const charged = summary.commissionBps > 0 || balance.commission > 0;
 
   return (
     <div className="flex flex-col gap-6">
       <header className="flex flex-col gap-1">
         <h1 className="m-0 text-2xl font-semibold tracking-[-0.01em]">Revenus</h1>
-        <p className="m-0 text-sm text-ev-muted">Ce que vos ventes ont rapporté, ce que GiyaX retient et ce qui vous a été reversé.</p>
+        <p className="m-0 text-sm text-ev-muted">
+          Ce que vos ventes ont rapporté et ce qui vous a été reversé. Les recettes d&apos;un événement sont versées {hold} jour{hold > 1 ? "s" : ""} après sa fin.
+        </p>
       </header>
 
       {summary.test && (
@@ -97,13 +104,17 @@ export function RevenuePage() {
 
       <EvCard className="flex flex-col">
         <div className="grid gap-6 p-5 sm:grid-cols-3 sm:p-6">
-          <Figure strong label="À venir" value={francs(balance.upcoming)} hint="Sera inclus dans votre prochain versement" />
+          <Figure strong label="À venir" value={francs(balance.upcoming)} hint={`Versé ${hold} jour${hold > 1 ? "s" : ""} après la fin de chaque événement`} />
           <Figure strong label="Versement en cours" value={francs(balance.inProgress)} hint="En préparation ou en cours d'envoi" />
           <Figure strong label="Déjà reversé" value={francs(balance.paidOut)} hint="Reçu sur votre Mobile Money" />
         </div>
         <div className="grid grid-cols-2 gap-6 border-t border-ev-line p-5 sm:grid-cols-3 sm:p-6">
           <Figure label="Ventes encaissées" value={francs(balance.sold)} />
-          <Figure label={`Commission GiyaX (${rate} %)`} value={francs(balance.commission)} />
+          {charged ? (
+            <Figure label={`Commission GiyaX (${rate} %)`} value={francs(balance.commission)} />
+          ) : (
+            <Figure label="Retenue sur vos ventes" value="0 F" hint="Les frais de service sont payés par vos acheteurs" />
+          )}
           <Figure label="Remboursements" value={francs(balance.refunds)} />
         </div>
       </EvCard>
@@ -111,9 +122,14 @@ export function RevenuePage() {
       <EvSegmented<Tab> ariaLabel="Rubriques des revenus" value={tab} onChange={(t) => go({ tab: t })} items={TABS} className="self-start" />
 
       {tab === "reversements" && <Payouts payouts={summary.payouts} onEvent={(id) => go({ tab: "releve", eventId: id })} />}
-      {tab === "evenements" && <ByEvent events={events} onOpen={(id) => go({ tab: "releve", eventId: id })} />}
+      {tab === "evenements" && (
+        <>
+          <Contributions events={events ?? []} />
+          <ByEvent events={events} onOpen={(id) => go({ tab: "releve", eventId: id })} />
+        </>
+      )}
       {tab === "releve" && <StatementTab key={eventId} eventId={eventId} events={events ?? []} onEvent={(id) => go({ eventId: id })} />}
-      {tab === "offre" && <Offer rate={rate} />}
+      {tab === "offre" && <Offer rate={rate} rules={rules} charged={charged} />}
     </div>
   );
 }
@@ -126,7 +142,7 @@ function Payouts({ payouts, onEvent }: { payouts: PayoutRow[]; onEvent: (eventId
     return (
       <EvCard className="flex flex-col items-center gap-2 px-6 py-12 text-center">
         <span className="text-[15px] font-semibold">Aucun versement pour le moment</span>
-        <span className="max-w-[460px] text-[13px] leading-relaxed text-ev-muted">Vos recettes sont reversées sur votre compte Mobile Money selon la fréquence choisie dans Paramètres › Paiements. Chaque versement apparaîtra ici.</span>
+        <span className="max-w-[460px] text-[13px] leading-relaxed text-ev-muted">Les recettes d&apos;un événement sont reversées sur votre compte Mobile Money quelques jours après sa fin. Chaque versement apparaîtra ici.</span>
       </EvCard>
     );
   }
@@ -140,7 +156,10 @@ function Payouts({ payouts, onEvent }: { payouts: PayoutRow[]; onEvent: (eventId
             <li key={p.id} className="border-b border-ev-line last:border-b-0">
               <button type="button" aria-expanded={expanded} onClick={() => setOpen(expanded ? null : p.id)} className="flex w-full items-center justify-between gap-3 px-5 py-4 text-left hover:bg-ev-soft sm:px-6">
                 <span className="flex min-w-0 flex-col gap-0.5">
-                  <span className="text-[15px] font-semibold">{francs(p.amount)}</span>
+                  <span className="text-[15px] font-semibold">
+                    {francs(p.amount)}
+                    {p.kind === "CONTRIBUTION" && <span className="ml-2 text-xs font-medium text-ev-muted">Cotisations</span>}
+                  </span>
                   <span className="truncate text-[13px] text-ev-muted">
                     {p.paidAt ? `Versé le ${day(p.paidAt)}` : `Préparé le ${day(p.createdAt)}`} · {operatorName(p.operator)} {p.phone}
                   </span>
@@ -165,7 +184,7 @@ function PayoutBreakdown({ payout, onEvent }: { payout: PayoutRow; onEvent: (eve
     <div className="flex flex-col gap-4 border-t border-ev-line bg-ev-soft px-5 py-4 sm:px-6">
       <div className="grid grid-cols-2 gap-4 text-[13px] sm:grid-cols-4">
         <Figure label="Ventes" value={francs(payout.gross)} />
-        <Figure label="Commission" value={`− ${francs(payout.commission)}`} />
+        <Figure label="Commission" value={payout.commission ? `− ${francs(payout.commission)}` : "0 F"} />
         <Figure label="Remboursements" value={`− ${francs(payout.refunds)}`} />
         <Figure label="Net versé" value={francs(payout.amount)} />
       </div>
@@ -193,6 +212,55 @@ function PayoutBreakdown({ payout, onEvent }: { payout: PayoutRow; onEvent: (eve
         </div>
       )}
     </div>
+  );
+}
+
+// ---------- Cotisations à retirer ----------
+
+// Une cotisation finance l'événement : elle se retire avant son début, dans
+// une fenêtre fixée par GiyaX. Passé ce délai, elle est versée après
+// l'événement comme les billets.
+function Contributions({ events }: { events: EventRevenue[] }) {
+  const withdraw = useWithdrawContributions();
+  const list = events.filter((e) => e.eventId && e.contribution && e.contribution.phase !== "AFTER");
+  if (list.length === 0) return null;
+
+  function run(eventId: string) {
+    withdraw.mutate(eventId, {
+      onSuccess: (p) => toast.success(p.status === "PAID" ? `${francs(p.amount)} envoyés sur votre Mobile Money.` : `Retrait de ${francs(p.amount)} enregistré : il est en cours de traitement.`),
+      onError: (err) => toast.error(apiErrorMessage(err, "Retrait impossible pour le moment.")),
+    });
+  }
+
+  return (
+    <EvCard className="overflow-hidden">
+      <div className="flex flex-col gap-1 border-b border-ev-line px-5 py-4 sm:px-6">
+        <span className="text-[15px] font-semibold">Cotisations à retirer</span>
+        <span className="text-[13px] leading-relaxed text-ev-muted">Les cotisations servent à préparer l&apos;événement : vous pouvez les retirer juste avant son début. Sans retrait, elles sont versées après l&apos;événement.</span>
+      </div>
+      <ul className="m-0 list-none p-0">
+        {list.map((e) => {
+          const c = e.contribution!;
+          const early = c.phase === "BEFORE";
+          const low = c.available < c.min;
+          return (
+            <li key={e.eventId} className="flex flex-wrap items-center justify-between gap-3 border-b border-ev-line px-5 py-4 last:border-b-0 sm:px-6">
+              <span className="flex min-w-0 flex-1 flex-col gap-0.5">
+                <span className="truncate text-sm font-medium">{e.title}</span>
+                <span className="text-[13px] text-ev-muted">
+                  {francs(c.available)} de cotisations ·{" "}
+                  {early ? `retrait ouvert le ${dayTime(c.opensAt)}` : `retrait possible jusqu'au ${dayTime(c.closesAt)}`}
+                  {low ? ` · minimum ${francs(c.min)}` : ""}
+                </span>
+              </span>
+              <EvButton size="sm" disabled={!c.open || withdraw.isPending} onClick={() => run(e.eventId!)}>
+                Retirer {francs(c.available)}
+              </EvButton>
+            </li>
+          );
+        })}
+      </ul>
+    </EvCard>
   );
 }
 
@@ -397,7 +465,7 @@ function StatementTab({ eventId, events, onEvent }: { eventId: string; events: E
 
 // ---------- Mon offre ----------
 
-function Offer({ rate }: { rate: string }) {
+function Offer({ rate, rules, charged }: { rate: string; rules?: PaymentRules; charged: boolean }) {
   const { data: tenant } = useAdminTenantInfo();
   if (!tenant) return <div className="h-40 animate-pulse rounded-[16px] bg-ev-line" />;
   const payouts = payoutsOf(tenant);
@@ -405,15 +473,26 @@ function Offer({ rate }: { rate: string }) {
   const rows: { title: string; value: string; detail: string; href: string; action: string }[] = [
     { title: "Formule", value: plan.label, detail: plan.detail, href: "/admin/event/settings?rubrique=abonnement", action: "Voir les formules" },
     {
-      title: "Commission sur les billets",
-      value: `${rate} %`,
-      detail: "Retenue sur chaque billet payant, frais de paiement compris. Les billets gratuits ne coûtent rien. Le taux appliqué à une vente est celui du jour de la vente.",
-      href: "/admin/event/settings?rubrique=abonnement",
+      title: "Frais de service",
+      value: rules ? `${feePercent(rules.buyerFeeBps)}, payés par l'acheteur` : "Payés par l'acheteur",
+      detail: "Ajoutés au prix du billet et affichés à l'acheteur avant le paiement. Vous recevez le prix de vos billets en entier. Les billets gratuits ne coûtent rien.",
+      href: "/admin/event/settings?rubrique=paiements",
       action: "En savoir plus",
     },
+    ...(charged
+      ? [
+          {
+            title: "Commission sur les billets",
+            value: `${rate} %`,
+            detail: "Retenue sur chaque billet payant. Le taux appliqué à une vente est celui du jour de la vente.",
+            href: "/admin/event/settings?rubrique=abonnement",
+            action: "En savoir plus",
+          },
+        ]
+      : []),
     {
-      title: "Fréquence des versements",
-      value: payouts.frequency === "WEEKLY" ? "Chaque semaine" : "Après chaque événement",
+      title: "Reversement",
+      value: `${rules?.payoutHoldDays ?? 2} jours après la fin de l'événement`,
       detail: payouts.accounts.length
         ? `Sur ${payouts.accounts.map((a) => `${operatorName(a.operator)} ${a.phone}`).join(", ")}.`
         : "Aucun compte de versement enregistré : ajoutez-en un pour recevoir vos recettes.",

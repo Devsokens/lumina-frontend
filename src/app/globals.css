@@ -595,3 +595,18 @@
 @media (prefers-reduced-motion: reduce) {
   .giyax-tour-ring { animation: none; }
 }
+
+/* Console /vision, page de connexion : bandes de logos en filigrane qui
+   défilent (deux copies bout à bout, −50 % = boucle sans raccord). */
+@keyframes vision-marquee {
+  from {
+    transform: translate3d(0, 0, 0);
+  }
+  to {
+    transform: translate3d(-50%, 0, 0);
+  }
+}
+.vision-marquee {
+  animation: vision-marquee 80s linear infinite;
+  will-change: transform;
+}

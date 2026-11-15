@@ -17,6 +17,8 @@ import type { PublicEvent, PurchasedTicket } from "@/types/events";
 import type { QuestionnaireQuestion } from "@/types/api";
 import { cn } from "@/lib/utils";
 import { isContribution } from "@/lib/contribution";
+import { feePercent, serviceFeeOf } from "@/lib/service-fee";
+import { clearPendingPayment, savePendingPayment } from "@/lib/pending-payment";
 import { OperatorLogo } from "@/components/shared/operator-logo";
 import { DataNotice } from "@/components/shared/data-notice";
 import { TurnstileWidget } from "@/components/shared/turnstile-widget";
@@ -47,7 +49,10 @@ const MOMO_MIN = 150;
 const MOMO_MAX = 500_000;
 const POLL_MS = 3_000;
 const POLL_SLOW_AFTER = 30; // ~1 min 30 : proposer de renvoyer la demande
-const POLL_MAX = 100; // ~5 min
+// Au-delà (~5 min) : on continue de vérifier, moins souvent, tant que la
+// fenêtre est ouverte. Un paiement validé tard finit toujours par s'afficher.
+const POLL_FAST_MAX = 100;
+const POLL_IDLE_MS = 10_000;
 
 // Opérateur d'après le numéro : Airtel 07, Moov 06.
 function operatorOf(phone: string): "AIRTEL" | "MOOV" | null {
@@ -97,8 +102,14 @@ export function CheckoutDialog({
   const look = useSiteLook();
   const nuit = variant === "nuit";
   const quantity = lines.reduce((n, l) => n + l.quantity, 0);
-  const total = lines.reduce((sum, l) => sum + unitOf(l) * l.quantity, 0);
-  const paid = total > 0;
+  const subtotal = lines.reduce((sum, l) => sum + unitOf(l) * l.quantity, 0);
+  // Frais de service à la charge de l'acheteur, affichés avant de payer. Le
+  // serveur refait le calcul : son total fait foi une fois la commande créée.
+  const feeBps = event.buyerFeeBps ?? 0;
+  const [serverTotal, setServerTotal] = useState<number | null>(null);
+  const fee = serverTotal !== null ? serverTotal - subtotal : serviceFeeOf(subtotal, feeBps);
+  const total = subtotal + fee;
+  const paid = subtotal > 0;
   // Uniquement des cotisations : remerciement plutôt que « billets ».
   const gift = lines.every((l) => isContribution(l.ticket));
   // Formule de chaque billet, dans l'ordre (billet 1 = l'acheteur).
@@ -152,6 +163,7 @@ export function CheckoutDialog({
           return;
         }
         if (status.paymentStatus === "FAILED") {
+          clearPendingPayment(event.id, waiting.reference);
           setWaiting(null);
           setFailed(true);
           return;
@@ -161,9 +173,18 @@ export function CheckoutDialog({
       }
       if (stopped) return;
       if (tries === POLL_SLOW_AFTER) setSlow(true);
-      if (tries < POLL_MAX) timer = setTimeout(() => void tick(), POLL_MS);
+      timer = setTimeout(() => void tick(), tries < POLL_FAST_MAX ? POLL_MS : POLL_IDLE_MS);
     };
     timer = setTimeout(() => void tick(), POLL_MS);
+    // Réseau revenu, ou retour sur l'onglet (téléphone déverrouillé après la
+    // saisie du code) : vérification immédiate.
+    const now = () => {
+      if (document.visibilityState === "hidden") return;
+      clearTimeout(timer);
+      void tick();
+    };
+    window.addEventListener("online", now);
+    document.addEventListener("visibilitychange", now);
     // Retour de la page PVit (même navigateur) : vérification immédiate.
     const channel = typeof BroadcastChannel !== "undefined" ? new BroadcastChannel(PAYMENT_CHANNEL) : null;
     if (channel) {
@@ -176,8 +197,10 @@ export function CheckoutDialog({
       stopped = true;
       clearTimeout(timer);
       channel?.close();
+      window.removeEventListener("online", now);
+      document.removeEventListener("visibilitychange", now);
     };
-  }, [waiting]);
+  }, [waiting, event.id]);
 
   // Une correction efface l'erreur du champ concerné.
   function clearError(name: string) {
@@ -281,6 +304,7 @@ export function CheckoutDialog({
         }
         id = order.id;
         setOrderId(id);
+        setServerTotal(order.total);
       }
       const payment = await initializePayment(id, { method, phone: normalizePhone(method === "CARD" ? buyer.phone : momo) });
       if (payment.simulated) {
@@ -298,6 +322,9 @@ export function CheckoutDialog({
           return;
         }
       }
+      // Gardé dans le navigateur : si cette fenêtre se perd (réseau, page
+      // rechargée), la page de l'événement proposera de retrouver les billets.
+      savePendingPayment(event.id, { reference: payment.reference, email: buyer.email.trim() });
       setWaiting({ reference: payment.reference, card: payment.flow === "REDIRECT", url: payment.flow === "REDIRECT" ? payment.authorizationUrl : undefined });
     } catch (err) {
       cardTab?.close();
@@ -413,14 +440,14 @@ export function CheckoutDialog({
                     {method === "CARD" ? " par carte" : ` sur votre téléphone (${method === "AIRTEL" ? "Airtel Money" : "Moov Money"})`}.
                   </span>
                 </div>
-                <PaymentSummary lines={lines} total={total} />
+                <PaymentSummary lines={lines} total={total} fee={fee} feeBps={feeBps} />
               </div>
             ) : step === "people" ? (
               <PeopleStep buyer={buyer} setBuyer={setBuyer} holders={holders} setHolders={setHolders} seats={lines.length > 1 ? seats : null} errors={errors} clearError={clearError} paid={paid} />
             ) : step === "questions" ? (
               <QuestionsStep questions={questions} answers={answers} setAnswers={setAnswers} errors={errors} clearError={clearError} nuit={nuit} />
             ) : (
-              <PaymentStep method={method} setMethod={setMethod} momo={momo} setMomo={changeMomo} errors={errors} lines={lines} total={total} failed={failed} nuit={nuit} />
+              <PaymentStep method={method} setMethod={setMethod} momo={momo} setMomo={changeMomo} errors={errors} lines={lines} total={total} fee={fee} feeBps={feeBps} failed={failed} nuit={nuit} />
             )}
           </div>
 
@@ -694,7 +721,7 @@ function QuestionsStep({
   );
 }
 
-function PaymentSummary({ lines, total }: { lines: CheckoutLine[]; total: number }) {
+function PaymentSummary({ lines, total, fee, feeBps }: { lines: CheckoutLine[]; total: number; fee: number; feeBps: number }) {
   return (
     <div className="flex flex-col gap-2 rounded-[18px] border border-(--s-line) bg-(--s-surface) p-4 text-sm">
       {lines.map((l) => (
@@ -706,8 +733,14 @@ function PaymentSummary({ lines, total }: { lines: CheckoutLine[]; total: number
           <span>{unitOf(l) === 0 ? "Gratuit" : formatPrice(unitOf(l) * l.quantity)}</span>
         </div>
       ))}
+      {fee > 0 && (
+        <div className="flex justify-between gap-3">
+          <span className="text-(--s-muted)">Frais de service{feeBps > 0 ? ` (${feePercent(feeBps)})` : ""}</span>
+          <span>{formatPrice(fee)}</span>
+        </div>
+      )}
       <div className="flex items-baseline justify-between gap-3 border-t border-(--s-line) pt-2">
-        <span className="font-semibold">Total</span>
+        <span className="font-semibold">Total à payer</span>
         <span className="font-(family-name:--s-font-display) text-2xl font-extrabold tracking-[-0.02em]">{formatPrice(total)}</span>
       </div>
     </div>
@@ -722,6 +755,8 @@ function PaymentStep({
   errors,
   lines,
   total,
+  fee,
+  feeBps,
   failed,
   nuit,
 }: {
@@ -732,6 +767,8 @@ function PaymentStep({
   errors: Record<string, string>;
   lines: CheckoutLine[];
   total: number;
+  fee: number;
+  feeBps: number;
   failed: boolean;
   nuit: boolean;
 }) {
@@ -802,7 +839,7 @@ function PaymentStep({
         </div>
       )}
 
-      <PaymentSummary lines={lines} total={total} />
+      <PaymentSummary lines={lines} total={total} fee={fee} feeBps={feeBps} />
       <span className="flex items-center gap-2 text-xs text-(--s-muted)">
         <ShieldCheck className="size-4 shrink-0" /> Paiement sécurisé. Vos billets et votre facture arrivent par e-mail dès la confirmation.
       </span>
@@ -849,7 +886,7 @@ function WaitingView({ card, method, phone, total, slow, onShowCard }: { card: b
 
 // ---------- Billets ----------
 
-function DoneView({ done, email, nuit, gift, typeName }: { done: Done; email: string; nuit: boolean; gift: boolean; typeName: (ticketTypeId: string) => string | null }) {
+export function DoneView({ done, email, nuit, gift, typeName }: { done: Done; email: string; nuit: boolean; gift: boolean; typeName: (ticketTypeId: string) => string | null }) {
   const codes = done.tickets.map((t) => t.qrCode);
   const many = done.tickets.length > 1;
   const action = cn(
@@ -866,7 +903,15 @@ function DoneView({ done, email, nuit, gift, typeName }: { done: Done; email: st
         <p className="m-0 max-w-[420px] text-sm leading-relaxed text-(--s-body)">
           {gift ? "Votre contribution aide à la réussite de l'événement. " : ""}
           {many ? `Vos ${done.tickets.length} billets` : "Votre billet"}
-          {done.paid ? " et votre facture" : ""} {many || done.paid ? "partent" : "part"} aussi à <strong className="text-(--s-text)">{email}</strong>. Présentez le QR code à l&apos;entrée, sur votre téléphone ou imprimé.
+          {done.paid ? " et votre facture" : ""}{" "}
+          {email ? (
+            <>
+              {many || done.paid ? "partent" : "part"} aussi à <strong className="text-(--s-text)">{email}</strong>.
+            </>
+          ) : (
+            <>{many || done.paid ? "sont prêts" : "est prêt"}.</>
+          )}{" "}
+          Téléchargez-{many ? "les" : "le"} dès maintenant, puis présentez le QR code à l&apos;entrée, sur votre téléphone ou imprimé.
         </p>
       </div>
 

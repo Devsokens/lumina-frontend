@@ -43,7 +43,10 @@ function recentlyDismissed() {
 // Installation (toutes plateformes), mise à jour et état réseau.
 export function PwaManager() {
   // Back-office sur téléphone : au-dessus de la barre d’onglets du bas.
-  const aboveTabBar = usePathname().startsWith("/admin");
+  const pathname = usePathname();
+  const aboveTabBar = pathname.startsWith("/admin");
+  // Console plateforme : outil interne, jamais proposé à l'installation.
+  const hidden = pathname.startsWith("/vision");
   const [deferred, setDeferred] = useState<BeforeInstallPromptEvent | null>(null);
   const [showIosHelp, setShowIosHelp] = useState(false);
   const [visible, setVisible] = useState(false);
@@ -129,7 +132,7 @@ export function PwaManager() {
     else dismiss();
   }
 
-  if (!visible) return null;
+  if (!visible || hidden) return null;
 
   return (
     <div
