@@ -257,7 +257,7 @@ export function EventTeam() {
                         {accessLabel(m)}
                       </td>
                       <td className="hidden px-2 py-4 text-[13px] text-ev-ink2 md:table-cell">
-                        {seen ?? (m.invitePending ? <span className="text-ev-gold-text">Invitation envoyée</span> : isPending(m) ? <span className="text-ev-gold-text">En attente de première connexion</span> : "Jamais connecté")}
+                        {self ? <span className="text-ev-ok">En ligne</span> : seen ?? (m.invitePending ? <span className="text-ev-gold-text">Invitation envoyée</span> : isPending(m) ? <span className="text-ev-gold-text">En attente de première connexion</span> : "Jamais connecté")}
                       </td>
                       <td className="px-4 py-4 text-right sm:px-5">
                         {(self || (isOwner && m.role !== "OWNER")) && (
