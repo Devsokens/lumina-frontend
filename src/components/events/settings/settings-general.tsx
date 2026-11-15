@@ -1,5 +1,6 @@
 "use client";
 
+import { useAuthStore } from "@/stores/useAuthStore";
 import { useRef, useState } from "react";
 import { toast } from "sonner";
 import { EvButton, EvInput, EvSelect, EvTextarea, initialsOf } from "@/components/events/ev-ui";
@@ -35,15 +36,17 @@ const SECTOR_LABELS: Record<string, string> = {
 
 const DESCRIPTION_MAX = 160;
 
-export function formFromTenant(tenant: Tenant): GeneralForm {
+// owner : coordonnées du propriétaire, proposées tant que l'organisation
+// n'a encore rien enregistré pour ce champ.
+export function formFromTenant(tenant: Tenant, owner?: { email?: string | null; phone?: string | null } | null): GeneralForm {
   const config = (tenant.config ?? {}) as Record<string, unknown>;
   const settings = (tenant.settings ?? {}) as Record<string, unknown>;
   const str = (v: unknown) => (typeof v === "string" ? v : "");
   return {
     name: tenant.name,
     description: str(config.description),
-    phone: str(config.phone),
-    contactEmail: str(config.contactEmail),
+    phone: config.phone === undefined ? (owner?.phone ?? "") : str(config.phone),
+    contactEmail: config.contactEmail === undefined ? (owner?.email ?? "") : str(config.contactEmail),
     address: str(config.address),
     taxPercent: typeof settings.taxRate === "number" ? String(settings.taxRate / 100).replace(".", ",") : "0",
     taxIncluded: settings.taxIncluded !== false,
@@ -62,12 +65,15 @@ export function SettingsGeneral({ tenant, canEdit }: { tenant: Tenant; canEdit: 
   // Valeurs du serveur → formulaire, à chaque nouvelle version du tenant
   // (chargement, enregistrement). React Query garde la même référence tant
   // que les données ne changent pas : une saisie en cours n'est pas écrasée.
-  const [form, setForm] = useState<GeneralForm>(() => formFromTenant(tenant));
+  const me = useAuthStore((s) => s.user);
+  const owner = me?.role === "OWNER" ? me : null;
+  const [form, setForm] = useState<GeneralForm>(() => formFromTenant(tenant, owner));
   const [source, setSource] = useState(tenant);
   if (source !== tenant) {
     setSource(tenant);
-    setForm(formFromTenant(tenant));
+    setForm(formFromTenant(tenant, owner));
   }
+  // Comparé à ce qui est enregistré : des coordonnées proposées restent à enregistrer.
   const initial = formFromTenant(tenant);
   const dirty = (Object.keys(initial) as (keyof GeneralForm)[]).filter((k) => form[k] !== initial[k]).length;
   const logo = tenantLogo(tenant);

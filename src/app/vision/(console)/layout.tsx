@@ -1,5 +1,6 @@
 "use client";
 
+import { GiyaxLoader } from "@/components/shared/giyax-loader";
 import { useEffect, useMemo, useState, useSyncExternalStore } from "react";
 import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
@@ -77,7 +78,7 @@ export default function VisionConsoleLayout({ children }: { children: React.Reac
     router.replace("/vision/login");
   }
 
-  if (!session) return null;
+  if (!session) return <GiyaxLoader full size="lg" />;
 
   const nav = (
     <nav className="space-y-1">

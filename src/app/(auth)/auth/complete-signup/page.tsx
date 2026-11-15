@@ -1,5 +1,6 @@
 "use client";
 
+import { GiyaxLoader } from "@/components/shared/giyax-loader";
 import { Suspense, useState } from "react";
 import Link from "next/link";
 import { useRouter, useSearchParams } from "next/navigation";
@@ -10,7 +11,6 @@ import { BadgeCheck, Loader2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { Skeleton } from "@/components/ui/skeleton";
 import { homePathFor, useAuth } from "@/hooks/useAuth";
 import { api, apiError, type ApiResponse } from "@/lib/api";
 import { APP_URL, OPEN_SECTORS, ROOT_DOMAIN, SECTOR_LABELS, type Sector } from "@/lib/constants";
@@ -64,7 +64,7 @@ function CompleteSignup() {
       </div>
     );
   }
-  if (isLoading || !pending) return <Skeleton className="h-96 rounded-2xl" />;
+  if (isLoading || !pending) return <GiyaxLoader className="h-96 py-0" />;
 
   const cleanPhone = phone.replace(/[\s.()-]/g, "");
   const phoneOk = !cleanPhone || /^\+?[0-9]{8,15}$/.test(cleanPhone);
@@ -216,7 +216,7 @@ function CompleteSignup() {
           .
         </span>
       </label>
-      <Button type="submit" className="h-11 w-full rounded-xl" disabled={busy}>
+      <Button type="submit" className="h-11 w-full rounded-xl" disabled={busy || !accepted}>
         {busy && <Loader2 className="size-4 animate-spin" />}
         {busy ? "Création…" : "Créer mon compte"}
       </Button>

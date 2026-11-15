@@ -1,5 +1,6 @@
 "use client";
 
+import { GiyaxLoader } from "@/components/shared/giyax-loader";
 import { use, useState } from "react";
 import Link from "next/link";
 import { usePathname, useRouter, useSearchParams } from "next/navigation";
@@ -58,7 +59,7 @@ export default function EventDetailPage({ params }: { params: Promise<{ id: stri
   const openEditor = (step: 1 | 2 | 3 | 4 = 1) => setEditor({ open: true, step });
   const goTab = (t: Tab) => router.replace(`${pathname}${t === "apercu" ? "" : `?tab=${t}`}`, { scroll: false });
 
-  if (isLoading) return <p className="px-8 py-10 text-sm text-ev-muted">Chargement de l&apos;événement…</p>;
+  if (isLoading) return <GiyaxLoader label="Chargement de l'événement…" />;
   if (isError || !event) {
     return (
       <div className="space-y-3 px-8 py-10">

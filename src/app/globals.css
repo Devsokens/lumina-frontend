@@ -610,3 +610,49 @@
   animation: vision-marquee 80s linear infinite;
   will-change: transform;
 }
+
+/* Chargement GiyaX (giyax-loader.tsx) : arc qui tourne, logo qui respire. */
+@keyframes giyax-loader-spin {
+  to {
+    transform: rotate(360deg);
+  }
+}
+@keyframes giyax-loader-breathe {
+  0%,
+  100% {
+    transform: scale(0.9);
+    opacity: 0.85;
+  }
+  50% {
+    transform: scale(1.06);
+    opacity: 1;
+  }
+}
+@keyframes giyax-loader-halo {
+  0%,
+  100% {
+    transform: scale(0.7);
+    opacity: 0.15;
+  }
+  50% {
+    transform: scale(1.25);
+    opacity: 0.55;
+  }
+}
+.giyax-loader-ring {
+  animation: giyax-loader-spin 1.1s cubic-bezier(0.55, 0.15, 0.45, 0.85) infinite;
+}
+.giyax-loader-logo {
+  animation: giyax-loader-breathe 1.6s ease-in-out infinite;
+}
+.giyax-loader-halo {
+  animation: giyax-loader-halo 1.6s ease-in-out infinite;
+  filter: blur(6px);
+}
+@media (prefers-reduced-motion: reduce) {
+  .giyax-loader-ring,
+  .giyax-loader-logo,
+  .giyax-loader-halo {
+    animation: none;
+  }
+}

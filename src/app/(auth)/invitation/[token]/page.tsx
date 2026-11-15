@@ -1,5 +1,6 @@
 "use client";
 
+import { GiyaxLoader } from "@/components/shared/giyax-loader";
 import { use, useState } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
@@ -57,7 +58,7 @@ export default function InvitationPage({ params }: { params: Promise<{ token: st
     router.replace(await homePathFor(user));
   }
 
-  if (isLoading) return <p className="text-sm text-muted-foreground">Vérification de l&apos;invitation…</p>;
+  if (isLoading) return <GiyaxLoader size="sm" label="Vérification de l'invitation…" className="py-8" />;
 
   if (isError || !data) {
     return (

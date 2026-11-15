@@ -4,7 +4,7 @@ import { useEffect } from "react";
 import { useRouter, usePathname } from "next/navigation";
 import { useAuthStore } from "@/stores/useAuthStore";
 import { useAuth } from "@/hooks/useAuth";
-import { Skeleton } from "@/components/ui/skeleton";
+import { GiyaxLoader } from "@/components/shared/giyax-loader";
 
 // Guard côté client : l'access token vit en mémoire (jamais accessible au
 // middleware edge). Voir LUMINA_FRONTEND_CONTEXT.md 4.5 et middleware.ts.
@@ -31,11 +31,7 @@ export function AuthGuard({ children }: { children: React.ReactNode }) {
   }, [status, mustChangePassword, router, pathname]);
 
   if (status !== "authenticated" || (mustChangePassword && pathname !== "/change-password")) {
-    return (
-      <div className="flex min-h-screen items-center justify-center">
-        <Skeleton className="h-8 w-48" />
-      </div>
-    );
+    return <GiyaxLoader full size="lg" />;
   }
 
   return <>{children}</>;
