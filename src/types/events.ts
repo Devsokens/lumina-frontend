@@ -178,6 +178,8 @@ export type PublicTicketType = {
 
 export type PublicEvent = Omit<ApiEvent, "ticketTypes" | "status" | "createdAt"> & {
   ticketTypes: PublicTicketType[];
+  // Frais de service de l'acheteur, en points de base (500 = 5 %).
+  buyerFeeBps?: number;
 };
 
 export type PurchasedTicket = {

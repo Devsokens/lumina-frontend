@@ -21,7 +21,7 @@ export function EventRevenueCard({ eventId }: { eventId: string }) {
 
   const rows: [string, string][] = [
     ["Vendu", francs(totals.sold)],
-    ["Commission GiyaX", `− ${francs(totals.commission)}`],
+    ...(totals.commission ? ([["Commission GiyaX", `− ${francs(totals.commission)}`]] as [string, string][]) : []),
     ...(totals.refunds ? ([["Remboursé", `− ${francs(totals.refunds)}`]] as [string, string][]) : []),
     ["Déjà reversé", francs(totals.paidOut)],
   ];

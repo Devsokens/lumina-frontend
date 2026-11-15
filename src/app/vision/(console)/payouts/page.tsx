@@ -38,6 +38,7 @@ type Payout = {
   kycStatus: string;
   kycName: string | null;
   firstToNumber: boolean;
+  kind?: "STANDARD" | "CONTRIBUTION";
   note: string | null;
   approvedBy: string | null;
   createdAt: string;
@@ -178,7 +179,7 @@ export default function VisionPayoutsPage() {
           <div className="grid grid-cols-2 gap-3 lg:grid-cols-4">
             <StatCard index={0} label="À valider" value={summary.toApproveAmount} format={francs} icon={Clock} hint={`${summary.toApproveCount} versement(s)`} />
             <StatCard index={1} label="Dû aux organisateurs" value={summary.owed} format={francs} icon={Wallet} />
-            <StatCard index={2} label="Commissions" value={summary.commission} format={francs} icon={Coins} />
+            <StatCard index={2} label="Frais et commissions" value={summary.commission} format={francs} icon={Coins} hint="Avant frais PVit" />
             <StatCard index={3} label="Déjà versé" value={summary.paid} format={francs} icon={Banknote} />
           </div>
 
@@ -296,6 +297,7 @@ function PayoutCard({
           <p className="truncate font-display font-semibold">{p.tenant.name}</p>
           <p className="text-xs text-muted-foreground">
             {p.tenant.slug} · préparé {relative(p.createdAt)}
+            {p.kind === "CONTRIBUTION" && " · retrait de cotisations demandé par l'organisateur"}
           </p>
         </div>
         <div className="flex items-center gap-2">
@@ -307,7 +309,7 @@ function PayoutCard({
       <div className="mt-4 grid gap-x-8 gap-y-1.5 md:grid-cols-2">
         <div className="space-y-1.5">
           <Fact label="Ventes">{francs(p.gross)}</Fact>
-          <Fact label="Commission">− {francs(p.commission)}</Fact>
+          {p.commission > 0 && <Fact label="Commission">− {francs(p.commission)}</Fact>}
           {p.refunds > 0 && <Fact label="Remboursements">− {francs(p.refunds)}</Fact>}
         </div>
         <div className="space-y-1.5">

@@ -218,9 +218,9 @@ function TenantSheet({ id, onClose }: { id: string; onClose: () => void }) {
               <h3 className="text-sm font-semibold">Versements</h3>
               <div className="flex items-center justify-between gap-3 rounded-xl border border-border p-3">
                 <span className="text-sm">
-                  <span className="block font-medium">Versement automatique quotidien</span>
+                  <span className="block font-medium">Versement automatique</span>
                   <span className="text-xs text-muted-foreground">
-                    {t.autoPayout ? "Activé : chaque jour, sans validation, dans les limites de sécurité." : "Désactivé : chaque versement attend votre validation."}
+                    {t.autoPayout ? "Activé : ses versements partent seuls dès qu'ils sont dus, dans les limites de sécurité." : "Désactivé : chaque versement attend votre validation."}
                   </span>
                 </span>
                 <Button size="sm" variant={t.autoPayout ? "outline" : "default"} onClick={() => setConfirm({ autoPayout: !t.autoPayout })}>
@@ -273,7 +273,7 @@ function TenantSheet({ id, onClose }: { id: string; onClose: () => void }) {
                 ? `Suspendre « ${t.name} » ?`
                 : `Réactiver « ${t.name} » ?`,
             description: confirm?.autoPayout
-              ? "Ses recettes partiront chaque jour sans votre validation. Restent manuels : le premier versement vers un numéro, un titulaire non vérifié et les montants au-delà de 1 000 000 F."
+              ? "Ses recettes partiront sans votre validation dès qu'elles sont dues (délai après l'événement, ou retrait de cotisations). Restent manuels : le premier versement vers un numéro, un titulaire non vérifié et les montants au-delà de 1 000 000 F."
               : confirm?.status === "SUSPENDED"
                 ? "Son site public et son back-office deviendront inaccessibles."
                 : "Le changement est immédiat.",

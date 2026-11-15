@@ -5,13 +5,14 @@ import Link from "next/link";
 import { usePathname, useRouter, useSearchParams } from "next/navigation";
 import { toast } from "sonner";
 import { EvButton, EvInput, EvSoon, initialsOf } from "@/components/events/ev-ui";
-import { ADDON_FIELD, AddonInput, Field, InfoNote, MiniSwitch, RadioCard, SettingsCard, SettingsHeading, SettingsRow, StatePill } from "@/components/events/settings/settings-ui";
+import { ADDON_FIELD, AddonInput, Field, InfoNote, MiniSwitch, SettingsCard, SettingsHeading, SettingsRow, StatePill } from "@/components/events/settings/settings-ui";
 import {
   useConfirmPayout,
   useConnectGmail,
   useDisconnectGmail,
   useGmailStatus,
   usePayoutCode,
+  usePayoutSummary,
   useSaveEmailSettings,
   useSavePayouts,
   useTestEmail,
@@ -19,7 +20,6 @@ import {
   type EmailSettings,
   type MessageKind,
   type MessageTemplate,
-  type PayoutAccount,
   type PayoutOperator,
   type Payouts,
 } from "@/hooks/useAdmin";
@@ -31,6 +31,7 @@ import { downloadTenantExport } from "@/lib/download";
 import { OperatorLogo } from "@/components/shared/operator-logo";
 import { cn } from "@/lib/utils";
 import { FEATURES } from "@/lib/features";
+import { feePercent } from "@/lib/service-fee";
 import type { Tenant } from "@/types/api";
 
 // Rubriques des Paramètres (refonte 2026-11, écrans 23 à 25) : identité
@@ -269,24 +270,18 @@ function PayoutRow({ op, payouts, canEdit, last }: { op: (typeof OPERATORS)[numb
 
 export function SettingsPayments({ tenant, canEdit }: { tenant: Tenant; canEdit: boolean }) {
   const payouts = payoutsOf(tenant);
-  const savePayouts = useSavePayouts();
   const verified = payouts.accounts.filter((a) => a.verifiedAt || !FEATURES.sms).length;
 
-  async function setFrequency(frequency: Payouts["frequency"]) {
-    if (frequency === payouts.frequency) return;
-    try {
-      await savePayouts.mutateAsync({ frequency, accounts: payouts.accounts.map(({ operator, phone, holderName }: PayoutAccount) => ({ operator, phone, holderName })) });
-      toast.success("Fréquence des versements enregistrée");
-    } catch (err) {
-      toast.error(apiError(err, "Enregistrement impossible"));
-    }
-  }
+  // Règles fixées par GiyaX (réservé au propriétaire, comme le module Revenus).
+  const { data: summary } = usePayoutSummary(canEdit);
+  const rules = summary?.rules;
+  const hold = rules?.payoutHoldDays ?? 2;
 
   return (
     <>
       <SettingsHeading title="Paiements" sub="Les participants paient par Mobile Money. Les fonds sont reversés sur les comptes ci-dessous." />
       <InfoNote>
-        Les encaissements sont traités par notre prestataire de paiement sécurisé. Vos recettes sont reversées sur votre compte, selon la fréquence choisie.
+        Les encaissements sont traités par notre prestataire de paiement sécurisé. Vos recettes sont reversées sur votre compte {hold} jour{hold > 1 ? "s" : ""} après la fin de chaque événement.
         {!FEATURES.sms && " Notre équipe confirme le numéro de versement avec vous avant le premier virement."} Un numéro modifié n&apos;est utilisable qu&apos;après 48 h, pour votre sécurité.
       </InfoNote>
       {canEdit && (
@@ -316,21 +311,23 @@ export function SettingsPayments({ tenant, canEdit }: { tenant: Tenant; canEdit:
         ))}
       </SettingsCard>
       <SettingsCard>
-        <fieldset disabled={!canEdit || savePayouts.isPending || !!tenant.autoPayout} className="m-0 min-w-0 border-0 p-0">
-          <SettingsRow title="Fréquence des versements" desc={tenant.autoPayout ? "Versement automatique chaque jour, activé par GiyaX pour votre organisation." : "Quand les recettes sont reversées."}>
-            <div role="radiogroup" aria-label="Fréquence" className="flex flex-col gap-2">
-              <RadioCard name="freq" checked={payouts.frequency === "AFTER_EVENT"} title="Après chaque événement" desc="Sous 48 h après la fin de l'événement" onSelect={() => void setFrequency("AFTER_EVENT")} />
-              <RadioCard name="freq" checked={payouts.frequency === "WEEKLY"} title="Chaque semaine" desc="Tous les lundis, ventes de la semaine précédente" onSelect={() => void setFrequency("WEEKLY")} />
-            </div>
-          </SettingsRow>
-        </fieldset>
-        <SettingsRow title="Frais" desc="Qui paie les frais de service." soon last>
-          <div className="flex flex-col gap-2.5">
-            <span className="flex items-center justify-between gap-3 text-sm">
-              Les frais sont ajoutés au prix payé par le participant
-              <MiniSwitch checked={false} disabled ariaLabel="Frais à la charge du participant" />
+        <SettingsRow title="Reversement des recettes" desc="Quand vos ventes vous sont versées.">
+          <div className="flex flex-col gap-2 text-sm leading-relaxed">
+            <span>
+              <strong className="font-semibold">Billets :</strong> {hold} jour{hold > 1 ? "s" : ""} après la fin de l&apos;événement{tenant.autoPayout ? ", envoyés automatiquement." : ", après validation par notre équipe."}
             </span>
-            <span className="text-[13px] text-ev-muted">Pour l&apos;instant, aucun frais n&apos;est ajouté au prix de vos billets.</span>
+            <span>
+              <strong className="font-semibold">Cotisations :</strong> retrait possible depuis Revenus entre {rules?.contributionOpenHours ?? 24} h et {rules?.contributionCloseHours ?? 2} h avant le début de l&apos;événement, à partir de{" "}
+              {(rules?.contributionMinPayout ?? 5000).toLocaleString("fr-FR")} F. Sinon, elles sont versées après l&apos;événement.
+            </span>
+          </div>
+        </SettingsRow>
+        <SettingsRow title="Frais de service" desc="Qui paie les frais." last>
+          <div className="flex flex-col gap-2 text-sm leading-relaxed">
+            <span>
+              {rules ? `Des frais de service de ${feePercent(rules.buyerFeeBps)} sont ajoutés` : "Des frais de service sont ajoutés"} au prix payé par l&apos;acheteur, et affichés avant le paiement.
+            </span>
+            <span className="text-[13px] text-ev-muted">Vous recevez le prix de vos billets en entier. Les billets gratuits ne coûtent rien.</span>
           </div>
         </SettingsRow>
       </SettingsCard>

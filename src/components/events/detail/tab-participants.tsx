@@ -36,7 +36,7 @@ import {
   EvSelect,
   initialsOf,
 } from "@/components/events/ev-ui";
-import { useCheckIn, useRefundOrder } from "@/hooks/useEvents";
+import { useCheckIn, useRefundOrder, useResendTickets } from "@/hooks/useEvents";
 import { api } from "@/lib/api";
 import { downloadTickets } from "@/lib/download";
 import { apiErrorMessage, normalizePhone } from "@/lib/events";
@@ -64,6 +64,7 @@ export function TabParticipants({ event, stats, tickets }: Props) {
 
   const checkIn = useCheckIn(event.id);
   const refundOrder = useRefundOrder(event.id);
+  const resendTickets = useResendTickets(event.id);
 
   // Billets affichés comme participants : VALID, USED, REFUNDED
   const participantTickets = useMemo(
@@ -238,6 +239,25 @@ export function TabParticipants({ event, stats, tickets }: Props) {
     }
   }
 
+  // Renvoi des billets de la commande : à la même adresse, ou à une adresse
+  // corrigée si l'acheteur s'était trompé.
+  async function handleResend(t: ApiTicket) {
+    if (!t.orderId) return;
+    const typed = window.prompt("Renvoyer les billets de cette commande à quelle adresse e-mail ?", t.customerEmail ?? "");
+    if (typed === null) return;
+    const email = typed.trim();
+    if (!/^[^\s@]+@[^\s@]+\.[^\s@]{2,}$/.test(email)) {
+      toast.error("Adresse e-mail invalide.");
+      return;
+    }
+    try {
+      const res = await resendTickets.mutateAsync({ orderId: t.orderId, ...(email !== (t.customerEmail ?? "") ? { email } : {}) });
+      toast.success(`${res.tickets > 1 ? `${res.tickets} billets renvoyés` : "Billet renvoyé"} à ${res.sentTo}.`);
+    } catch (err) {
+      toast.error(apiErrorMessage(err, "Envoi impossible pour le moment."));
+    }
+  }
+
   async function handleRefund(t: ApiTicket) {
     if (!t.orderId) {
       toast.error("Ce billet n'est rattaché à aucune commande remboursable.");
@@ -245,7 +265,7 @@ export function TabParticipants({ event, stats, tickets }: Props) {
     }
     if (
       !window.confirm(
-        `Rembourser la commande de ${t.customerName || "ce participant"} et remettre la place en vente ?`
+        `Rembourser la commande de ${t.customerName || "ce participant"} et remettre la place en vente ? Le prix des billets est rendu ; les frais de service ne sont pas remboursés.`
       )
     ) {
       return;
@@ -437,6 +457,11 @@ export function TabParticipants({ event, stats, tickets }: Props) {
                           </DropdownMenuItem>
                         )}
                         {t.orderId && !isRefunded && (
+                          <DropdownMenuItem disabled={resendTickets.isPending} onClick={() => void handleResend(t)}>
+                            Renvoyer les billets par e-mail
+                          </DropdownMenuItem>
+                        )}
+                        {t.orderId && !isRefunded && (
                           <>
                             <DropdownMenuSeparator />
                             <DropdownMenuItem
@@ -610,6 +635,11 @@ export function TabParticipants({ event, stats, tickets }: Props) {
                             {t.status === "VALID" && (
                               <DropdownMenuItem onClick={() => void handleManualCheckIn(t)}>
                                 Valider l&apos;entrée maintenant
+                              </DropdownMenuItem>
+                            )}
+                            {t.orderId && !isRefunded && (
+                              <DropdownMenuItem disabled={resendTickets.isPending} onClick={() => void handleResend(t)}>
+                                Renvoyer les billets par e-mail
                               </DropdownMenuItem>
                             )}
                             {t.orderId && !isRefunded && (
