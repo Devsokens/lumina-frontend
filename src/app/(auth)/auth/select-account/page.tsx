@@ -1,5 +1,6 @@
 "use client";
 
+import { GiyaxOverlay } from "@/components/shared/giyax-loader";
 import { Suspense, useEffect, useState } from "react";
 import Link from "next/link";
 import { useRouter, useSearchParams } from "next/navigation";
@@ -50,6 +51,7 @@ function SelectAccount() {
 
   return (
     <div>
+      <GiyaxOverlay show={busy !== null} label="Ouverture de votre espace…" />
       <div className="flex size-14 items-center justify-center rounded-2xl bg-muted text-primary">
         <Layers className="size-6" />
       </div>

@@ -153,6 +153,8 @@ export type PayoutSummary = {
   test: boolean;
   commissionBps: number;
   rules?: PaymentRules;
+  // Ventes versées sans attendre la fin de l'événement (accord avec GiyaX).
+  earlyPayout?: boolean;
   balance: { sold: number; commission: number; refunds: number; paidOut: number; inProgress: number; upcoming: number };
   payouts: PayoutRow[];
 };

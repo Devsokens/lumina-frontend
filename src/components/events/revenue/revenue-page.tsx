@@ -94,7 +94,8 @@ export function RevenuePage() {
       <header className="flex flex-col gap-1">
         <h1 className="m-0 text-2xl font-semibold tracking-[-0.01em]">Revenus</h1>
         <p className="m-0 text-sm text-ev-muted">
-          Ce que vos ventes ont rapporté et ce qui vous a été reversé. Les recettes d&apos;un événement sont versées {hold} jour{hold > 1 ? "s" : ""} après sa fin.
+          Ce que vos ventes ont rapporté et ce qui vous a été reversé.{" "}
+          {summary.earlyPayout ? "Versement anticipé activé : vos recettes sont versées sans attendre la fin de l'événement." : `Les recettes d'un événement sont versées ${hold} jour${hold > 1 ? "s" : ""} après sa fin.`}
         </p>
       </header>
 
@@ -104,7 +105,7 @@ export function RevenuePage() {
 
       <EvCard className="flex flex-col">
         <div className="grid gap-6 p-5 sm:grid-cols-3 sm:p-6">
-          <Figure strong label="À venir" value={francs(balance.upcoming)} hint={`Versé ${hold} jour${hold > 1 ? "s" : ""} après la fin de chaque événement`} />
+          <Figure strong label="À venir" value={francs(balance.upcoming)} hint={summary.earlyPayout ? "Versement anticipé activé" : `Versé ${hold} jour${hold > 1 ? "s" : ""} après la fin de chaque événement`} />
           <Figure strong label="Versement en cours" value={francs(balance.inProgress)} hint="En préparation ou en cours d'envoi" />
           <Figure strong label="Déjà reversé" value={francs(balance.paidOut)} hint="Reçu sur votre Mobile Money" />
         </div>

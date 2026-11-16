@@ -1,5 +1,6 @@
 "use client";
 
+import { GiyaxOverlay } from "@/components/shared/giyax-loader";
 import { useState } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import { Suspense } from "react";
@@ -238,6 +239,7 @@ function LoginContent() {
             </div>
           </div>
 
+          <GiyaxOverlay show={submitting || googleLoading} label={googleLoading ? "Redirection vers Google…" : "Connexion en cours…"} />
           <TurnstileWidget />
           <Button
             type="submit"

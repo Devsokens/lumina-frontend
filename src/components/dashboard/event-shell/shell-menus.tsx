@@ -1,5 +1,7 @@
 "use client";
 
+import { useState } from "react";
+import { GiyaxOverlay } from "@/components/shared/giyax-loader";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { toast } from "sonner";
@@ -134,7 +136,9 @@ export function UserMenuContent({ name, contact }: { name: string; contact: stri
   const setFeedbackOpen = useShellStore((s) => s.setFeedbackOpen);
   const setSupportOpen = useShellStore((s) => s.setSupportOpen);
 
+  const [leaving, setLeaving] = useState(false);
   async function logout() {
+    setLeaving(true);
     await signOut();
     toast.success("Vous avez été déconnecté.");
     router.push("/login");
@@ -142,6 +146,7 @@ export function UserMenuContent({ name, contact }: { name: string; contact: stri
 
   return (
     <>
+      <GiyaxOverlay show={leaving} label="Déconnexion…" />
       <div className="flex items-center gap-3 p-3.5">
         <span className="flex size-10 shrink-0 items-center justify-center rounded-full bg-[#12A06F] text-sm font-semibold text-white">{initialsOf(name)}</span>
         <span className="flex min-w-0 flex-col">

@@ -1,5 +1,6 @@
 "use client";
 
+import { GiyaxOverlay } from "@/components/shared/giyax-loader";
 import { Suspense, useState } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import Link from "next/link";
@@ -531,6 +532,7 @@ function SignupContent() {
               <ArrowLeft className="mr-1.5 size-3.5" />
               Retour
             </Button>
+            <GiyaxOverlay show={submitting} label="Création de votre compte…" />
             <Button
               type="button"
               disabled={submitting || !acceptedTerms}

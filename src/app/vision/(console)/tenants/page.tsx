@@ -1,5 +1,6 @@
 "use client";
 
+import { EarlyPayout } from "@/components/vision/early-payout";
 import { useState } from "react";
 import { keepPreviousData, useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { toast } from "sonner";
@@ -228,6 +229,8 @@ function TenantSheet({ id, onClose }: { id: string; onClose: () => void }) {
                 </Button>
               </div>
             </div>
+
+            <EarlyPayout tenantId={t.id} name={t.name} />
 
             <div className="space-y-2">
               <h3 className="text-sm font-semibold">Utilisateurs ({t.users.length})</h3>
