@@ -1,6 +1,6 @@
 "use client";
 
-import { GiyaxLoader } from "@/components/shared/giyax-loader";
+import { GiyaxLoader, GiyaxOverlay } from "@/components/shared/giyax-loader";
 import { Suspense, useState } from "react";
 import Link from "next/link";
 import { useRouter, useSearchParams } from "next/navigation";
@@ -216,6 +216,7 @@ function CompleteSignup() {
           .
         </span>
       </label>
+      <GiyaxOverlay show={busy} label="Création de votre compte…" />
       <Button type="submit" className="h-11 w-full rounded-xl" disabled={busy || !accepted}>
         {busy && <Loader2 className="size-4 animate-spin" />}
         {busy ? "Création…" : "Créer mon compte"}

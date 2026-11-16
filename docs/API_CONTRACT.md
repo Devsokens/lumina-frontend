@@ -616,6 +616,10 @@ Administrateurs du SaaS (table `PlatformAdmin`, distincte de `User`). Jeton Bear
 | PATCH | `/vision/tenants/:id` | Vision | `{ status?: ACTIVE\|SUSPENDED, plan?, autoPayout?, reason? }` | `{ id, status, plan, autoPayout }` (autoPayout : versement quotidien sans validation ; restent manuels le premier versement vers un numéro, un titulaire non vérifié, plus de 1 000 000 F) |
 | GET | `/vision/users` | Vision | `?page&limit&search&activity=active\|passive\|disabled` | `{ data, meta }` |
 | PATCH | `/vision/users/:id` | Vision | `{ isActive, reason? }` | `{ id, isActive }` |
+| GET | `/vision/tenants/:id/early-payout` | Vision | — | `{ earlyPayout, consent: { fileName, mime, size, uploadedBy, createdAt } \| null }` — versement anticipé de l'organisation (ventes dues sans attendre la fin de l'événement) |
+| POST | `/vision/tenants/:id/early-payout` | Vision | `{ document: data URL (PDF, PNG ou JPEG, 4 Mo au plus), fileName, code: "123456" }` | idem — active avec le document de consentement et le code TOTP (journal `EARLY_PAYOUT_ENABLED`) |
+| DELETE | `/vision/tenants/:id/early-payout` | Vision | — | idem — désactive, le document est conservé |
+| GET | `/vision/tenants/:id/early-payout/document` | Vision | — | `{ fileName, mime, base64 }` — lecture journalisée |
 | GET | `/vision/settings` | Vision | — | `{ buyerFeeBps, ticketCommissionBps, payoutHoldDays, contributionOpenHours, contributionCloseHours, contributionMinPayout, isDefault, updatedAt, updatedBy, limits: { <règle>: [min, max] } }` — règles d'argent de la plateforme. Taux en points de base (500 = 5 %) ; `buyerFeeBps` : frais ajoutés au prix, payés par l'acheteur ; `ticketCommissionBps` : commission retirée à l'organisateur |
 | PATCH | `/vision/settings` | Vision | une ou plusieurs règles (seules celles envoyées changent) | idem (journal `PAYMENT_RULE_UPDATED` / `TICKET_COMMISSION_UPDATED`, une ligne par règle changée). 400 si la fenêtre de cotisation s'ouvre après sa fermeture |
 | GET | `/vision/payouts` | Vision | `?page&limit&status` | `{ rows, page, limit, total, summary }` |

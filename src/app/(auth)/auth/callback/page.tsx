@@ -1,5 +1,6 @@
 "use client";
 
+import { GiyaxOverlay } from "@/components/shared/giyax-loader";
 import { useEffect, useRef } from "react";
 import { useRouter } from "next/navigation";
 import { homePathFor, useAuth } from "@/hooks/useAuth";
@@ -21,5 +22,5 @@ export default function GoogleCallbackPage() {
     })();
   }, [restoreSession, router]);
 
-  return <p className="text-sm text-muted-foreground">Connexion avec Google en cours…</p>;
+  return <GiyaxOverlay show label="Connexion avec Google en cours…" />;
 }

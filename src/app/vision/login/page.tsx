@@ -1,5 +1,6 @@
 "use client";
 
+import { GiyaxOverlay } from "@/components/shared/giyax-loader";
 import { useRef, useState, type CSSProperties } from "react";
 import Image from "next/image";
 import { useRouter } from "next/navigation";
@@ -106,6 +107,7 @@ export default function VisionLoginPage() {
   return (
     <main style={BRAND} className={cn(eventFontVariables, "relative flex h-dvh items-center justify-center overflow-hidden bg-(--vl-bg) px-4 font-ev text-(--vl-text)")}>
       <Watermark />
+      <GiyaxOverlay show={busy} label="Connexion à la console…" />
 
       <form
         onSubmit={submit}
