@@ -2,7 +2,7 @@
 
 import { useEffect } from "react";
 import { usePathname, useRouter } from "next/navigation";
-import { Skeleton } from "@/components/ui/skeleton";
+import { GiyaxLoader } from "@/components/shared/giyax-loader";
 import { useTenantSector } from "@/hooks/useTenantSector";
 import { navLinks } from "@/lib/navigation";
 import { useAuthStore } from "@/stores/useAuthStore";
@@ -54,6 +54,6 @@ export function SectorGuard({ children, allow }: { children: React.ReactNode; al
     if (target) router.replace(target);
   }, [target, router]);
 
-  if (isLoading || target) return <Skeleton className="m-6 h-96" />;
+  if (isLoading || target) return <GiyaxLoader className="min-h-[60dvh]" />;
   return <>{children}</>;
 }
