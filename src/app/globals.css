@@ -669,6 +669,15 @@
     opacity: 0;
   }
 }
+@keyframes giyax-overlay-card-in {
+  from {
+    opacity: 0;
+    transform: translateY(8px) scale(0.96);
+  }
+}
+.giyax-overlay-card {
+  animation: giyax-overlay-card-in 0.26s cubic-bezier(0.2, 0.8, 0.2, 1);
+}
 .giyax-loader-x {
   -webkit-mask-image: linear-gradient(45deg, #000 42%, transparent 58%);
   mask-image: linear-gradient(45deg, #000 42%, transparent 58%);
@@ -695,7 +704,8 @@
   .giyax-loader-x,
   .giyax-loader-shine,
   .giyax-loader-halo,
-  .giyax-overlay {
+  .giyax-overlay,
+  .giyax-overlay-card {
     animation: none;
   }
   .giyax-loader-x {
