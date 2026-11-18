@@ -1,5 +1,6 @@
 "use client";
 
+import { Landmark } from "lucide-react";
 import { Fragment, useEffect, useRef, useState } from "react";
 import Link from "next/link";
 import { usePathname, useRouter, useSearchParams } from "next/navigation";
@@ -103,7 +104,7 @@ export function SettingsLegal({ tenant, canEdit }: { tenant: Tenant; canEdit: bo
 
 export function payoutsOf(tenant: Tenant): Payouts {
   const raw = ((tenant.settings ?? {}) as { payouts?: Partial<Payouts> }).payouts;
-  return { frequency: raw?.frequency ?? "AFTER_EVENT", accounts: Array.isArray(raw?.accounts) ? raw.accounts : [] };
+  return { frequency: raw?.frequency ?? "AFTER_EVENT", accounts: Array.isArray(raw?.accounts) ? raw.accounts : [], bank: raw?.bank ?? null };
 }
 
 const OPERATORS: { key: PayoutOperator; name: string; optional?: boolean; placeholder: string }[] = [
@@ -119,6 +120,107 @@ function toPhone(raw: string) {
   return `+241${digits.length === 9 && digits.startsWith("0") ? digits.slice(1) : digits}`;
 }
 const localPart = (phone: string) => phone.replace(/^\+241/, "");
+
+// Compte bancaire : reçoit par virement la part payée par carte (PVit ne
+// verse l'argent des cartes que vers un compte bancaire).
+function BankRow({ payouts, canEdit }: { payouts: Payouts; canEdit: boolean }) {
+  const saved = payouts.bank;
+  const [open, setOpen] = useState(!!saved);
+  const [holder, setHolder] = useState(saved?.holderName ?? "");
+  const [bankName, setBankName] = useState(saved?.bankName ?? "");
+  const [number, setNumber] = useState(saved?.accountNumber ?? "");
+  const [source, setSource] = useState(saved);
+  if (source !== saved) {
+    setSource(saved);
+    setHolder(saved?.holderName ?? "");
+    setBankName(saved?.bankName ?? "");
+    setNumber(saved?.accountNumber ?? "");
+  }
+  const savePayouts = useSavePayouts();
+  const accounts = payouts.accounts.map(({ operator, phone, holderName }) => ({ operator, phone, holderName }));
+  const dirty = !saved || holder.trim() !== saved.holderName || bankName.trim() !== saved.bankName || number.trim().toUpperCase() !== saved.accountNumber;
+
+  async function save() {
+    if (holder.trim().length < 2) return void toast.error("Indiquez le titulaire du compte.");
+    if (bankName.trim().length < 2) return void toast.error("Indiquez le nom de la banque.");
+    if (!/^[A-Za-z0-9 ]{8,40}$/.test(number.trim())) return void toast.error("Numéro de compte invalide : RIB ou IBAN, chiffres et lettres.");
+    try {
+      await savePayouts.mutateAsync({ frequency: payouts.frequency, accounts, bank: { holderName: holder.trim(), bankName: bankName.trim(), accountNumber: number.trim() } });
+      toast.success("Compte bancaire enregistré.");
+    } catch (err) {
+      toast.error(apiError(err, "Enregistrement impossible"));
+    }
+  }
+
+  async function remove() {
+    if (!window.confirm("Retirer le compte bancaire ?")) return;
+    try {
+      await savePayouts.mutateAsync({ frequency: payouts.frequency, accounts, bank: null });
+      setOpen(false);
+      toast.success("Compte bancaire retiré");
+    } catch (err) {
+      toast.error(apiError(err, "Suppression impossible"));
+    }
+  }
+
+  return (
+    <div className="flex flex-col gap-4 px-5 py-[22px] sm:px-6">
+      <div className="flex items-center gap-3.5">
+        <span className="flex size-10 shrink-0 items-center justify-center rounded-[10px] bg-ev-soft text-ev-ink2">
+          <Landmark className="size-5" />
+        </span>
+        <div className="flex min-w-0 flex-1 flex-col gap-0.5">
+          <span className="text-[15px] font-semibold">Compte bancaire</span>
+          <span className="text-[13px] text-ev-muted">Reçoit par virement l&apos;argent payé par carte bancaire</span>
+        </div>
+        {saved ? (
+          <StatePill tone="ok" dot>
+            Enregistré
+          </StatePill>
+        ) : (
+          <StatePill>Si vous acceptez la carte</StatePill>
+        )}
+      </div>
+      <div className="sm:pl-[54px]">
+        {!open ? (
+          <button
+            type="button"
+            disabled={!canEdit}
+            onClick={() => setOpen(true)}
+            className="h-[38px] rounded-[10px] border border-dashed border-ev-dash bg-ev-surface px-3.5 text-[13px] font-medium text-ev-ink2 disabled:opacity-60"
+          >
+            + Ajouter un compte bancaire
+          </button>
+        ) : (
+          <fieldset disabled={!canEdit} className="m-0 flex min-w-0 flex-col gap-3 border-0 p-0">
+            <div className="grid gap-3 md:grid-cols-2">
+              <Field label="Titulaire du compte">
+                <EvInput h={42} maxLength={120} value={holder} onChange={(e) => setHolder(e.target.value)} placeholder="Tel qu'indiqué sur le RIB" className="font-normal" />
+              </Field>
+              <Field label="Banque">
+                <EvInput h={42} maxLength={80} value={bankName} onChange={(e) => setBankName(e.target.value)} placeholder="Ex. BGFIBank, UGB, Orabank" className="font-normal" />
+              </Field>
+            </div>
+            <div className="grid items-end gap-3 md:grid-cols-[minmax(0,1fr)_auto]">
+              <Field label="Numéro de compte (RIB ou IBAN)">
+                <EvInput h={42} maxLength={40} value={number} onChange={(e) => setNumber(e.target.value)} placeholder="GA21 4000 3001 0000 0000 0000 000" className="font-ev-mono font-normal" />
+              </Field>
+              {dirty ? (
+                <EvButton variant="primary" className="h-[42px] px-4" disabled={savePayouts.isPending} onClick={() => void save()}>
+                  Enregistrer
+                </EvButton>
+              ) : (
+                <EvButton className="h-[42px] px-4" disabled={savePayouts.isPending} onClick={() => void remove()}>
+                  Retirer
+                </EvButton>
+              )}
+            </div>
+          </fieldset>
+        )}
+      </div>
+    </div>
+  );
+}
 
 function PayoutRow({ op, payouts, canEdit, last }: { op: (typeof OPERATORS)[number]; payouts: Payouts; canEdit: boolean; last?: boolean }) {
   const saved = payouts.accounts.find((a) => a.operator === op.key) ?? null;
@@ -199,7 +301,7 @@ function PayoutRow({ op, payouts, canEdit, last }: { op: (typeof OPERATORS)[numb
       À vérifier
     </StatePill>
   ) : op.optional ? (
-    <StatePill>Facultatif</StatePill>
+    <StatePill>Si vous acceptez {op.name.split(" ")[0]}</StatePill>
   ) : (
     <StatePill tone="warn" dot>
       À configurer
@@ -212,7 +314,7 @@ function PayoutRow({ op, payouts, canEdit, last }: { op: (typeof OPERATORS)[numb
         <OperatorLogo operator={op.key} decorative className="size-10 rounded-[10px]" />
         <div className="flex min-w-0 flex-1 flex-col gap-0.5">
           <span className="text-[15px] font-semibold">{op.name}</span>
-          <span className="text-[13px] text-ev-muted">Compte marchand Gabon</span>
+          <span className="text-[13px] text-ev-muted">Reçoit l&apos;argent payé par {op.name}</span>
         </div>
         {state}
       </div>
@@ -281,7 +383,7 @@ export function SettingsPayments({ tenant, canEdit }: { tenant: Tenant; canEdit:
     <>
       <SettingsHeading title="Paiements" sub="Les participants paient par Mobile Money. Les fonds sont reversés sur les comptes ci-dessous." />
       <InfoNote>
-        Les encaissements sont traités par notre prestataire de paiement sécurisé. Vos recettes sont reversées sur votre compte {hold} jour{hold > 1 ? "s" : ""} après la fin de chaque événement.
+        Les encaissements sont traités par notre prestataire de paiement sécurisé. Vos recettes sont reversées {hold} jour{hold > 1 ? "s" : ""} après la fin de chaque événement, par le même moyen que celui utilisé par vos acheteurs : l&apos;argent payé par Airtel Money arrive sur votre numéro Airtel, celui payé par Moov Money sur votre numéro Moov, celui payé par carte sur votre compte bancaire. Renseignez un compte pour chaque moyen que vous acceptez.
         {!FEATURES.sms && " Notre équipe confirme le numéro de versement avec vous avant le premier virement."} Un numéro modifié n&apos;est utilisable qu&apos;après 48 h, pour votre sécurité.
       </InfoNote>
       {canEdit && (
@@ -306,9 +408,10 @@ export function SettingsPayments({ tenant, canEdit }: { tenant: Tenant; canEdit:
             </span>
           </div>
         </div>
-        {OPERATORS.map((op, i) => (
-          <PayoutRow key={op.key} op={op} payouts={payouts} canEdit={canEdit} last={i === OPERATORS.length - 1} />
+        {OPERATORS.map((op) => (
+          <PayoutRow key={op.key} op={op} payouts={payouts} canEdit={canEdit} />
         ))}
+        <BankRow payouts={payouts} canEdit={canEdit} />
       </SettingsCard>
       <SettingsCard>
         <SettingsRow title="Reversement des recettes" desc="Quand vos ventes vous sont versées.">

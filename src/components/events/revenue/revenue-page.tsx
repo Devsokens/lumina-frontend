@@ -7,10 +7,11 @@ import { toast } from "sonner";
 import { ChevronDown, ChevronLeft, ChevronRight, Download } from "lucide-react";
 import { EvButton, EvCard, EvPill, EvSegmented, EvSelect } from "@/components/events/ev-ui";
 import { PLAN_LABELS, payoutsOf } from "@/components/events/settings/settings-sections";
-import { useAdminTenantInfo, usePayoutSummary, type PaymentRules, type PayoutRow } from "@/hooks/useAdmin";
+import { useAdminTenantInfo, usePayoutSummary, type PaymentRules, type PayoutChannel, type PayoutRow } from "@/hooks/useAdmin";
 import { fetchStatementExport, usePayoutDetail, useRevenueByEvent, useStatement, useWithdrawContributions, type EventRevenue, type MoneyState, type StatementLine } from "@/hooks/useRevenue";
 import { apiErrorMessage } from "@/lib/events";
 import { feePercent } from "@/lib/service-fee";
+import { CHANNELS, CHANNEL_DESTINATION, CHANNEL_LABEL, ChannelIcon, missingLabel } from "@/components/events/revenue/channel-badge";
 import { useAuthStore } from "@/stores/useAuthStore";
 import { cn } from "@/lib/utils";
 
@@ -30,7 +31,7 @@ const TABS: { value: Tab; label: string }[] = [
 export const francs = (n: number) => `${n.toLocaleString("fr-FR")} F`;
 const day = (d: string) => new Date(d).toLocaleDateString("fr-FR", { day: "numeric", month: "short", year: "numeric", timeZone: "Africa/Libreville" });
 const dayTime = (d: string) => new Date(d).toLocaleString("fr-FR", { day: "numeric", month: "short", year: "numeric", hour: "2-digit", minute: "2-digit", timeZone: "Africa/Libreville" });
-const operatorName = (o: string) => (o === "MOOV" ? "Moov Money" : "Airtel Money");
+const operatorName = (o: string) => (o === "MOOV" ? "Moov Money" : o === "CARD" ? "Virement bancaire" : "Airtel Money");
 
 const PAYOUT_STATUS: Record<PayoutRow["status"], { label: string; tone: "ok" | "neutral" | "warn" }> = {
   PENDING_APPROVAL: { label: "En préparation", tone: "neutral" },
@@ -99,6 +100,20 @@ export function RevenuePage() {
         </p>
       </header>
 
+      {(summary.missing ?? []).length > 0 && summary.channels && (
+        <div className="flex flex-wrap items-center justify-between gap-3 rounded-[12px] border border-ev-gold/40 bg-ev-warn-bg px-4 py-3 text-[13px] text-ev-gold-text">
+          <span>
+            <strong className="font-semibold">
+              {francs((summary.missing ?? []).reduce((sum, c) => sum + (summary.channels?.[c].upcoming ?? 0), 0))} vous attendent.
+            </strong>{" "}
+            Ajoutez {(summary.missing ?? []).map(missingLabel).join(" et ")} pour les recevoir.
+          </span>
+          <Link href="/admin/event/settings?rubrique=paiements" className="font-semibold underline underline-offset-2">
+            Compléter mes comptes
+          </Link>
+        </div>
+      )}
+
       {summary.test && (
         <p className="m-0 rounded-[12px] bg-ev-warn-bg px-4 py-3 text-[13px] text-ev-gold-text">Mode test : ces montants viennent de paiements d&apos;essai et ne seront pas versés.</p>
       )}
@@ -120,6 +135,8 @@ export function RevenuePage() {
         </div>
       </EvCard>
 
+      {summary.channels && <ChannelsCard channels={summary.channels} missing={summary.missing ?? []} />}
+
       <EvSegmented<Tab> ariaLabel="Rubriques des revenus" value={tab} onChange={(t) => go({ tab: t })} items={TABS} className="self-start" />
 
       {tab === "reversements" && <Payouts payouts={summary.payouts} onEvent={(id) => go({ tab: "releve", eventId: id })} />}
@@ -132,6 +149,60 @@ export function RevenuePage() {
       {tab === "releve" && <StatementTab key={eventId} eventId={eventId} events={events ?? []} onEvent={(id) => go({ eventId: id })} />}
       {tab === "offre" && <Offer rate={rate} rules={rules} charged={charged} />}
     </div>
+  );
+}
+
+// ---------- Par moyen de paiement ----------
+
+// Chaque moyen de paiement a son propre circuit de versement : on montre ce
+// qui attend, ce qui est en cours et ce qui est versé, circuit par circuit.
+function ChannelsCard({ channels, missing }: { channels: Record<PayoutChannel, { upcoming: number; inProgress: number; paidOut: number }>; missing: PayoutChannel[] }) {
+  const shown = CHANNELS.filter((c) => channels[c].upcoming + channels[c].inProgress + channels[c].paidOut !== 0);
+  if (shown.length === 0) return null;
+  return (
+    <EvCard className="overflow-hidden">
+      <div className="flex flex-col gap-0.5 border-b border-ev-line px-5 py-4 sm:px-6">
+        <span className="text-[15px] font-semibold">Par moyen de paiement</span>
+        <span className="text-[13px] text-ev-muted">Vos acheteurs paient par Airtel Money, Moov Money ou carte : chaque montant vous est versé par le même moyen.</span>
+      </div>
+      <div className={cn("grid divide-y divide-ev-line sm:divide-x sm:divide-y-0", shown.length === 3 ? "sm:grid-cols-3" : shown.length === 2 ? "sm:grid-cols-2" : "")}>
+        {shown.map((c) => {
+          const v = channels[c];
+          const lacking = missing.includes(c);
+          return (
+            <div key={c} className="flex flex-col gap-3 px-5 py-4 sm:px-6">
+              <span className="flex items-center gap-2.5 text-sm font-semibold">
+                <ChannelIcon channel={c} className="size-8" />
+                {CHANNEL_LABEL[c]}
+              </span>
+              <dl className="m-0 flex flex-col gap-1.5 text-[13px]">
+                <div className="flex justify-between gap-3">
+                  <dt className="text-ev-muted">À venir</dt>
+                  <dd className="m-0 font-semibold">{francs(v.upcoming)}</dd>
+                </div>
+                {v.inProgress > 0 && (
+                  <div className="flex justify-between gap-3">
+                    <dt className="text-ev-muted">En cours</dt>
+                    <dd className="m-0">{francs(v.inProgress)}</dd>
+                  </div>
+                )}
+                <div className="flex justify-between gap-3">
+                  <dt className="text-ev-muted">Déjà reversé</dt>
+                  <dd className="m-0">{francs(v.paidOut)}</dd>
+                </div>
+              </dl>
+              {lacking ? (
+                <Link href="/admin/event/settings?rubrique=paiements" className="text-xs font-semibold text-ev-gold-text underline underline-offset-2">
+                  Ajoutez {missingLabel(c)} pour recevoir ce montant
+                </Link>
+              ) : (
+                <span className="text-xs text-ev-muted">Versé {CHANNEL_DESTINATION[c]}</span>
+              )}
+            </div>
+          );
+        })}
+      </div>
+    </EvCard>
   );
 }
 
@@ -228,7 +299,11 @@ function Contributions({ events }: { events: EventRevenue[] }) {
 
   function run(eventId: string) {
     withdraw.mutate(eventId, {
-      onSuccess: (p) => toast.success(p.status === "PAID" ? `${francs(p.amount)} envoyés sur votre Mobile Money.` : `Retrait de ${francs(p.amount)} enregistré : il est en cours de traitement.`),
+      onSuccess: (r) => {
+        const sent = r.payouts.every((p) => p.status === "PAID");
+        toast.success(sent ? `${francs(r.amount)} envoyés.` : `Retrait de ${francs(r.amount)} enregistré : il est en cours de traitement.`);
+        if (r.missing.length) toast.info(`Une partie attend : ajoutez ${r.missing.map(missingLabel).join(" et ")} dans Paramètres › Paiements.`);
+      },
       onError: (err) => toast.error(apiErrorMessage(err, "Retrait impossible pour le moment.")),
     });
   }
@@ -268,6 +343,8 @@ function Contributions({ events }: { events: EventRevenue[] }) {
 // ---------- Par événement ----------
 
 function ByEvent({ events, onOpen }: { events: EventRevenue[] | undefined; onOpen: (eventId: string) => void }) {
+  // Heure figée au premier affichage (pas d'appel à l'horloge pendant le rendu).
+  const [now] = useState(() => Date.now());
   if (!events) return <div className="h-40 animate-pulse rounded-[16px] bg-ev-line" />;
   if (events.length === 0) {
     return <EvCard className="px-6 py-12 text-center text-[13px] text-ev-muted">Aucune vente payante enregistrée pour le moment.</EvCard>;
@@ -301,13 +378,28 @@ function ByEvent({ events, onOpen }: { events: EventRevenue[] | undefined; onOpe
                   {e.sales} vente{e.sales > 1 ? "s" : ""}
                   {e.startDate ? ` · ${day(e.startDate)}` : ""}
                 </span>
+                {e.channels && (
+                  <span className="mt-1 flex flex-wrap gap-x-2.5 gap-y-1 text-xs text-ev-muted">
+                    {CHANNELS.filter((c) => (e.channels?.[c] ?? 0) !== 0).map((c) => (
+                      <span key={c} className="flex items-center gap-1">
+                        <ChannelIcon channel={c} className="size-3.5" />
+                        {francs(e.channels?.[c] ?? 0)}
+                      </span>
+                    ))}
+                  </span>
+                )}
               </td>
               <td className="px-3 py-3.5 text-right">{francs(e.sold)}</td>
               <td className="px-3 py-3.5 text-right text-ev-muted">− {francs(e.commission)}</td>
               <td className="px-3 py-3.5 text-right text-ev-muted">{e.refunds ? `− ${francs(e.refunds)}` : "—"}</td>
               <td className="px-3 py-3.5 text-right font-semibold">{francs(e.net)}</td>
               <td className="px-3 py-3.5 text-right">{francs(e.paidOut)}</td>
-              <td className="px-5 py-3.5 text-right font-semibold sm:px-6">{francs(e.upcoming + e.inProgress)}</td>
+              <td className="px-5 py-3.5 text-right font-semibold sm:px-6">
+                {francs(e.upcoming + e.inProgress)}
+                {e.upcoming > 0 && e.payableAt !== undefined && (
+                  <span className="block text-xs font-normal text-ev-muted">{e.payableAt === null ? "Versement anticipé" : new Date(e.payableAt).getTime() > now ? `À partir du ${day(e.payableAt)}` : "Versement imminent"}</span>
+                )}
+              </td>
             </tr>
           ))}
         </tbody>

@@ -351,6 +351,7 @@ export const HELP_SECTIONS: HelpSection[] = [
           ),
           p("Vous recevez le prix de vos billets en entier. Les frais de service sont ajoutés au prix et payés par l'acheteur, qui les voit avant de payer. Les billets gratuits ne coûtent rien."),
           p("Les recettes d'un événement sont versées quelques jours après sa fin. Les cotisations peuvent être retirées juste avant le début de l'événement, depuis l'onglet Par événement."),
+          p("Chaque montant vous est versé par le moyen utilisé par vos acheteurs : l'argent payé par Airtel Money arrive sur votre numéro Airtel, celui payé par Moov Money sur votre numéro Moov, celui payé par carte par virement sur votre compte bancaire. Renseignez-les dans Paramètres › Paiements : sans compte, la part correspondante vous attend, et vous êtes prévenu."),
           note("Le module Revenus est réservé au propriétaire du compte."),
         ],
         link: { label: "Ouvrir Revenus", href: `${BASE}/revenue` },
