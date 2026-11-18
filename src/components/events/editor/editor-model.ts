@@ -164,7 +164,9 @@ export function formFromEvent(e: ApiEvent | null, issuer: string): EditorForm {
       sold: t.sold,
       description: t.description,
       saleEndsAt: t.saleEndsAt ?? null,
-      ticketTemplate: (t.template as TicketTemplate | null) ?? undefined,
+      // L'éditeur choisit un modèle pour tout l'événement : un ancien modèle
+      // propre à la formule est effacé au prochain enregistrement.
+      ticketTemplate: undefined,
       maxPerOrder: t.maxPerOrder ?? undefined,
       visible: t.visible ?? true,
       kind: t.kind ?? "FIXED",

@@ -34,8 +34,9 @@ export function setTurnstileToken(next: string | null) {
   }
 }
 
-// Jeton disponible, ou attente (vérification en cours) jusqu'à `ms`.
-export function takeTurnstileToken(ms = 8000): Promise<string | null> {
+// Jeton disponible, ou attente (vérification en cours) jusqu'à `ms`. Large :
+// sur un réseau mobile lent, la vérification peut prendre plusieurs secondes.
+export function takeTurnstileToken(ms = 20_000): Promise<string | null> {
   const consume = (t: string | null) => {
     token = null;
     // Jeton à usage unique : le widget en prépare un nouveau.
@@ -54,6 +55,17 @@ export function takeTurnstileToken(ms = 8000): Promise<string | null> {
     };
     waiters.push(done);
   });
+}
+
+// Demande un nouveau jeton (refus du serveur, jeton expiré).
+export function resetTurnstile() {
+  token = null;
+  resetters.forEach((r) => r());
+}
+
+// Message d'erreur du serveur quand la vérification anti-robot échoue.
+export function isTurnstileRejection(status: number | undefined, message: unknown): boolean {
+  return status === 403 && typeof message === "string" && message.includes("anti-robot");
 }
 
 export function onTurnstileConsumed(reset: () => void): () => void {

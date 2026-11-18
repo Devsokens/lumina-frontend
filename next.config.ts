@@ -56,7 +56,8 @@ const csp = [
   "worker-src 'self' blob:",
   "font-src 'self'",
   // Carte de localisation du site restaurant (iframe Google Maps, sans clé).
-  "frame-src https://www.google.com https://maps.google.com https://challenges.cloudflare.com",
+  // blob: : aperçu PDF réel des billets (généré par l'API, affiché dans l'éditeur).
+  "frame-src blob: https://www.google.com https://maps.google.com https://challenges.cloudflare.com",
   "frame-ancestors 'none'",
   "base-uri 'self'",
   "form-action 'self'",

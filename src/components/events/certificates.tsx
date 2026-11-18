@@ -30,7 +30,7 @@ export function certificateModelOf(value?: string | null): CertificateModel {
   }
 }
 
-export type Signatory = { name?: string; role: string };
+export type Signatory = { name?: string; role: string; signatureUrl?: string | null };
 
 export type CertificateData = {
   org: string; // organisme émetteur
@@ -108,7 +108,13 @@ function QrArt({ size, padding, style }: { size: number; padding: number; style?
 function SignatureBlock({ s, width, line, center }: { s: Signatory; width: number; line: string; center?: boolean }) {
   return (
     <div style={{ width, display: "flex", flexDirection: "column", alignItems: center ? "center" : "flex-start", gap: 6 }}>
-      <span style={{ fontFamily: SERIF, fontStyle: "italic", fontSize: 26, color: "#3F4A45", height: 34 }}>{s.name ? s.name : "[Signature]"}</span>
+      {s.signatureUrl ? (
+        // Signature importée : même emplacement que la signature écrite.
+        // eslint-disable-next-line @next/next/no-img-element
+        <img src={s.signatureUrl} alt="" style={{ height: 34, maxWidth: width, objectFit: "contain" }} />
+      ) : (
+        <span style={{ fontFamily: SERIF, fontStyle: "italic", fontSize: 26, color: "#3F4A45", height: 34 }}>{s.name ? s.name : "[Signature]"}</span>
+      )}
       <span style={{ alignSelf: "stretch", height: 1, background: line }} />
       <span style={{ fontSize: 13, fontWeight: 600 }}>{s.name || "[Nom du signataire]"}</span>
       <span style={{ fontSize: 12, color: "#5E6A64" }}>{s.role}</span>
@@ -130,7 +136,7 @@ export function CertificateClassic({ d, primary = "#0C4A3A", gold = "#C79A3B" }:
       {corner({ bottom: 26, left: 26 })}
       {corner({ bottom: 26, right: 26 })}
 
-      <div style={{ position: "absolute", inset: "64px 96px 56px", display: "flex", flexDirection: "column", alignItems: "center", textAlign: "center" }}>
+      <div style={{ position: "absolute", inset: "64px 96px 96px", display: "flex", flexDirection: "column", alignItems: "center", textAlign: "center" }}>
         <div style={{ display: "flex", alignItems: "center", gap: 14, fontSize: 12, fontWeight: 600, letterSpacing: "0.32em", color: primary }}>
           <span style={{ width: 40, height: 1, background: gold }} />
           {d.org.toUpperCase()}

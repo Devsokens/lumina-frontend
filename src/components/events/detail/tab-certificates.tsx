@@ -21,6 +21,7 @@ import {
   type Signatory,
 } from "@/components/events/certificates";
 import { AwardIcon } from "@/components/events/ev-icons";
+import { SignatureField } from "@/components/events/signature-field";
 import {
   EV_PORTAL,
   EvButton,
@@ -101,12 +102,17 @@ export function TabCertificates({ event, tickets, orgName }: Props) {
 
   const sampleParticipant = eligibleTickets[0]?.customerName?.trim() || "Marc Ondimba";
 
-  const certData = certificateDataFor(event, {
-    org: (s.certificateIssuer || orgName).toUpperCase(),
-    participant: sampleParticipant,
-    mention,
-    signatories,
-  });
+  // Date de délivrance : celle saisie, comme sur le PDF envoyé.
+  const certData = {
+    ...certificateDataFor(event, {
+      org: (s.certificateIssuer || orgName).toUpperCase(),
+      participant: sampleParticipant,
+      mention,
+      signatories,
+    }),
+    issuedShort: issuedDate,
+    issuedLong: issuedDate,
+  };
 
   async function selectModel(next: CertificateModel) {
     setModel(next);
@@ -238,95 +244,31 @@ export function TabCertificates({ event, tickets, orgName }: Props) {
               aria-label="Modèle de certificat"
               className="grid gap-3 sm:grid-cols-3"
             >
-              {/* A · Classique */}
-              <button
-                type="button"
-                role="radio"
-                aria-checked={model === "CLASSIC"}
-                onClick={() => void selectModel("CLASSIC")}
-                className={cn(
-                  "flex cursor-pointer flex-col gap-2.5 rounded-[12px] bg-ev-surface p-2.5 text-left transition-colors",
-                  model === "CLASSIC"
-                    ? "border-2 border-ev-primary"
-                    : "border border-ev-border hover:bg-ev-soft"
-                )}
-              >
-                <span className="flex h-[110px] items-center justify-center rounded-[6px] border border-[#E9DFC7] bg-[#FBF8F1]">
-                  <span
-                    className="flex h-[80%] w-[82%] flex-col items-center justify-center gap-1.5 border-[1.5px] border-[#0C4A3A]"
-                    style={{ outline: "1px solid #C79A3B", outlineOffset: "-5px" }}
+              {/* Vraies miniatures : le même rendu que le certificat envoyé. */}
+              {CERTIFICATE_MODELS.map((m) => {
+                const sel = model === m.id;
+                return (
+                  <button
+                    key={m.id}
+                    type="button"
+                    role="radio"
+                    aria-checked={sel}
+                    onClick={() => void selectModel(m.id)}
+                    className={cn(
+                      "flex cursor-pointer flex-col gap-2.5 rounded-[12px] bg-ev-surface p-2 text-left transition-colors",
+                      sel ? "border-2 border-ev-primary" : "border border-ev-border hover:bg-ev-soft"
+                    )}
                   >
-                    <span className="h-1 w-1/2 bg-[#0C4A3A]" />
-                    <span className="h-[7px] w-[64%] bg-[#16211C]" />
-                    <span className="h-[3px] w-2/5 bg-[#C79A3B]" />
-                  </span>
-                </span>
-                <span className="flex items-center justify-between">
-                  <span className="text-[13px] font-semibold text-ev-ink">A · Classique</span>
-                  {model === "CLASSIC" && (
-                    <CheckCircle2 className="size-[18px] fill-ev-primary text-white" />
-                  )}
-                </span>
-              </button>
-
-              {/* B · Moderne */}
-              <button
-                type="button"
-                role="radio"
-                aria-checked={model === "MODERN"}
-                onClick={() => void selectModel("MODERN")}
-                className={cn(
-                  "flex cursor-pointer flex-col gap-2.5 rounded-[12px] bg-ev-surface p-2.5 text-left transition-colors",
-                  model === "MODERN"
-                    ? "border-2 border-ev-primary"
-                    : "border border-ev-border hover:bg-ev-soft"
-                )}
-              >
-                <span className="flex h-[110px] overflow-hidden rounded-[6px] border border-[#E7E5DE] bg-white">
-                  <span className="w-[32%] bg-[#0C4A3A]" />
-                  <span className="flex flex-1 flex-col justify-center gap-1.5 px-3">
-                    <span className="h-[3px] w-2/5 bg-[#E39A1F]" />
-                    <span className="h-2 w-4/5 bg-[#16211C]" />
-                    <span className="h-[3px] w-3/5 bg-[#C9CEC9]" />
-                  </span>
-                </span>
-                <span className="flex items-center justify-between">
-                  <span className="text-[13px] font-semibold text-ev-ink">B · Moderne</span>
-                  {model === "MODERN" && (
-                    <CheckCircle2 className="size-[18px] fill-ev-primary text-white" />
-                  )}
-                </span>
-              </button>
-
-              {/* C · Exécutif */}
-              <button
-                type="button"
-                role="radio"
-                aria-checked={model === "EXECUTIVE"}
-                onClick={() => void selectModel("EXECUTIVE")}
-                className={cn(
-                  "flex cursor-pointer flex-col gap-2.5 rounded-[12px] bg-ev-surface p-2.5 text-left transition-colors",
-                  model === "EXECUTIVE"
-                    ? "border-2 border-ev-primary"
-                    : "border border-ev-border hover:bg-ev-soft"
-                )}
-              >
-                <span className="box-border flex h-[110px] flex-col justify-between rounded-[6px] border border-[#E7E5DE] bg-white p-3.5">
-                  <span className="h-[3px] w-[30%] bg-[#0C4A3A]" />
-                  <span className="h-2.5 w-3/4 bg-[#16211C]" />
-                  <span className="flex gap-1.5">
-                    <span className="h-[3px] flex-1 bg-[#C9CEC9]" />
-                    <span className="h-[3px] flex-1 bg-[#C9CEC9]" />
-                    <span className="h-[3px] flex-1 bg-[#C9CEC9]" />
-                  </span>
-                </span>
-                <span className="flex items-center justify-between">
-                  <span className="text-[13px] font-semibold text-ev-ink">C · Exécutif</span>
-                  {model === "EXECUTIVE" && (
-                    <CheckCircle2 className="size-[18px] fill-ev-primary text-white" />
-                  )}
-                </span>
-              </button>
+                    <ScaledCertificate model={m.id} d={certData} className="rounded-[6px] shadow-[0_0_0_1px_var(--ev-border)]" />
+                    <span className="flex items-center justify-between px-1 pb-1">
+                      <span className="text-[13px] font-semibold text-ev-ink">
+                        {m.letter} · {m.label}
+                      </span>
+                      {sel && <CheckCircle2 className="size-[18px] fill-ev-primary text-white" />}
+                    </span>
+                  </button>
+                );
+              })}
             </div>
           </EvCard>
 
@@ -657,6 +599,7 @@ function SignatoryDialog({
   const current = index !== null ? signatories[index] : { name: "", role: "" };
   const [name, setName] = useState(current.name ?? "");
   const [role, setRole] = useState(current.role);
+  const [signatureUrl, setSignatureUrl] = useState<string | null>(current.signatureUrl ?? null);
 
   if (index === null) return null;
 
@@ -688,6 +631,7 @@ function SignatoryDialog({
               placeholder={index === 0 ? "Organisateur" : "Intervenant principal"}
             />
           </label>
+          <SignatureField value={signatureUrl} onChange={setSignatureUrl} />
         </div>
         <DialogFooter className="gap-2">
           <EvButton onClick={onClose}>Annuler</EvButton>
@@ -697,6 +641,7 @@ function SignatoryDialog({
               onSave(index, {
                 name: name.trim(),
                 role: role.trim() || (index === 0 ? "Organisateur" : "Intervenant principal"),
+                signatureUrl,
               })
             }
           >

@@ -6,12 +6,13 @@ import { CheckCircle2, ChevronLeft, ChevronRight, ImagePlus, MoreHorizontal, Pen
 import { prepareImage } from "@/lib/image";
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
 import { EvButton, EvHr, EvSectionTitle, EvSwitch, EV_PORTAL } from "@/components/events/ev-ui";
-import { amount, formatEventDay, formulaColor } from "@/lib/event-meta";
+import { amount, formulaColor } from "@/lib/event-meta";
 import { TEMPLATE_CATEGORIES, TICKET_TEMPLATES, defaultTemplateFor, getTicketTemplate } from "@/lib/ticket-templates";
 import { cn } from "@/lib/utils";
 import { MIN_CONTRIBUTION, contributionFloor, isContribution } from "@/lib/contribution";
 import { capacityOf, newId, potentialOf, type EditorForm, type EditorFormula } from "./editor-model";
-import { KIND_LABEL, TicketMini } from "./ticket-design";
+import { KIND_LABEL } from "./ticket-design";
+import { TicketPdfPreview } from "./ticket-pdf-preview";
 
 type Props = { form: EditorForm; set: (patch: Partial<EditorForm>) => void; eventId: string | null };
 
@@ -201,7 +202,22 @@ export function StepTickets({ form, set, eventId }: Props) {
   const suggested = getTicketTemplate(defaultTemplateFor(form.eventType ?? undefined));
   const sampleFormula = form.formulas[form.formulas.length > 1 ? 1 : 0];
   const title = form.title || "Votre événement";
-  const meta = form.startDay ? `${formatEventDay(`${form.startDay}T${form.startTime || "00:00"}`).replace(/ \d{4}$/, "")} · ${form.startTime}${sampleFormula ? ` · ${amount(sampleFormula.price)} F` : ""}` : undefined;
+  // Aperçu réel : les réglages en cours, rendus par le serveur.
+  const iso = (day: string, time: string) => (day ? new Date(`${day}T${time || "00:00"}`).toISOString() : null);
+  const previewInput = {
+    template: current.id,
+    color: sampleFormula?.color ?? null,
+    title,
+    startDate: iso(form.startDay, form.startTime) ?? new Date().toISOString(),
+    endDate: iso(form.endDay, form.endTime),
+    location: [form.venueName, form.city].filter(Boolean).join(", ") || null,
+    imageUrl: form.imageUrl || null,
+    couplePhoto: form.ticketPhoto || null,
+    texts: form.ticketTexts,
+    formulaName: sampleFormula?.name ?? "Pass Standard",
+    price: sampleFormula?.price ?? 0,
+    contribution: sampleFormula ? isContribution(sampleFormula) : false,
+  };
 
   return (
     <div className="flex flex-col gap-7">
@@ -428,7 +444,9 @@ export function StepTickets({ form, set, eventId }: Props) {
                     className={cn("relative flex flex-col gap-2 rounded-[12px] p-1.5 text-left", sel ? "border-2 border-ev-primary bg-ev-selected" : "border border-ev-border bg-ev-surface hover:bg-ev-soft")}
                   >
                     <span className="flex flex-1 items-center justify-center overflow-hidden rounded-[8px] bg-[#F1EFE9]">
-                      <TicketMini id={t.id} title={title} formula={form.formulas[0]?.name ?? "Pass Standard"} price={form.formulas[0] ? `${amount(form.formulas[0].price)} F` : undefined} />
+                      {/* Rendu réel du modèle (même moteur que les billets envoyés). */}
+                      {/* eslint-disable-next-line @next/next/no-img-element */}
+                      <img src={`/ticket-previews/${t.id}.webp`} alt="" loading="lazy" className="max-h-full max-w-full object-contain" />
                     </span>
                     <span className="flex items-center justify-between px-1 pb-0.5">
                       <span className="flex flex-col gap-px">
@@ -467,11 +485,7 @@ export function StepTickets({ form, set, eventId }: Props) {
               <span className="text-[13px] font-semibold">Aperçu</span>
               <span className="text-xs text-ev-muted">{current.label}</span>
             </div>
-            <div className="flex min-h-[200px] flex-1 items-center justify-center overflow-hidden rounded-[10px] bg-ev-line">
-              <div className="origin-center scale-[1.35] sm:scale-[1.7]">
-                <TicketMini large id={current.id} title={title} formula={sampleFormula?.name ?? "Pass Standard"} meta={meta} price={form.ticketShowPrice && sampleFormula ? `${amount(sampleFormula.price)} F` : undefined} />
-              </div>
-            </div>
+            <TicketPdfPreview input={previewInput} className="flex-1" />
             <span className="text-xs leading-normal text-ev-muted">
               {current.category} · {KIND_LABEL[current.layout]}
               {form.eventType ? ` · suggéré pour ce type d'événement : ${suggested.category}` : ""}

@@ -1,7 +1,7 @@
 import axios, { type InternalAxiosRequestConfig } from "axios";
 import { API_URL } from "@/lib/constants";
 import { useAuthStore } from "@/stores/useAuthStore";
-import { TURNSTILE_HEADER, isTurnstileProtected, takeTurnstileToken } from "@/lib/turnstile";
+import { TURNSTILE_HEADER, isTurnstileProtected, isTurnstileRejection, resetTurnstile, takeTurnstileToken } from "@/lib/turnstile";
 
 // Client HTTP centralisé — voir LUMINA_FRONTEND_CONTEXT.md 4.2.
 // withCredentials: true envoie le cookie httpOnly refresh_token au backend
@@ -56,12 +56,27 @@ api.interceptors.request.use(async (config) => {
   return config;
 });
 
-type RetryableConfig = InternalAxiosRequestConfig & { _retry?: boolean };
+type RetryableConfig = InternalAxiosRequestConfig & { _retry?: boolean; _turnstileRetry?: boolean };
 
 api.interceptors.response.use(
   (res) => res,
   async (err) => {
     const original = err.config as RetryableConfig | undefined;
+
+    // Vérification anti-robot refusée (jeton pas encore prêt, expiré ou
+    // déjà utilisé) : un nouveau jeton est demandé et l'envoi refait une
+    // fois, sans que la personne ait à recommencer.
+    const body = err.response?.data as { error?: unknown; message?: unknown } | undefined;
+    if (original && !original._turnstileRetry && isTurnstileProtected(original.method, original.url) && isTurnstileRejection(err.response?.status, body?.error ?? body?.message)) {
+      original._turnstileRetry = true;
+      resetTurnstile();
+      const proof = await takeTurnstileToken(30_000);
+      if (proof) {
+        original.headers[TURNSTILE_HEADER] = proof;
+        return api(original);
+      }
+    }
+
     const isAuthRoute = original?.url?.startsWith("/auth/") ?? false;
     const hadSession = !!original?.headers?.Authorization;
 

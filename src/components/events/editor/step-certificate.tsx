@@ -5,6 +5,7 @@ import { Award, CheckCircle2, PenLine } from "lucide-react";
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { EV_PORTAL, EvButton, EvCheckbox, EvHr, EvInput, EvLabel } from "@/components/events/ev-ui";
 import { CERTIFICATE_MODELS, ScaledCertificate, certificateDataFor } from "@/components/events/certificates";
+import { SignatureField } from "@/components/events/signature-field";
 import { amount, formatEventDay, typeOption } from "@/lib/event-meta";
 import { cn } from "@/lib/utils";
 import type { CertificateRecipientsMode, CertificateSendMode, CertificateSignatory } from "@/types/events";
@@ -324,6 +325,7 @@ function SignatoryModal({
 }) {
   const [name, setName] = useState(signatory?.name ?? "");
   const [role, setRole] = useState(signatory?.role ?? (index === 0 ? "Organisateur" : "Intervenant principal"));
+  const [signatureUrl, setSignatureUrl] = useState<string | null>(signatory?.signatureUrl ?? null);
 
   return (
     <Dialog open onOpenChange={(v) => !v && onClose()}>
@@ -353,6 +355,7 @@ function SignatoryModal({
               placeholder={index === 0 ? "Organisateur" : "Intervenant principal"}
             />
           </label>
+          <SignatureField value={signatureUrl} onChange={setSignatureUrl} />
         </div>
         <DialogFooter className="gap-2">
           <EvButton onClick={onClose}>Annuler</EvButton>
@@ -362,6 +365,7 @@ function SignatoryModal({
               onSave(index, {
                 name: name.trim(),
                 role: role.trim() || (index === 0 ? "Organisateur" : "Intervenant principal"),
+                signatureUrl,
               });
             }}
           >
