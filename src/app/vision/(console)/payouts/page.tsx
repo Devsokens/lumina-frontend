@@ -82,15 +82,16 @@ const COOLING_MS = 48 * 60 * 60 * 1000;
 const LIMIT = 20;
 
 const francs = (n: number) => `${n.toLocaleString("fr-FR")} F`;
-const operatorName = (o: string) => (o === "MOOV" ? "Moov Money" : "Airtel Money");
+const operatorName = (o: string) => (o === "MOOV" ? "Moov Money" : o === "CARD" ? "Compte bancaire" : "Airtel Money");
 
 type Action =
-  | { kind: "approve" | "retry"; payout: Payout }
+  | { kind: "approve" | "retry" | "bank"; payout: Payout }
   | { kind: "resolve"; payout: Payout; part: Part; outcome: "SUCCESS" | "FAILED" }
   | { kind: "reject"; payout: Payout };
 
 const COPY = {
   approve: { title: "Valider ce versement", confirm: "Envoyer l'argent" },
+  bank: { title: "Virement bancaire effectué", confirm: "Marquer comme versé" },
   retry: { title: "Reprendre ce versement", confirm: "Reprendre" },
   resolve: { title: "Constater le résultat", confirm: "Confirmer" },
   reject: { title: "Refuser ce versement", confirm: "Refuser" },
@@ -102,6 +103,8 @@ export default function VisionPayoutsPage() {
   const [page, setPage] = useState(1);
   const [action, setAction] = useState<Action | null>(null);
   const [value, setValue] = useState("");
+  // Virement bancaire : référence du virement fait depuis la banque.
+  const [reference, setReference] = useState("");
   const [now] = useState(() => Date.now());
 
   const query = `?page=${page}&limit=${LIMIT}${filter === "ALL" ? "" : `&status=${filter}`}`;
@@ -128,6 +131,10 @@ export default function VisionPayoutsPage() {
         await visionApi.post(`/payouts/${id}/reject`, { reason: value.trim() });
         return "Versement refusé : les recettes sont rendues au solde.";
       }
+      if (a.kind === "bank") {
+        await visionApi.post(`/payouts/${id}/settle-bank`, { code: value, reference: reference.trim() });
+        return "Versement marqué comme effectué : l'organisateur est prévenu.";
+      }
       if (a.kind === "resolve") {
         await visionApi.post(`/payouts/${id}/parts/${a.part.id}/resolve`, { outcome: a.outcome, code: value });
         return "Résultat enregistré.";
@@ -148,12 +155,13 @@ export default function VisionPayoutsPage() {
 
   function open(a: Action) {
     setValue("");
+    setReference("");
     setAction(a);
   }
 
   const summary = data?.summary;
   const isReject = action?.kind === "reject";
-  const valid = isReject ? value.trim().length >= 3 : /^[0-9]{6}$/.test(value);
+  const valid = isReject ? value.trim().length >= 3 : /^[0-9]{6}$/.test(value) && (action?.kind !== "bank" || reference.trim().length >= 3);
 
   return (
     <>
@@ -204,7 +212,7 @@ export default function VisionPayoutsPage() {
                 key={p.id}
                 payout={p}
                 now={now}
-                onApprove={() => open({ kind: "approve", payout: p })}
+                onApprove={() => open({ kind: p.operator === "CARD" ? "bank" : "approve", payout: p })}
                 onReject={() => open({ kind: "reject", payout: p })}
                 onRetry={() => open({ kind: "retry", payout: p })}
                 onResolve={(part, outcome) => open({ kind: "resolve", payout: p, part, outcome })}
@@ -229,13 +237,17 @@ export default function VisionPayoutsPage() {
                 <DialogTitle>{COPY[action.kind].title}</DialogTitle>
                 <DialogDescription>
                   {action.kind === "approve" && `${francs(action.payout.amount)} seront envoyés à ${action.payout.holderName} (${operatorName(action.payout.operator)} ${action.payout.phone}). Cette opération ne peut pas être annulée.`}
+                  {action.kind === "bank" && `Part payée par carte : rapatriez d'abord les fonds carte depuis MyPVIT, faites le virement de ${francs(action.payout.amount)} à ${action.payout.holderName} (${action.payout.kycName ?? "banque"}, ${action.payout.phone}), puis indiquez sa référence. L'organisateur est prévenu.`}
                   {action.kind === "retry" && "Les envois incertains sont d'abord vérifiés chez PVit. Seul ce qui a échoué à coup sûr est renvoyé."}
                   {action.kind === "resolve" && (action.outcome === "SUCCESS" ? "À confirmer seulement si l'opération apparaît comme réussie dans votre espace MyPVIT." : "À confirmer seulement si l'opération a bien échoué dans votre espace MyPVIT : cette part pourra être renvoyée.")}
                   {action.kind === "reject" && "Les recettes reviennent au solde de l'organisation."}
                 </DialogDescription>
               </DialogHeader>
+              {action.kind === "bank" && (
+                <Input autoFocus value={reference} onChange={(e) => setReference(e.target.value)} maxLength={120} placeholder="Référence du virement" aria-label="Référence du virement" />
+              )}
               <Input
-                autoFocus
+                autoFocus={action.kind !== "bank"}
                 value={value}
                 onChange={(e) => setValue(isReject ? e.target.value : e.target.value.replace(/\D/g, "").slice(0, 6))}
                 inputMode={isReject ? "text" : "numeric"}
@@ -315,7 +327,7 @@ function PayoutCard({
         <div className="space-y-1.5">
           <Fact label={operatorName(p.operator)}>{p.phone}</Fact>
           <Fact label="Titulaire déclaré">{p.holderName}</Fact>
-          <Fact label="Nom chez l'opérateur">
+          <Fact label={p.operator === "CARD" ? "Banque" : "Nom chez l'opérateur"}>
             {p.kycName ?? (unknownNumber ? <span className="text-red-400">Numéro inconnu</span> : <span className="text-amber-400">Non vérifié</span>)}
           </Fact>
         </div>
@@ -369,7 +381,7 @@ function PayoutCard({
           )}
           {p.status === "PENDING_APPROVAL" ? (
             <Button size="sm" disabled={blocked} onClick={onApprove}>
-              Valider et envoyer
+              {p.operator === "CARD" ? "Marquer comme versé" : "Valider et envoyer"}
             </Button>
           ) : (
             <Button size="sm" disabled={blocked} onClick={onRetry}>

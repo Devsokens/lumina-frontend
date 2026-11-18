@@ -123,8 +123,14 @@ export function useDisconnectGmail() {
 // ---------- Comptes de versement (Tenant.settings.payouts) ----------
 
 export type PayoutOperator = "AIRTEL" | "MOOV";
+// Circuit d'un versement : l'argent payé par Airtel repart vers un numéro
+// Airtel, celui payé par Moov vers un numéro Moov, celui payé par carte par
+// virement bancaire (PVit ne transfère pas entre ses comptes).
+export type PayoutChannel = PayoutOperator | "CARD";
 export type PayoutAccount = { operator: PayoutOperator; phone: string; holderName: string; verifiedAt: string | null };
-export type Payouts = { frequency: "AFTER_EVENT" | "WEEKLY"; accounts: PayoutAccount[] };
+// Compte bancaire : reçoit par virement la part payée par carte.
+export type PayoutBank = { holderName: string; bankName: string; accountNumber: string; changedAt?: string | null };
+export type Payouts = { frequency: "AFTER_EVENT" | "WEEKLY"; accounts: PayoutAccount[]; bank: PayoutBank | null };
 
 export type PayoutRow = {
   id: string;
@@ -133,7 +139,7 @@ export type PayoutRow = {
   gross: number;
   commission: number;
   refunds: number;
-  operator: PayoutOperator;
+  operator: PayoutChannel;
   phone: string;
   // CONTRIBUTION : retrait de cotisations demandé avant l'événement.
   kind?: "STANDARD" | "CONTRIBUTION";
@@ -155,6 +161,10 @@ export type PayoutSummary = {
   rules?: PaymentRules;
   // Ventes versées sans attendre la fin de l'événement (accord avec GiyaX).
   earlyPayout?: boolean;
+  // Par circuit : à venir, en cours, versé.
+  channels?: Record<PayoutChannel, { upcoming: number; inProgress: number; paidOut: number }>;
+  // Circuits dont une part attend faute de numéro ou de compte bancaire.
+  missing?: PayoutChannel[];
   balance: { sold: number; commission: number; refunds: number; paidOut: number; inProgress: number; upcoming: number };
   payouts: PayoutRow[];
 };
@@ -167,7 +177,8 @@ export function usePayoutSummary(enabled = true) {
 export function useSavePayouts() {
   const invalidate = useInvalidate("admin-tenant");
   return useMutation({
-    mutationFn: (body: { frequency: Payouts["frequency"]; accounts: Omit<PayoutAccount, "verifiedAt">[] }) =>
+    // bank absent : inchangé ; null : supprimé.
+    mutationFn: (body: { frequency: Payouts["frequency"]; accounts: Omit<PayoutAccount, "verifiedAt">[]; bank?: Omit<PayoutBank, "changedAt"> | null }) =>
       api.put("/admin/tenant/payouts", body),
     onSuccess: invalidate,
   });

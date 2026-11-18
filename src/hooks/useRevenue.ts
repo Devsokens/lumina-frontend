@@ -2,7 +2,7 @@
 
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { api, type ApiResponse } from "@/lib/api";
-import type { PayoutRow } from "@/hooks/useAdmin";
+import type { PayoutChannel, PayoutRow } from "@/hooks/useAdmin";
 
 // Module « Revenus » (propriétaire) — routes /admin/payouts/*
 // (docs/API_CONTRACT.md). Montants en francs CFA entiers, comme le grand
@@ -22,6 +22,10 @@ export type EventRevenue = {
   paidOut: number;
   inProgress: number;
   upcoming: number;
+  // Net par circuit de versement.
+  channels?: Record<PayoutChannel, number>;
+  // Versement à partir de cette date (null : versement anticipé).
+  payableAt?: string | null;
   // Cotisations pas encore versées et fenêtre de retrait avant l'événement
   // (phase : avant, pendant ou après la fenêtre ; open : retrait possible
   // maintenant). null : aucune cotisation à retirer.
@@ -40,6 +44,7 @@ export type StatementLine = {
   commission: number;
   net: number;
   commissionBps: number;
+  channel?: PayoutChannel;
   state: MoneyState;
   payoutId: string | null;
   paidAt: string | null;
@@ -86,13 +91,16 @@ export function fetchStatementExport(eventId?: string) {
   return get<{ truncated: boolean; rows: StatementLine[] }>(`/admin/payouts/statement/export${query({ eventId })}`);
 }
 
+// Un versement par circuit ; missing : circuits sans compte (part différée).
+export type WithdrawResult = { payouts: { id: string; status: string; amount: number; operator: PayoutChannel }[]; amount: number; missing: PayoutChannel[] };
+
 // Retrait des cotisations d'un événement (fenêtre fixée par GiyaX).
 export function useWithdrawContributions() {
   const qc = useQueryClient();
   return useMutation({
     mutationFn: async (eventId: string) => {
-      const { data } = await api.post<ApiResponse<{ id: string; status: string; amount: number }>>(`/admin/payouts/events/${eventId}/contributions/withdraw`);
-      return data.data as { id: string; status: string; amount: number };
+      const { data } = await api.post<ApiResponse<WithdrawResult>>(`/admin/payouts/events/${eventId}/contributions/withdraw`);
+      return data.data as WithdrawResult;
     },
     onSuccess: () => {
       void qc.invalidateQueries({ queryKey: ["revenue-events"] });
