@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useRef } from "react";
+import { useEffect, useRef, useState } from "react";
 import { TURNSTILE_SCRIPT, TURNSTILE_SITE_KEY, onTurnstileConsumed, setTurnstileToken } from "@/lib/turnstile";
 import { cn } from "@/lib/utils";
 
@@ -40,6 +40,8 @@ function loadTurnstile(): Promise<TurnstileApi | null> {
 
 export function TurnstileWidget({ className }: { className?: string }) {
   const box = useRef<HTMLDivElement>(null);
+  // Turnstile demande une action (case à cocher) : on le dit clairement.
+  const [interactive, setInteractive] = useState(false);
 
   useEffect(() => {
     if (!TURNSTILE_SITE_KEY || !box.current) return;
@@ -52,9 +54,24 @@ export function TurnstileWidget({ className }: { className?: string }) {
         sitekey: TURNSTILE_SITE_KEY,
         appearance: "interaction-only",
         language: "fr",
-        callback: (t: string) => setTurnstileToken(t),
+        // Nouvelle tentative et renouvellement du jeton expiré, sans action.
+        retry: "auto",
+        "refresh-expired": "auto",
+        callback: (t: string) => {
+          setInteractive(false);
+          setTurnstileToken(t);
+        },
         "expired-callback": () => setTurnstileToken(null),
-        "error-callback": () => setTurnstileToken(null),
+        "before-interactive-callback": () => setInteractive(true),
+        "after-interactive-callback": () => setInteractive(false),
+        // Erreur (réseau coupé…) : nouvel essai au bout de quelques secondes.
+        "error-callback": () => {
+          setTurnstileToken(null);
+          setTimeout(() => {
+            if (id && !cancelled && window.turnstile) window.turnstile.reset(id);
+          }, 3000);
+          return true;
+        },
       });
     });
     const off = onTurnstileConsumed(() => {
@@ -69,5 +86,10 @@ export function TurnstileWidget({ className }: { className?: string }) {
   }, []);
 
   if (!TURNSTILE_SITE_KEY) return null;
-  return <div ref={box} className={cn("flex justify-center empty:hidden", className)} />;
+  return (
+    <div className={cn("flex flex-col items-center gap-1.5", className)}>
+      {interactive && <p className="m-0 text-center text-[13px] font-medium text-amber-600">Cochez la case ci-dessous pour confirmer que vous n&apos;êtes pas un robot.</p>}
+      <div ref={box} className="flex justify-center empty:hidden" />
+    </div>
+  );
 }
