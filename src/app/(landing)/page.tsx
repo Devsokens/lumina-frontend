@@ -1,3 +1,4 @@
+import type { Metadata } from "next";
 import { HeroSection } from "@/components/landing/hero-section";
 import { ClientLogos } from "@/components/landing/client-logos";
 import { SectorShowcaseHub } from "@/components/landing/sector-showcase-hub";
@@ -5,6 +6,10 @@ import { PricingPreview } from "@/components/landing/pricing-preview";
 import { TechStackSection } from "@/components/landing/tech-stack-section";
 import { FaqSection } from "@/components/landing/faq-section";
 import { FinalCtaSection } from "@/components/landing/final-cta-section";
+
+// Adresse de référence de la page d'accueil (variantes sans www, http ou
+// giyax.vercel.app : redirigées ici).
+export const metadata: Metadata = { alternates: { canonical: "/" } };
 
 export default function LandingPage() {
   return (
