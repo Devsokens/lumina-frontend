@@ -9,12 +9,14 @@ import { useAuth } from "@/hooks/useAuth";
 import { apiError } from "@/lib/api";
 import type { AuthUser } from "@/stores/useAuthStore";
 import { TurnstileWidget } from "@/components/shared/turnstile-widget";
+import { useTurnstileReady } from "@/lib/turnstile";
 
 const PHONE_FORMAT = /^\+?[0-9]{8,15}$/;
 
 // Connexion par code SMS (POST /auth/otp/request puis /auth/otp/verify).
 // Sert aussi de recours en cas de mot de passe oublié.
 export function OtpLogin({ onSuccess }: { onSuccess: (user: AuthUser) => void }) {
+  const humanReady = useTurnstileReady();
   const { requestOtp, verifyOtp } = useAuth();
   const [phone, setPhone] = useState("");
   const [code, setCode] = useState("");
@@ -99,8 +101,8 @@ export function OtpLogin({ onSuccess }: { onSuccess: (user: AuthUser) => void })
       ) : (
         <>
           <TurnstileWidget />
-          <Button type="button" className="h-11 w-full rounded-xl" onClick={send} disabled={busy}>
-            {busy ? "Envoi…" : "Recevoir un code"}
+          <Button type="button" className="h-11 w-full rounded-xl" onClick={send} disabled={busy || !humanReady}>
+            {busy ? "Envoi…" : humanReady ? "Recevoir un code" : "Vérification de sécurité…"}
           </Button>
         </>
       )}

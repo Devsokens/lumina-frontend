@@ -19,6 +19,7 @@ import {
   type ResetPasswordInput,
 } from "@/lib/validations";
 import { TurnstileWidget } from "@/components/shared/turnstile-widget";
+import { useTurnstileReady } from "@/lib/turnstile";
 
 // Mot de passe oublié : 1) adresse e-mail → code à 6 chiffres envoyé par
 // GiyaX ; 2) code + nouveau mot de passe, puis connexion directe.
@@ -44,6 +45,7 @@ function ForgotPassword() {
 }
 
 function EmailStep({ initial, onSent }: { initial: string; onSent: (email: string) => void }) {
+  const humanReady = useTurnstileReady();
   const { requestPasswordReset } = useAuth();
   const {
     register,
@@ -81,8 +83,8 @@ function EmailStep({ initial, onSent }: { initial: string; onSent: (email: strin
           {...register("email")}
         />
         <TurnstileWidget />
-        <Button type="submit" className="h-12 w-full rounded-xl text-base font-semibold shadow-md shadow-primary/20" disabled={isSubmitting}>
-          {isSubmitting ? "Envoi…" : "Recevoir un code"}
+        <Button type="submit" className="h-12 w-full rounded-xl text-base font-semibold shadow-md shadow-primary/20" disabled={isSubmitting || !humanReady}>
+          {isSubmitting ? "Envoi…" : humanReady ? "Recevoir un code" : "Vérification de sécurité…"}
         </Button>
       </form>
       <SupportNote />

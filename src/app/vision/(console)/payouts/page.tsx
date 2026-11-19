@@ -51,7 +51,7 @@ type Response = {
   page: number;
   limit: number;
   total: number;
-  summary: { test: boolean; toApproveCount: number; toApproveAmount: number; owed: number; commission: number; paid: number };
+  summary: { test: boolean; toApproveCount: number; toApproveAmount: number; owed: number; commission: number; paid: number; coolingHours?: number };
 };
 
 type Tone = "muted" | "good" | "warn" | "bad" | "accent";
@@ -78,7 +78,6 @@ const FILTERS = [
   { value: "PAID", label: "Versés" },
   { value: "ALL", label: "Tous" },
 ];
-const COOLING_MS = 48 * 60 * 60 * 1000;
 const LIMIT = 20;
 
 const francs = (n: number) => `${n.toLocaleString("fr-FR")} F`;
@@ -91,7 +90,7 @@ type Action =
 
 const COPY = {
   approve: { title: "Valider ce versement", confirm: "Envoyer l'argent" },
-  bank: { title: "Virement bancaire effectué", confirm: "Marquer comme versé" },
+  bank: { title: "Versement fait hors GiyaX", confirm: "Marquer comme versé" },
   retry: { title: "Reprendre ce versement", confirm: "Reprendre" },
   resolve: { title: "Constater le résultat", confirm: "Confirmer" },
   reject: { title: "Refuser ce versement", confirm: "Refuser" },
@@ -212,7 +211,9 @@ export default function VisionPayoutsPage() {
                 key={p.id}
                 payout={p}
                 now={now}
+                coolingHours={summary.coolingHours ?? 48}
                 onApprove={() => open({ kind: p.operator === "CARD" ? "bank" : "approve", payout: p })}
+                onManual={() => open({ kind: "bank", payout: p })}
                 onReject={() => open({ kind: "reject", payout: p })}
                 onRetry={() => open({ kind: "retry", payout: p })}
                 onResolve={(part, outcome) => open({ kind: "resolve", payout: p, part, outcome })}
@@ -237,7 +238,10 @@ export default function VisionPayoutsPage() {
                 <DialogTitle>{COPY[action.kind].title}</DialogTitle>
                 <DialogDescription>
                   {action.kind === "approve" && `${francs(action.payout.amount)} seront envoyés à ${action.payout.holderName} (${operatorName(action.payout.operator)} ${action.payout.phone}). Cette opération ne peut pas être annulée.`}
-                  {action.kind === "bank" && `Part payée par carte : rapatriez d'abord les fonds carte depuis MyPVIT, faites le virement de ${francs(action.payout.amount)} à ${action.payout.holderName} (${action.payout.kycName ?? "banque"}, ${action.payout.phone}), puis indiquez sa référence. L'organisateur est prévenu.`}
+                  {action.kind === "bank" &&
+                    (action.payout.operator === "CARD"
+                      ? `Part payée par carte : rapatriez d'abord les fonds carte depuis MyPVIT, faites le virement de ${francs(action.payout.amount)} à ${action.payout.holderName} (${action.payout.kycName ?? "banque"}, ${action.payout.phone}), puis indiquez sa référence. L'organisateur est prévenu.`
+                      : `À utiliser seulement si ${francs(action.payout.amount)} ont déjà été versés à ${action.payout.holderName} (${operatorName(action.payout.operator)} ${action.payout.phone}) en dehors de GiyaX, par exemple depuis MyPVIT. Le versement est clôturé et ne reviendra plus ; l'organisateur est prévenu. Indiquez la référence de l'opération.`)}
                   {action.kind === "retry" && "Les envois incertains sont d'abord vérifiés chez PVit. Seul ce qui a échoué à coup sûr est renvoyé."}
                   {action.kind === "resolve" && (action.outcome === "SUCCESS" ? "À confirmer seulement si l'opération apparaît comme réussie dans votre espace MyPVIT." : "À confirmer seulement si l'opération a bien échoué dans votre espace MyPVIT : cette part pourra être renvoyée.")}
                   {action.kind === "reject" && "Les recettes reviennent au solde de l'organisation."}
@@ -288,16 +292,20 @@ function PayoutCard({
   onReject,
   onRetry,
   onResolve,
+  onManual,
+  coolingHours,
 }: {
   payout: Payout;
   now: number;
+  coolingHours: number;
+  onManual: () => void;
   onApprove: () => void;
   onReject: () => void;
   onRetry: () => void;
   onResolve: (part: Part, outcome: "SUCCESS" | "FAILED") => void;
 }) {
   const status = STATUS[p.status] ?? { label: p.status, tone: "muted" as Tone };
-  const recentChange = p.accountChangedAt && now - new Date(p.accountChangedAt).getTime() < COOLING_MS;
+  const recentChange = coolingHours > 0 && p.accountChangedAt && now - new Date(p.accountChangedAt).getTime() < coolingHours * 60 * 60 * 1000;
   const unknownNumber = p.kycStatus === "UNKNOWN_NUMBER";
   const blocked = unknownNumber || !!recentChange;
   const noneSent = p.parts.every((x) => x.status === "PLANNED" || x.status === "FAILED");
@@ -336,7 +344,7 @@ function PayoutCard({
       {(p.firstToNumber || recentChange) && (
         <div className="mt-3 flex flex-wrap gap-2">
           {p.firstToNumber && <Pill tone="warn">Premier versement vers ce numéro</Pill>}
-          {recentChange && <Pill tone="bad">Numéro modifié {relative(p.accountChangedAt)} : bloqué 48 h</Pill>}
+          {recentChange && <Pill tone="bad">Numéro modifié {relative(p.accountChangedAt)} : bloqué {coolingHours} h</Pill>}
         </div>
       )}
 
@@ -377,6 +385,12 @@ function PayoutCard({
           {(p.status === "PENDING_APPROVAL" || (p.status === "FAILED" && noneSent)) && (
             <Button variant="outline" size="sm" onClick={onReject}>
               Refuser
+            </Button>
+          )}
+          {/* Déjà payé à la main (MyPVIT, rapatriement…) : on le clôture, il ne revient plus. */}
+          {p.operator !== "CARD" && (p.status === "PENDING_APPROVAL" || (p.status === "FAILED" && noneSent)) && (
+            <Button variant="outline" size="sm" onClick={onManual}>
+              Déjà versé hors GiyaX
             </Button>
           )}
           {p.status === "PENDING_APPROVAL" ? (

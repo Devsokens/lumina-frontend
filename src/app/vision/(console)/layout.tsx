@@ -10,15 +10,13 @@ import {
   Building2,
   Coins,
   CreditCard,
-  Globe,
   Headset,
   KeyRound,
   LayoutDashboard,
   LogOut,
-  Mail,
   Menu,
-  Percent,
   ScrollText,
+  Settings,
   ShieldCheck,
   Users,
   X,
@@ -36,9 +34,8 @@ const NAV = [
   { href: "/vision/costs", label: "Coûts & revenus", icon: Coins },
   { href: "/vision/payments", label: "Paiements", icon: CreditCard },
   { href: "/vision/payouts", label: "Versements", icon: Banknote },
-  { href: "/vision/commission", label: "Frais et reversements", icon: Percent },
-  { href: "/vision/domains", label: "Domaines", icon: Globe },
-  { href: "/vision/emails", label: "E-mails", icon: Mail },
+  // Frais et reversements, e-mails d'envoi, domaines : regroupés.
+  { href: "/vision/configuration", label: "Configuration", icon: Settings },
   { href: "/vision/logs", label: "Journal & admins", icon: ScrollText },
 ];
 

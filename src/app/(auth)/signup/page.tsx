@@ -27,6 +27,7 @@ import { LEGAL_LINKS } from "@/lib/legal";
 import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
 import { TurnstileWidget } from "@/components/shared/turnstile-widget";
+import { useTurnstileReady } from "@/lib/turnstile";
 
 const SECTOR_OPTIONS: { id: Sector; label: string; icon: React.ComponentType<{ className?: string }> }[] = [
   { id: "EVENT", label: "Événementiel", icon: PartyPopper },
@@ -51,6 +52,7 @@ export default function SignupPage() {
 }
 
 function SignupContent() {
+  const humanReady = useTurnstileReady();
   const router = useRouter();
   const searchParams = useSearchParams();
   const { signup } = useAuth();
@@ -535,11 +537,11 @@ function SignupContent() {
             <GiyaxOverlay show={submitting} label="Création de votre compte…" />
             <Button
               type="button"
-              disabled={submitting || !acceptedTerms}
+              disabled={submitting || !acceptedTerms || !humanReady}
               onClick={handleSubmit}
               className="h-11 flex-1 rounded-xl text-sm font-semibold shadow-md shadow-primary/20"
             >
-              {submitting ? "Création en cours..." : "Créer mon compte"}
+              {submitting ? "Création en cours..." : humanReady ? "Créer mon compte" : "Vérification de sécurité…"}
             </Button>
           </div>
         </div>
