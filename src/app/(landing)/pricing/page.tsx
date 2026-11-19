@@ -4,6 +4,7 @@ import { PricingPreview } from "@/components/landing/pricing-preview";
 export const metadata: Metadata = {
   title: "Tarifs · GiyaX",
   description: "Démarrez gratuitement avec GiyaX. Les formules Pro et Entreprise arrivent très prochainement.",
+  alternates: { canonical: "/pricing" },
 };
 
 // Même présentation que la section « Tarifs » de la page d'accueil : une
