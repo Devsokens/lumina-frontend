@@ -199,6 +199,8 @@ export type Event = {
   questionnaire?: QuestionnaireQuestion[];
   settings?: import("@/lib/events").EventSettings;
   notifyParticipants?: boolean;
+  // Rappel e-mail aux participants 24 h avant le début.
+  reminderEnabled?: boolean;
   startDate: string;
   endDate: string | null;
   location: string | null;

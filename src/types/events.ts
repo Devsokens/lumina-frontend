@@ -75,6 +75,9 @@ export type ApiEvent = {
   ticketTypes: ApiTicketType[];
   // Questionnaire et modèles (Event.settings).
   settings?: import("@/lib/events").EventSettings;
+  // Rappel e-mail aux participants 24 h avant le début ; date d'envoi.
+  reminderEnabled?: boolean;
+  reminderSentAt?: string | null;
 };
 
 export type ApiTicketStatus = "PENDING" | "VALID" | "USED" | "CANCELLED" | "REFUNDED";

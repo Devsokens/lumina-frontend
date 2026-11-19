@@ -65,6 +65,10 @@ export type EditorForm = {
   certificateSendMode: CertificateSendMode;
   certificateChannels: CertificateChannels;
   notifyParticipants: boolean;
+  // Rappel e-mail 24 h avant. null (nouvel événement non touché) : réglage
+  // par défaut de l'organisation, appliqué par le serveur.
+  reminderEnabled: boolean | null;
+  reminderSentAt: string | null;
   // Page publique de l'événement.
   program: ProgramItem[];
   speakers: Speaker[];
@@ -127,6 +131,8 @@ export function formFromEvent(e: ApiEvent | null, issuer: string): EditorForm {
       certificateSendMode: "AUTO_NEXT_DAY",
       certificateChannels: { email: true, whatsapp: true, portal: false },
       notifyParticipants: true,
+      reminderEnabled: null,
+      reminderSentAt: null,
       program: [],
       speakers: [],
       album: [],
@@ -190,6 +196,8 @@ export function formFromEvent(e: ApiEvent | null, issuer: string): EditorForm {
     certificateSendMode: s.certificateSendMode ?? "AUTO_NEXT_DAY",
     certificateChannels: s.certificateChannels ?? { email: true, whatsapp: true, portal: false },
     notifyParticipants: true,
+    reminderEnabled: e.reminderEnabled ?? false,
+    reminderSentAt: e.reminderSentAt ?? null,
   };
 }
 
@@ -238,6 +246,7 @@ export function toEventForm(form: EditorForm): Partial<Event> {
     hasCertificate: form.hasCertificate,
     certificateTemplate: form.certificateModel,
     notifyParticipants: form.notifyParticipants,
+    ...(form.reminderEnabled !== null ? { reminderEnabled: form.reminderEnabled } : {}),
     settings: {
       questionnaireEnabled: form.questionnaireEnabled,
       questionnaire,

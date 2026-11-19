@@ -1,7 +1,7 @@
 "use client";
 
 import { useState } from "react";
-import { Award, CheckCircle2, PenLine } from "lucide-react";
+import { Award, BellRing, CheckCircle2, PenLine } from "lucide-react";
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { EV_PORTAL, EvButton, EvCheckbox, EvHr, EvInput, EvLabel } from "@/components/events/ev-ui";
 import { CERTIFICATE_MODELS, ScaledCertificate, certificateDataFor } from "@/components/events/certificates";
@@ -11,6 +11,14 @@ import { cn } from "@/lib/utils";
 import type { CertificateRecipientsMode, CertificateSendMode, CertificateSignatory } from "@/types/events";
 import { capacityOf, potentialOf, type EditorForm } from "./editor-model";
 import { BigSwitch } from "./step-questionnaire";
+import { useAdminTenant } from "@/hooks/useEvents";
+
+// Rappel coché d'office sur les nouveaux événements si l'organisation l'a
+// activé (Paramètres · E-mails et messages · Rappel).
+function reminderDefault(settings: Record<string, unknown> | undefined) {
+  const emails = settings?.emails as { templates?: { reminder?: { enabled?: boolean } } } | undefined;
+  return emails?.templates?.reminder?.enabled === true;
+}
 
 type Props = {
   form: EditorForm;
@@ -73,6 +81,8 @@ const RECIPIENT_OPTIONS: { id: CertificateRecipientsMode; title: string; sub: st
 
 export function StepCertificate({ form, set, soldCount, goTo }: Props) {
   const [editingSigIndex, setEditingSigIndex] = useState<0 | 1 | null>(null);
+  const { data: tenant } = useAdminTenant();
+  const reminderOn = form.reminderEnabled ?? reminderDefault(tenant?.settings);
 
   const sample = certificateDataFor(
     {
@@ -254,6 +264,25 @@ export function StepCertificate({ form, set, soldCount, goTo }: Props) {
           </label>
         </section>
       </div>
+
+      <EvHr />
+
+      <section className="flex items-center justify-between gap-4 rounded-[12px] border border-ev-border bg-ev-soft px-[18px] py-4">
+        <div className="flex items-center gap-3.5">
+          <span className="flex size-[38px] shrink-0 items-center justify-center rounded-[10px] bg-ev-mint text-ev-primary dark:text-ev-link">
+            <BellRing className="size-5" />
+          </span>
+          <div className="flex flex-col gap-1">
+            <h2 className="m-0 text-[15px] font-semibold">Rappel aux participants</h2>
+            <span className="text-[13px] text-ev-muted">
+              {form.reminderSentAt
+                ? "Déjà envoyé pour cette date. Si vous changez la date de début, il repartira 24 h avant la nouvelle date."
+                : "Un e-mail à tous les inscrits 24 h avant le début. Texte modifiable dans Paramètres · E-mails et messages."}
+            </span>
+          </div>
+        </div>
+        <BigSwitch checked={reminderOn} onChange={(v) => set({ reminderEnabled: v })} label="Rappel aux participants 24 h avant" />
+      </section>
 
       <EvHr />
 
