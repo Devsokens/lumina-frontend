@@ -18,7 +18,7 @@ import { formatXAF } from "@/lib/format";
 // stockés en points de base (500 = 5 %) : voir PlatformSettingsService côté
 // API. Seuls les champs modifiés sont envoyés.
 
-type RuleKey = "buyerFeeBps" | "ticketCommissionBps" | "payoutHoldDays" | "contributionOpenHours" | "contributionCloseHours" | "contributionMinPayout";
+type RuleKey = "buyerFeeBps" | "ticketCommissionBps" | "payoutHoldDays" | "contributionOpenHours" | "contributionCloseHours" | "contributionMinPayout" | "accountCoolingHours";
 type Rules = Record<RuleKey, number>;
 type Settings = Rules & {
   isDefault: boolean;
@@ -43,6 +43,10 @@ const GROUPS: { title: string; fields: Field[] }[] = [
   {
     title: "Reversement des billets",
     fields: [{ key: "payoutHoldDays", label: "Délai après la fin de l'événement", unit: "jours", help: "Les recettes d'un événement ne sont versées qu'une fois ce délai passé, pour toutes les organisations." }],
+  },
+  {
+    title: "Sécurité des versements",
+    fields: [{ key: "accountCoolingHours", label: "Délai après un changement de numéro", unit: "heures", help: "Protège d'un compte piraté : rien n'est versé vers un numéro ou un compte bancaire modifié depuis moins longtemps. 0 = aucun délai." }],
   },
   {
     title: "Retrait des cotisations",

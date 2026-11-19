@@ -154,6 +154,8 @@ export type PaymentRules = {
   contributionOpenHours: number;
   contributionCloseHours: number;
   contributionMinPayout: number;
+  // Délai (heures) après un changement de numéro de versement.
+  accountCoolingHours?: number;
 };
 export type PayoutSummary = {
   test: boolean;

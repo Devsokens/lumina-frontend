@@ -38,6 +38,10 @@ function loadTurnstile(): Promise<TurnstileApi | null> {
   return loading;
 }
 
+// Script chargé dès l'ouverture de la page (pas au montage du widget) : la
+// vérification démarre plus tôt et le bouton se débloque plus vite.
+if (typeof window !== "undefined" && TURNSTILE_SITE_KEY) void loadTurnstile();
+
 export function TurnstileWidget({ className }: { className?: string }) {
   const box = useRef<HTMLDivElement>(null);
   // Turnstile demande une action (case à cocher) : on le dit clairement.

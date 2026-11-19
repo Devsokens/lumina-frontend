@@ -19,6 +19,7 @@ import { FloatingField } from "@/components/shared/floating-field";
 import { API_URL } from "@/lib/constants";
 import { FEATURES } from "@/lib/features";
 import { TurnstileWidget } from "@/components/shared/turnstile-widget";
+import { useTurnstileReady } from "@/lib/turnstile";
 
 // Accès démo sans backend : uniquement si NEXT_PUBLIC_DEMO_MODE=true
 // (prévisualisation des écrans). Jamais en production.
@@ -42,6 +43,7 @@ export default function LoginPage() {
 }
 
 function LoginContent() {
+  const humanReady = useTurnstileReady();
   const router = useRouter();
   const searchParams = useSearchParams();
   const [mode, setMode] = useState<"password" | "otp">("password");
@@ -244,9 +246,9 @@ function LoginContent() {
           <Button
             type="submit"
             className="h-12 w-full rounded-xl text-base font-semibold shadow-md shadow-primary/20"
-            disabled={submitting}
+            disabled={submitting || !humanReady}
           >
-            {submitting ? "Connexion..." : "Se connecter"}
+            {submitting ? "Connexion..." : humanReady ? "Se connecter" : "Vérification de sécurité…"}
           </Button>
         </form>
       )}

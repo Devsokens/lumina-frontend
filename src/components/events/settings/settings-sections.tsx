@@ -384,7 +384,7 @@ export function SettingsPayments({ tenant, canEdit }: { tenant: Tenant; canEdit:
       <SettingsHeading title="Paiements" sub="Les participants paient par Mobile Money. Les fonds sont reversés sur les comptes ci-dessous." />
       <InfoNote>
         Les encaissements sont traités par notre prestataire de paiement sécurisé. Vos recettes sont reversées {hold} jour{hold > 1 ? "s" : ""} après la fin de chaque événement, par le même moyen que celui utilisé par vos acheteurs : l&apos;argent payé par Airtel Money arrive sur votre numéro Airtel, celui payé par Moov Money sur votre numéro Moov, celui payé par carte sur votre compte bancaire. Renseignez un compte pour chaque moyen que vous acceptez.
-        {!FEATURES.sms && " Notre équipe confirme le numéro de versement avec vous avant le premier virement."} Un numéro modifié n&apos;est utilisable qu&apos;après 48 h, pour votre sécurité.
+        {!FEATURES.sms && " Notre équipe confirme le numéro de versement avec vous avant le premier virement."}{(rules?.accountCoolingHours ?? 48) > 0 && ` Un numéro modifié n'est utilisable qu'après ${rules?.accountCoolingHours ?? 48} h, pour votre sécurité.`}
       </InfoNote>
       {canEdit && (
         <SettingsCard className="flex flex-wrap items-center justify-between gap-3 px-5 py-4 sm:px-6">
