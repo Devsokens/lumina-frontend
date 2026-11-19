@@ -16,6 +16,7 @@ import { EvButton, EvCard, EvIconButton, EvPill, EvProgress, EvSegmented, EV_POR
 import { AwardIcon, TypeIcon } from "@/components/events/ev-icons";
 import { EventEditor } from "@/components/events/editor/event-editor";
 import { useAdminEvents, useAdminTenant, useDeleteEvent, useEventStats, useSetEventStatus } from "@/hooks/useEvents";
+import { ReminderMenuItem } from "@/components/events/reminder-menu-item";
 import { apiErrorMessage } from "@/lib/events";
 import { publicSiteUrl } from "@/lib/tenant-url";
 import { amount, daysUntilLabel, EVENT_TYPE_OPTIONS, formatEventDay, pct, STATUS_META, typeOption } from "@/lib/event-meta";
@@ -119,6 +120,7 @@ export default function EventsListPage() {
         {(e.status === "DRAFT" || onSale(e)) && (
           <DropdownMenuItem onClick={() => void toggleSale(e)}>{onSale(e) ? "Mettre la vente en pause" : "Ouvrir la vente"}</DropdownMenuItem>
         )}
+        <ReminderMenuItem event={e} />
         <DropdownMenuSeparator />
         <DropdownMenuItem className="text-ev-danger focus:text-ev-danger" onClick={() => void remove(e)}>
           Supprimer

@@ -15,6 +15,7 @@ import {
 } from "@/components/ui/dropdown-menu";
 import { EV_PORTAL, EvButton, EvIconButton, EvPill } from "@/components/events/ev-ui";
 import { EventEditor } from "@/components/events/editor/event-editor";
+import { ReminderMenuItem } from "@/components/events/reminder-menu-item";
 import { TabOverview } from "@/components/events/detail/tab-overview";
 import { TabParticipants } from "@/components/events/detail/tab-participants";
 import { TabCertificates } from "@/components/events/detail/tab-certificates";
@@ -169,6 +170,7 @@ export default function EventDetailPage({ params }: { params: Promise<{ id: stri
                       {onSale ? "Mettre la vente en pause" : "Ouvrir la vente"}
                     </DropdownMenuItem>
                   )}
+                  <ReminderMenuItem event={event} />
                   <DropdownMenuItem onClick={() => void duplicate()}>Dupliquer</DropdownMenuItem>
                   {event.status !== "CANCELLED" && (
                     <DropdownMenuItem

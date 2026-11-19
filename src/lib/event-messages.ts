@@ -19,8 +19,8 @@ export const DEFAULT_MESSAGES: Record<MessageKind, MessageTemplate> = {
     enabled: true,
   },
   reminder: {
-    subject: "C'est demain : {Événement}",
-    body: "Bonjour {Prénom},\nRendez-vous demain à {Lieu} pour {Événement}. Gardez votre QR code à portée de main.",
+    subject: "Rappel : {Événement} approche",
+    body: "Bonjour {Prénom},\nPetit rappel : {Événement} a lieu le {Date}, à {Lieu}. Gardez votre billet et son QR code à portée de main.",
     cta: "Voir mon pass",
     enabled: false,
   },
@@ -35,7 +35,7 @@ export const DEFAULT_MESSAGES: Record<MessageKind, MessageTemplate> = {
 export const MESSAGE_META: Record<MessageKind, { name: string; when: string; note?: string; locked?: boolean; soon?: boolean }> = {
   ticket: { name: "Billet et pass QR", when: "Après le paiement", note: "Toujours envoyé, avec les billets en PDF.", locked: true },
   certificate: { name: "Certificat", when: "À l'envoi des attestations", note: "Envoyé avec l'attestation en PDF quand vous l'envoyez." },
-  reminder: { name: "Rappel", when: "La veille, 18:00", note: "Envoyé automatiquement la veille à 18 h aux participants qui ont donné leur e-mail." },
+  reminder: { name: "Rappel", when: "24 h avant", note: "Envoyé 24 h avant le début aux participants qui ont donné leur e-mail, pour chaque événement où le rappel est activé (formulaire de l'événement ou menu « … »). Activé ici, il est coché d'office sur vos nouveaux événements." },
   survey: { name: "Avis et questionnaire", when: "Le lendemain", soon: true },
 };
 

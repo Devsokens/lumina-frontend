@@ -159,8 +159,9 @@ function stripToBaseEventPayload(body: ReturnType<typeof toEventPayload>) {
     ...(s.certificateTemplate ? { certificateTemplate: s.certificateTemplate } : {}),
     ...(s.ticketTemplate ? { ticketTemplate: s.ticketTemplate } : {}),
   };
-  const { notifyParticipants: _unused, eventType, ...rest } = body;
+  const { notifyParticipants: _unused, reminderEnabled: _reminder, eventType, ...rest } = body;
   void _unused;
+  void _reminder;
   return {
     ...rest,
     ...(eventType && BASE_EVENT_TYPES.has(eventType) ? { eventType } : {}),
@@ -313,6 +314,16 @@ export function useSetEventStatus() {
   return useMutation({
     mutationFn: ({ id, status }: { id: string; status: EventStatus }) =>
       api.patch(`/admin/events/${id}`, { status }),
+    onSettled: (_r, _e, { id }) => invalidate(id),
+  });
+}
+
+// Rappel e-mail aux participants (menu « … » d'un événement).
+export function useSetEventReminder() {
+  const invalidate = useInvalidateEvents();
+  return useMutation({
+    mutationFn: ({ id, enabled }: { id: string; enabled: boolean }) =>
+      api.patch(`/admin/events/${id}`, { reminderEnabled: enabled }),
     onSettled: (_r, _e, { id }) => invalidate(id),
   });
 }

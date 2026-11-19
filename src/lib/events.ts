@@ -32,6 +32,7 @@ export function toUiEvent(event: ApiEvent, stats?: EventStats): Event {
     capacity: event.capacity,
     status: event.status,
     createdAt: event.createdAt,
+    reminderEnabled: event.reminderEnabled,
     ticketTypes: event.ticketTypes.map(
       (t): TicketType => ({
         id: t.id,
@@ -131,6 +132,7 @@ export type EventPayload = {
   capacity?: number;
   settings?: EventSettings;
   notifyParticipants?: boolean;
+  reminderEnabled?: boolean;
 };
 
 // Page publique de l'événement (programme, intervenants, album photo).
@@ -216,6 +218,8 @@ export function toEventPayload(form: Partial<Event>): EventPayload {
     ...(form.eventType ? { eventType: form.eventType } : {}),
     ...(form.capacity ? { capacity: form.capacity } : {}),
     ...(form.notifyParticipants !== undefined ? { notifyParticipants: form.notifyParticipants } : {}),
+    // Absent : réglage par défaut de l'organisation (serveur).
+    ...(form.reminderEnabled !== undefined ? { reminderEnabled: form.reminderEnabled } : {}),
   };
 }
 
